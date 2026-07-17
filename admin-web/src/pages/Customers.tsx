@@ -97,7 +97,7 @@ export default function Customers() {
             MANAGE PROFILES
           </Typography>
         </Box>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ mt: 1, fontWeight: 700 }}>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ mt: 1, mr: { xs: 0, md: 10 }, fontWeight: 700 }}>
           + ADD CUSTOMER
         </Button>
       </Box>

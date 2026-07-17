@@ -294,7 +294,7 @@ function App() {
         onClose={handleNotificationClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: 1, mb: 2 } } }}
+        slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: 1, mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(12px)' } } }}
       >
         <Box sx={{ p: 2, minWidth: 250 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>

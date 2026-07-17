@@ -57,5 +57,11 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.customerId) || isAdmin();
       allow write: if isAdmin();
     }
+
+    // 7. Categories
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
   }
 }

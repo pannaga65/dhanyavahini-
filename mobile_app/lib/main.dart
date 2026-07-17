@@ -7,8 +7,6 @@ import 'screens/main_scaffold.dart';
 import 'screens/home_screen.dart';
 import 'screens/product_details_screen.dart';
 import 'screens/cart_screen.dart';
-import 'screens/bids_screen.dart';
-import 'screens/live_bid_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,15 +28,7 @@ final _router = GoRouter(
           path: '/orders',
           builder: (context, state) => const Scaffold(body: Center(child: Text('Orders Screen'))),
         ),
-        GoRoute(
-          path: '/bids',
-          builder: (context, state) => const BidsScreen(),
-        ),
       ],
-    ),
-    GoRoute(
-      path: '/live_bid/:id',
-      builder: (context, state) => LiveBidScreen(bidId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/product/:id',

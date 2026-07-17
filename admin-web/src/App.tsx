@@ -7,7 +7,6 @@ import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Products from './pages/Products'
 import Orders from './pages/Orders'
-import Bids from './pages/Bids'
 import Login from './pages/Login'
 import app from './firebase'
 import './index.css'
@@ -20,7 +19,6 @@ const NAV_ITEMS = [
   { text: 'PRODUCTS', path: '/products' },
   { text: 'ORDERS', path: '/orders' },
   { text: 'CUSTOMERS', path: '/customers' },
-  { text: 'TENDERS', path: '/bids' },
 ];
 
 function App() {
@@ -218,7 +216,6 @@ function App() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/bids" element={<Bids />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>

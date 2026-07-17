@@ -51,18 +51,6 @@ service cloud.firestore {
       // Only admins can update status (Confirmed -> Dispatched -> Delivered)
       allow update, delete: if isAdmin();
     }
-
-    // 5. Live Bidding / Tenders
-    match /bids/{bidId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-      
-      // Tender subcollection
-      match /tenders/{tenderId} {
-        allow read: if isAuthenticated();
-        allow write: if isAuthenticated(); // Retailers can submit tenders
-      }
-    }
     
     // 6. Invoices
     match /invoices/{invoiceId} {

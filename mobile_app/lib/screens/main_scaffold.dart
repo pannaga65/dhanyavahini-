@@ -11,8 +11,9 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
     int currentIndex = 0;
+    if (location == '/') currentIndex = 0;
     if (location.startsWith('/orders')) currentIndex = 1;
-    if (location.startsWith('/bids')) currentIndex = 2;
+    if (location.startsWith('/cart')) currentIndex = 2;
 
     return Scaffold(
       body: child,
@@ -35,7 +36,7 @@ class MainScaffold extends StatelessWidget {
               children: [
                 _buildNavItem(context, icon: Icons.home_rounded, label: 'Home', isSelected: currentIndex == 0, route: '/'),
                 _buildNavItem(context, icon: Icons.shopping_bag_rounded, label: 'Orders', isSelected: currentIndex == 1, route: '/orders'),
-                _buildNavItem(context, icon: Icons.gavel_rounded, label: 'Live Bids', isSelected: currentIndex == 2, route: '/bids'),
+                _buildNavItem(context, icon: Icons.shopping_cart_outlined, label: 'Cart', isSelected: currentIndex == 2, route: '/cart'),
               ],
             ),
           ),

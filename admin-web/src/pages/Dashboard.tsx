@@ -10,8 +10,8 @@ const sampleOrders = [
 export default function Dashboard() {
   return (
     <Box>
-      <Typography variant="h4" fontWeight="700" mb={4}>
-        Dashboard Overview
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 4 }}>
+        Overview
       </Typography>
 
       <Typography variant="h6" fontWeight="600" mb={2} color="text.secondary">

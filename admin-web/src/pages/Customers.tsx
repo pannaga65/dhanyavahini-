@@ -46,9 +46,9 @@ export default function Customers() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4" fontWeight="700">
-          Customers
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Retailer Accounts
         </Typography>
         <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
           + Add Customer

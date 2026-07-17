@@ -38,7 +38,7 @@ export default function Orders() {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight="700" mb={4}>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 4 }}>
         Orders Management
       </Typography>
 

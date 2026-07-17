@@ -48,8 +48,8 @@ export default function Products() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4" fontWeight="700">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
           Products Inventory
         </Typography>
         <Button variant="contained" color="primary" onClick={() => setOpen(true)}>

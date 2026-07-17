@@ -1,12 +1,7 @@
 name: Firebase CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -22,14 +17,8 @@ jobs:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: |
-            admin-web/package-lock.json
             backend/functions/package-lock.json
 
-      - name: 🌐 Install dependencies & Build Admin Web
-        working-directory: ./admin-web
-        run: |
-          npm ci
-          npm run build
 
       - name: 🚀 Install Functions dependencies
         working-directory: ./backend/functions
@@ -43,4 +32,4 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          firebase deploy --project dhanyavahini-4d360 --token "$FIREBASE_TOKEN" --non-interactive
+          firebase deploy --project dhanyavahini-4d360 --only functions,firestore,storage --token "$FIREBASE_TOKEN" --force --non-interactive

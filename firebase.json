@@ -1,20 +1,7 @@
 {
-  "hosting": {
-    "public": "admin-web/dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "functions": {
     "source": "backend/functions",
@@ -25,5 +12,8 @@
       "firebase-debug.log",
       "firebase-debug.*.log"
     ]
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }

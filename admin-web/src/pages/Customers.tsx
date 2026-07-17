@@ -17,7 +17,10 @@ export default function Customers() {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({ email: '', displayName: '', tradeName: '', gstNumber: '' });
+  const [formData, setFormData] = useState({ 
+    email: '', displayName: '', tradeName: '', gstNumber: '', 
+    panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''] 
+  });
 
   useEffect(() => { fetchCustomers(); }, []);
 
@@ -33,13 +36,25 @@ export default function Customers() {
 
   const handleOpenNew = () => {
     setEditingId(null);
-    setFormData({ email: '', displayName: '', tradeName: '', gstNumber: '' });
+    setFormData({ 
+      email: '', displayName: '', tradeName: '', gstNumber: '', 
+      panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''] 
+    });
     setOpen(true);
   };
 
   const handleOpenEdit = (customer: any) => {
     setEditingId(customer.id);
-    setFormData({ email: customer.email || '', displayName: customer.displayName || '', tradeName: customer.tradeName || '', gstNumber: customer.gstNumber || '' });
+    setFormData({ 
+      email: customer.email || '', 
+      displayName: customer.displayName || '', 
+      tradeName: customer.tradeName || '', 
+      gstNumber: customer.gstNumber || '',
+      panNumber: customer.panNumber || '',
+      phoneNumber: customer.phoneNumber || '',
+      billingAddress: customer.billingAddress || '',
+      mailingAddresses: (customer.mailingAddresses && customer.mailingAddresses.length > 0) ? customer.mailingAddresses : ['']
+    });
     setOpen(true);
   };
 
@@ -64,7 +79,11 @@ export default function Customers() {
         await updateDoc(doc(db, 'users', editingId), {
           displayName: formData.displayName,
           tradeName: formData.tradeName,
-          gstNumber: formData.gstNumber
+          gstNumber: formData.gstNumber,
+          panNumber: formData.panNumber,
+          phoneNumber: formData.phoneNumber,
+          billingAddress: formData.billingAddress,
+          mailingAddresses: formData.mailingAddresses.filter(a => a.trim() !== '')
           // email is not updated here because it requires Auth update
         });
         setOpen(false);
@@ -166,7 +185,42 @@ export default function Customers() {
             <TextField label="Trade Name (Business)" fullWidth value={formData.tradeName} onChange={(e) => setFormData({ ...formData, tradeName: e.target.value })} />
             <TextField label="Contact Name" fullWidth value={formData.displayName} onChange={(e) => setFormData({ ...formData, displayName: e.target.value })} />
             <TextField label="Email Address" type="email" fullWidth disabled={!!editingId} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            <TextField label="GST Number" fullWidth value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} />
+            <TextField label="Phone Number" fullWidth value={formData.phoneNumber} onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField label="GST Number" fullWidth value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} />
+              <TextField label="PAN Number" fullWidth value={formData.panNumber} onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })} />
+            </Box>
+            <TextField label="Billing Address" fullWidth multiline rows={2} value={formData.billingAddress} onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })} />
+            
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', mb: 1 }}>MAILING ADDRESSES</Typography>
+              {formData.mailingAddresses.map((addr, index) => (
+                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                  <TextField 
+                    size="small" 
+                    fullWidth 
+                    placeholder="Mailing Address" 
+                    value={addr} 
+                    onChange={(e) => {
+                      const newAddrs = [...formData.mailingAddresses];
+                      newAddrs[index] = e.target.value;
+                      setFormData({ ...formData, mailingAddresses: newAddrs });
+                    }} 
+                  />
+                  {formData.mailingAddresses.length > 1 && (
+                    <IconButton size="small" onClick={() => {
+                      const newAddrs = formData.mailingAddresses.filter((_, i) => i !== index);
+                      setFormData({ ...formData, mailingAddresses: newAddrs });
+                    }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+              ))}
+              <Button size="small" onClick={() => setFormData({ ...formData, mailingAddresses: [...formData.mailingAddresses, ''] })}>
+                + ADD ANOTHER MAILING ADDRESS
+              </Button>
+            </Box>
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>

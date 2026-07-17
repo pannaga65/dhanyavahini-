@@ -9,7 +9,16 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+import { getMessaging, isSupported } from "firebase/messaging";
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+export const messaging = async () => {
+  if (await isSupported()) {
+    return getMessaging(app);
+  }
+  return null;
+};
 
 export default app;

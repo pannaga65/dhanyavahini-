@@ -3,7 +3,7 @@ import { Box, Typography, List, ListItem, ListItemButton, ListItemText, Drawer, 
 import MenuIcon from '@mui/icons-material/Menu'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore'
+import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore'
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
@@ -12,7 +12,8 @@ import Orders from './pages/Orders'
 import Inquiries from './pages/Inquiries'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
-import app from './firebase'
+import app, { messaging } from './firebase'
+import { getToken } from 'firebase/messaging'
 import './index.css'
 
 const DRAWER_WIDTH = 220;
@@ -61,6 +62,26 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
+    
+    // Request Push Notification Permissions & Token
+    const setupNotifications = async () => {
+      try {
+        const msg = await messaging();
+        if (msg) {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+             const token = await getToken(msg, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
+             if (token) {
+                await updateDoc(doc(db, 'admins', user.uid), { fcmToken: token });
+             }
+          }
+        }
+      } catch (e) {
+        console.log('Error setting up push notifications:', e);
+      }
+    };
+    setupNotifications();
+    
     const q = query(collection(db, 'orders'), where('status', '==', 'Inquiry'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newCount = snapshot.size;

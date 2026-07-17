@@ -60,7 +60,7 @@ function App() {
                     <ListItemIcon sx={{ color: isActive ? '#FFFFFF' : '#000000', minWidth: 40 }}>
                       {item.icon}
                     </ListItemIcon>
-                    <ListItemText primary={item.text} primaryTypographyProps={{ fontWeight: 500 }} />
+                    <ListItemText primary={<Typography sx={{ fontWeight: 500 }}>{item.text}</Typography>} />
                   </ListItemButton>
                 </ListItem>
               );

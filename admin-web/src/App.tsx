@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { Box, Typography, List, ListItem, ListItemButton, ListItemText, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge } from '@mui/material'
+import { Box, Typography, List, ListItem, ListItemButton, ListItemText, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth'
@@ -36,6 +36,15 @@ function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [inquiryCount, setInquiryCount] = useState(0);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  const handleNotificationClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleNotificationClose = () => {
+    setAnchorEl(null);
+  };
+  const openNotification = Boolean(anchorEl);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -251,6 +260,48 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>
+
+      {/* ── Floating Notification Button ── */}
+      {inquiryCount > 0 && (
+        <>
+          <Fab 
+            color="error" 
+            aria-label="notifications" 
+            onClick={handleNotificationClick}
+            sx={{ position: 'fixed', bottom: 32, right: 32, zIndex: 9999 }}
+          >
+            <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#000', color: '#FFF', fontWeight: 900 } }}>
+              <NotificationsIcon />
+            </Badge>
+          </Fab>
+          
+          <Popover
+            open={openNotification}
+            anchorEl={anchorEl}
+            onClose={handleNotificationClose}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: -2 } } }}
+          >
+            <Box sx={{ p: 2, minWidth: 250 }}>
+              <Typography sx={{ fontWeight: 900, mb: 1, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>
+              <Box sx={{ borderBottom: '1px solid #000', mb: 1 }} />
+              <ListItemButton 
+                onClick={() => {
+                  handleNotificationClose();
+                  navigate('/inquiries');
+                }}
+                sx={{ backgroundColor: '#F9F9F9', border: '1px solid #EEE' }}
+              >
+                <ListItemText 
+                  primary={<Typography sx={{ fontWeight: 700 }}>You have {inquiryCount} pending Inquiries!</Typography>}
+                  secondary={<Typography sx={{ fontSize: '0.75rem', color: '#666', mt: 0.5 }}>Click here to review and negotiate.</Typography>}
+                />
+              </ListItemButton>
+            </Box>
+          </Popover>
+        </>
+      )}
 
       {/* ── Sign Out Confirmation Dialog ── */}
       <Dialog 

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
-import { collection, getCountFromServer } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
+import { collection, getCountFromServer, query, where, getFirestore } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import app from '../firebase';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
-import GavelIcon from '@mui/icons-material/Gavel';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 
 const db = getFirestore(app);
 
@@ -76,22 +75,22 @@ interface DashboardProps {
 
 export default function Dashboard({ userEmail }: DashboardProps) {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, tenders: 0 });
+  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0 });
 
   useEffect(() => {
     (async () => {
       try {
-        const [o, p, c, t] = await Promise.all([
+        const [o, p, c, i] = await Promise.all([
           getCountFromServer(collection(db, 'orders')),
           getCountFromServer(collection(db, 'products')),
           getCountFromServer(collection(db, 'users')),
-          getCountFromServer(collection(db, 'bids')),
+          getCountFromServer(query(collection(db, 'orders'), where('status', '==', 'Inquiry'))),
         ]);
         setStats({
           orders: o.data().count,
           products: p.data().count,
           customers: c.data().count,
-          tenders: t.data().count,
+          inquiries: i.data().count,
         });
       } catch (e) {
         console.error('Error fetching live dashboard stats:', e);
@@ -136,11 +135,11 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           onClick={() => navigate('/customers')}
         />
         <BrutalistCard
-          title="TENDERS"
-          count={stats.tenders}
-          subtitle="MANAGE ACTIVE SESSIONS"
-          icon={<GavelIcon sx={iconSx} />}
-          onClick={() => navigate('/bids')}
+          title="INQUIRIES"
+          count={stats.inquiries}
+          subtitle="MANAGE NEGOTIATIONS"
+          icon={<AssignmentOutlinedIcon sx={iconSx} />}
+          onClick={() => navigate('/inquiries')}
         />
         <BrutalistCard
           title="ORDERS"

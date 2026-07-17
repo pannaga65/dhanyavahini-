@@ -266,7 +266,15 @@ function App() {
         color={inquiryCount > 0 ? "error" : "primary"} 
         aria-label="notifications" 
         onClick={handleNotificationClick}
-        sx={{ position: 'fixed', top: { xs: 80, md: 32 }, right: 32, zIndex: 9999, backgroundColor: inquiryCount > 0 ? '#d32f2f' : '#000', '&:hover': { backgroundColor: inquiryCount > 0 ? '#c62828' : '#333' } }}
+        sx={{ 
+          display: { xs: 'none', md: 'flex' }, 
+          position: 'fixed', 
+          top: 32, 
+          right: 32, 
+          zIndex: 9999, 
+          backgroundColor: inquiryCount > 0 ? '#d32f2f' : '#000', 
+          '&:hover': { backgroundColor: inquiryCount > 0 ? '#c62828' : '#333' } 
+        }}
       >
         <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#000', fontWeight: 900 } }}>
           <NotificationsIcon sx={{ color: '#FFF' }} />
@@ -277,9 +285,9 @@ function App() {
         open={openNotification}
         anchorEl={anchorEl}
         onClose={handleNotificationClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: -2, mb: 2 } } }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: 1, mb: 2 } } }}
       >
         <Box sx={{ p: 2, minWidth: 250 }}>
           <Typography sx={{ fontWeight: 900, mb: 1, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>

@@ -1,82 +1,260 @@
-import { Routes, Route } from 'react-router-dom'
-import { Box, AppBar, Toolbar, Typography, Drawer, List, ListItem, ListItemButton, ListItemText, ListItemIcon } from '@mui/material'
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import PeopleIcon from '@mui/icons-material/People'
-import InventoryIcon from '@mui/icons-material/Inventory'
-import GavelIcon from '@mui/icons-material/Gavel'
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { Box, Typography, List, ListItem, ListItemButton, ListItemText, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button } from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth'
+import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Products from './pages/Products'
 import Orders from './pages/Orders'
 import Bids from './pages/Bids'
-import { useNavigate, useLocation } from 'react-router-dom'
+import Login from './pages/Login'
+import app from './firebase'
+import './index.css'
 
-const drawerWidth = 240;
+const DRAWER_WIDTH = 220;
+const auth = getAuth(app);
+
+const NAV_ITEMS = [
+  { text: 'DASHBOARD', path: '/' },
+  { text: 'PRODUCTS', path: '/products' },
+  { text: 'ORDERS', path: '/orders' },
+  { text: 'CUSTOMERS', path: '/customers' },
+  { text: 'TENDERS', path: '/bids' },
+];
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const confirmSignOut = () => {
+    setSignOutOpen(true);
+  };
+
+  const handleSignOut = async () => {
+    setSignOutOpen(false);
+    await signOut(auth);
+    navigate('/login');
+  };
+
+  const cancelSignOut = () => {
+    setSignOutOpen(false);
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Typography sx={{ fontWeight: 900, letterSpacing: 3, fontSize: '1.2rem' }}>LOADING…</Typography>
+      </Box>
+    );
+  }
+
+  // If not logged in, show Login page
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+  const drawerContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Logo */}
+      <Box sx={{ px: 3, pt: 5, pb: 2 }}>
+        <Typography sx={{ fontWeight: 900, fontSize: '1.6rem', letterSpacing: 3, lineHeight: 1 }}>
+          ADMIN
+        </Typography>
+        <Typography sx={{ fontWeight: 600, fontSize: '0.65rem', color: '#999', letterSpacing: 2, mt: 0.5 }}>
+          DHANYAVAHINI CMS
+        </Typography>
+      </Box>
+
+      <Box sx={{ borderBottom: '2px solid #000', mx: 3, mb: 3 }} />
+
+      {/* Nav Links */}
+      <List disablePadding sx={{ px: 1.5 }}>
+        {NAV_ITEMS.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => {
+                  navigate(item.path);
+                  if (mobileOpen) setMobileOpen(false);
+                }}
+                sx={{
+                  py: 1.2,
+                  px: 2,
+                  backgroundColor: isActive ? '#000' : 'transparent',
+                  color: isActive ? '#FFF' : '#000',
+                  '&:hover': {
+                    backgroundColor: isActive ? '#000' : '#F0F0F0',
+                  },
+                }}
+              >
+                <ListItemText
+                  primary={
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', letterSpacing: 1.2 }}>
+                      {item.text}
+                    </Typography>
+                  }
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+      </List>
+
+      <Box sx={{ flexGrow: 1 }} />
+
+      {/* Footer */}
+      <Box sx={{ borderTop: '2px solid #000', mx: 3 }} />
+      <Box sx={{ px: 1.5, py: 2 }}>
+        <ListItemButton
+          onClick={confirmSignOut}
+          sx={{ py: 1.2, px: 2, '&:hover': { backgroundColor: '#F0F0F0' } }}
+        >
+          <ListItemText
+            primary={
+              <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', letterSpacing: 1.2 }}>
+                ← SIGN OUT
+              </Typography>
+            }
+          />
+        </ListItemButton>
+      </Box>
+    </Box>
+  );
+
   return (
-    <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, backgroundColor: '#000000' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#FFF', width: '100%' }}>
+      
+      {/* ── Mobile AppBar ── */}
+      <AppBar 
+        position="fixed" 
+        elevation={0}
+        sx={{ 
+          display: { md: 'none' }, 
+          backgroundColor: '#FFF',
+          borderBottom: '2px solid #000',
+          color: '#000'
+        }}
+      >
         <Toolbar>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, letterSpacing: 1 }}>
-            DHANYAVAHINI ADMIN
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { md: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', letterSpacing: 2 }}>
+            ADMIN
           </Typography>
         </Toolbar>
       </AppBar>
-      <Drawer
-        variant="permanent"
+
+      {/* ── Sidebar (Responsive) ── */}
+      <Box
+        component="nav"
+        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+      >
+        {/* Mobile Temporary Drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }} // Better open performance on mobile
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '2px solid #000' },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+        {/* Desktop Permanent Drawer */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '2px solid #000', border: 'none', borderRightStyle: 'solid' },
+          }}
+          open
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
+
+      {/* ── Main Content — FULL WIDTH ── */}
+      <Box
+        component="main"
         sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box', borderRight: '1px solid #EAEAEA' },
+          flexGrow: 1,
+          width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          p: { xs: 2, sm: 3, md: 5 },
+          pt: { xs: 10, md: 6 }, // Extra padding top on mobile to account for AppBar
         }}
       >
-        <Toolbar />
-        <Box sx={{ overflow: 'auto', mt: 2 }}>
-          <List>
-            {[
-              { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
-              { text: 'Orders', path: '/orders', icon: <ShoppingCartIcon /> },
-              { text: 'Products', path: '/products', icon: <InventoryIcon /> },
-              { text: 'Customers', path: '/customers', icon: <PeopleIcon /> },
-              { text: 'Live Bids', path: '/bids', icon: <GavelIcon /> },
-            ].map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <ListItem key={item.text} disablePadding>
-                  <ListItemButton 
-                    onClick={() => navigate(item.path)}
-                    sx={{ 
-                      mx: 1, 
-                      borderRadius: 2, 
-                      backgroundColor: isActive ? '#000000' : 'transparent',
-                      color: isActive ? '#FFFFFF' : '#000000',
-                      '&:hover': { backgroundColor: isActive ? '#000000' : '#F4F4F4' } 
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: isActive ? '#FFFFFF' : '#000000', minWidth: 40 }}>
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText primary={<Typography sx={{ fontWeight: 500 }}>{item.text}</Typography>} />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          </List>
-        </Box>
-      </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 4, pt: 10, minHeight: '100vh', backgroundColor: '#F9F9F9' }}>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard userEmail={user.email} />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/products" element={<Products />} />
           <Route path="/bids" element={<Bids />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>
+
+      {/* ── Sign Out Confirmation Dialog ── */}
+      <Dialog 
+        open={signOutOpen} 
+        onClose={cancelSignOut}
+        PaperProps={{
+          sx: { border: '2px solid #000', borderRadius: 0 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1 }}>
+          CONFIRM SIGN OUT
+        </DialogTitle>
+        <Box sx={{ px: 3, pb: 2 }}>
+          <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+            Are you sure you want to end your session and sign out of the CMS?
+          </Typography>
+        </Box>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button 
+            onClick={cancelSignOut} 
+            sx={{ color: '#000', fontWeight: 700 }}
+          >
+            CANCEL
+          </Button>
+          <Button 
+            onClick={handleSignOut} 
+            variant="contained" 
+            sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0, '&:hover': { backgroundColor: '#333' } }}
+          >
+            SIGN OUT
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

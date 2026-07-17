@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Stepper, Step, StepLabel, Divider } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogContent, DialogActions, Stepper, Step, StepLabel } from '@mui/material';
 import { collection, getDocs } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import app from '../firebase';
@@ -22,24 +22,16 @@ export default function Orders() {
   const statusSteps = ['Pending', 'Confirmed', 'Dispatched', 'Delivered'];
 
   const getStepIndex = (status: string) => {
-    switch (status) {
-      case 'Pending': return 0;
-      case 'Confirmed': return 1;
-      case 'Dispatched': return 2;
-      case 'Delivered': return 3;
-      default: return 0;
-    }
+    const idx = statusSteps.indexOf(status);
+    return idx >= 0 ? idx : 0;
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'orders'));
-      const data = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[];
-      setOrders(data);
+      setOrders(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[]);
     } catch (e) {
       console.log('Error fetching orders', e);
     }
@@ -57,54 +49,60 @@ export default function Orders() {
     }
   };
 
+  const statusColor = (status: string) => {
+    switch (status) {
+      case 'Confirmed': return { bg: '#000', fg: '#FFF' };
+      case 'Dispatched': return { bg: '#333', fg: '#FFF' };
+      case 'Delivered': return { bg: '#666', fg: '#FFF' };
+      default: return { bg: '#E0E0E0', fg: '#000' };
+    }
+  };
+
   return (
     <Box>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 4 }}>
-        Orders Management
+      {/* Page Header */}
+      <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3, mb: 1 }}>
+        ORDERS
       </Typography>
+      <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mb: 3 }}>
+        MANAGE DISPATCHES
+      </Typography>
+      <Box sx={{ borderBottom: '2px solid #000', mb: 4 }} />
 
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }}>
+      <TableContainer>
+        <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Order ID</TableCell>
-              <TableCell>Customer ID</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>ORDER ID</TableCell>
+              <TableCell>CUSTOMER</TableCell>
+              <TableCell>AMOUNT</TableCell>
+              <TableCell>STATUS</TableCell>
+              <TableCell>ACTION</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell sx={{ fontWeight: 600 }}>{row.id}</TableCell>
-                <TableCell>{row.customerId}</TableCell>
-                <TableCell>
-                  <Chip 
-                    label={row.status} 
-                    size="small"
-                    sx={{ 
-                      fontWeight: 600, 
-                      backgroundColor: row.status === 'Confirmed' ? '#000000' : '#EAEAEA',
-                      color: row.status === 'Confirmed' ? '#FFFFFF' : '#000000',
-                      borderRadius: 1
-                    }} 
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button 
-                    variant="outlined" 
-                    size="small"
-                    onClick={() => setSelectedOrder(row)}
-                  >
-                    View Details
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {orders.map((row) => {
+              const sc = statusColor(row.status);
+              return (
+                <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
+                  <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>{row.id.substring(0, 8)}…</TableCell>
+                  <TableCell>{row.customerId}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString() || '—'}</TableCell>
+                  <TableCell>
+                    <Chip label={row.status} size="small" sx={{ backgroundColor: sc.bg, color: sc.fg }} />
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outlined" size="small" onClick={() => setSelectedOrder(row)}>
+                      Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {orders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 6, color: 'text.secondary' }}>
-                  No orders found.
+                <TableCell colSpan={5} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                  NO ORDERS YET
                 </TableCell>
               </TableRow>
             )}
@@ -112,11 +110,14 @@ export default function Orders() {
         </Table>
       </TableContainer>
 
-      {/* Order Details & Timeline Dialog */}
+      {/* Order Detail Dialog */}
       <Dialog open={!!selectedOrder} onClose={() => setSelectedOrder(null)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Order Details: {selectedOrder?.id}</DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ mb: 4, mt: 2 }}>
+        <Box sx={{ p: 3 }}>
+          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
+            ORDER: {selectedOrder?.id.substring(0, 8)}…
+          </Typography>
+
+          <Box sx={{ mb: 4 }}>
             <Stepper activeStep={selectedOrder ? getStepIndex(selectedOrder.status) : 0} alternativeLabel>
               {statusSteps.map((label) => (
                 <Step key={label}>
@@ -125,24 +126,39 @@ export default function Orders() {
               ))}
             </Stepper>
           </Box>
-          
-          <Divider sx={{ my: 3 }} />
-          
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Order Summary</Typography>
-          <Typography variant="body1"><b>Customer:</b> {selectedOrder?.customerId}</Typography>
-          <Typography variant="body1"><b>Total Amount:</b> ₹{selectedOrder?.totalAmount?.toLocaleString()}</Typography>
-          
-          <Box sx={{ mt: 4, p: 2, backgroundColor: '#F9F9F9', borderRadius: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Admin Actions</Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="contained" color="primary" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Confirmed')} disabled={selectedOrder?.status === 'Confirmed' || selectedOrder?.status === 'Dispatched' || selectedOrder?.status === 'Delivered'}>Mark Confirmed</Button>
-              <Button variant="contained" color="secondary" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Dispatched')} disabled={selectedOrder?.status !== 'Confirmed'}>Mark Dispatched</Button>
-              <Button variant="contained" sx={{ backgroundColor: '#000', color: '#fff' }} onClick={() => handleUpdateStatus(selectedOrder!.id, 'Delivered')} disabled={selectedOrder?.status !== 'Dispatched'}>Mark Delivered</Button>
+
+          <Box sx={{ borderTop: '1px solid #E0E0E0', pt: 3, mb: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>CUSTOMER</Typography>
+                <Typography sx={{ fontWeight: 700 }}>{selectedOrder?.customerId}</Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>TOTAL</Typography>
+                <Typography sx={{ fontWeight: 900, fontSize: '1.5rem' }}>₹{selectedOrder?.totalAmount?.toLocaleString()}</Typography>
+              </Box>
             </Box>
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button variant="outlined" color="primary">Download Invoice PDF</Button>
+
+          <Box sx={{ borderTop: '2px solid #000', pt: 3 }}>
+            <Typography sx={{ fontWeight: 800, letterSpacing: 1, fontSize: '0.8rem', mb: 2 }}>ADMIN ACTIONS</Typography>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Button variant="contained" size="small" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Confirmed')} disabled={selectedOrder?.status !== 'Pending'}>
+                Confirm
+              </Button>
+              <Button variant="contained" size="small" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Dispatched')} disabled={selectedOrder?.status !== 'Confirmed'}>
+                Dispatch
+              </Button>
+              <Button variant="contained" size="small" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Delivered')} disabled={selectedOrder?.status !== 'Dispatched'}>
+                Deliver
+              </Button>
+              <Button variant="outlined" size="small">
+                Download Invoice
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+        <DialogActions sx={{ borderTop: '1px solid #E0E0E0', p: 2 }}>
           <Button onClick={() => setSelectedOrder(null)}>Close</Button>
         </DialogActions>
       </Dialog>

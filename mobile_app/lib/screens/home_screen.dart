@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
+import '../providers/cart_provider.dart';
+import '../widgets/shimmer_loader.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,8 +15,8 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Dhanyavahini'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, size: 28),
-            onPressed: () {},
+            icon: const Icon(Icons.shopping_cart_outlined, size: 28),
+            onPressed: () => context.push('/cart'),
           )
         ],
       ),
@@ -80,60 +84,50 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           
-          const SizedBox(height: 32),
-          Text('Product Catalog', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
-          
-          // Product Card replicating the "Continue Reading" style
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: AppTheme.softShadow,
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 60,
-                  height: 80,
+          // Using Skeleton Loaders for a premium feel
+          SizedBox(
+            height: 400,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: 4, // Show 4 skeletons while loading
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.background,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: AppTheme.softShadow,
                   ),
-                  child: const Center(child: Icon(Icons.inventory_2_outlined, color: AppTheme.textLight)),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text('Premium Wheat', style: Theme.of(context).textTheme.bodyMedium),
-                      const SizedBox(height: 4),
-                      Text('₹1,500 / Quintal', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18)),
-                      const SizedBox(height: 12),
-                      LinearProgressIndicator(
-                        value: 0.6,
-                        backgroundColor: AppTheme.background,
-                        color: AppTheme.primaryAction,
-                        borderRadius: BorderRadius.circular(10),
-                      )
+                      const ShimmerLoader(width: 80, height: 80, borderRadius: 16),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const ShimmerLoader(width: 150, height: 20),
+                            const SizedBox(height: 8),
+                            const ShimmerLoader(width: 100, height: 16),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const ShimmerLoader(width: 80, height: 24),
+                                const ShimmerLoader(width: 60, height: 32, borderRadius: 20),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primaryAction,
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(Icons.shopping_cart, color: Colors.white, size: 24),
-                )
-              ],
+                );
+              },
             ),
-          )
+          ),
         ],
       ),
     );

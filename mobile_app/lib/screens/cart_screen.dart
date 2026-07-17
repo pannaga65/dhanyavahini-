@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../providers/cart_provider.dart';
@@ -115,26 +116,19 @@ class CartScreen extends ConsumerWidget {
                     if (cartItems.isEmpty) return;
                     
                     try {
-                      final orderData = {
-                        'customerId': 'retailer_123', // Hardcoded until Auth is fully integrated
-                        'items': cartItems.map((item) => {
-                          'productId': item.productId,
-                          'name': item.name,
-                          'price': item.price,
-                          'quantity': item.quantity,
-                        }).toList(),
-                        'subtotal': cartNotifier.subtotal,
-                        'gst': cartNotifier.gst,
-                        'totalAmount': cartNotifier.total,
-                        'status': 'Pending',
-                        'createdAt': FieldValue.serverTimestamp(),
-                      };
+                      // Call the highly secure Cloud Function instead of trusting the client
+                      final callable = FirebaseFunctions.instance.httpsCallable('placeSecureOrder');
                       
-                      await FirebaseFirestore.instance.collection('orders').add(orderData);
+                      final itemsData = cartItems.map((item) => {
+                        'productId': item.productId,
+                        'quantity': item.quantity,
+                      }).toList();
+                      
+                      await callable.call({'items': itemsData});
                       
                       cartNotifier.clear();
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order Placed Successfully!')));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order Placed Securely!')));
                         Navigator.of(context).pop();
                       }
                     } catch (e) {

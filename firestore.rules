@@ -1,56 +1,73 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Function to check if the user is an admin
+    // Security Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+      return isAuthenticated() && request.auth.token.admin == true;
     }
-    
-    // Function to check if the user is a customer
-    function isCustomer() {
-      return request.auth != null && request.auth.token.customer == true;
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Admins have read/write access to everything globally
-    match /{document=**} {
-      allow read, write: if isAdmin();
+    // 1. Admins Collection (Separate from Users)
+    match /admins/{adminId} {
+      // Any authenticated user can read their own admin doc (needed for login check)
+      allow read: if isAuthenticated() && request.auth.uid == adminId;
+      // No one can write from the client — admins are added manually in the Firebase Console
+      allow write: if false;
     }
 
-    // Users Collection
+    // 2. Users / Customers (Retailers, Distributors)
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isAdmin();
-      // Only admins can write to users (handled by overarching rule)
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin(); // Only admins can create/approve customers
     }
 
-    // Products Collection
+    // 3. Products Catalog
     match /products/{productId} {
-      allow read: if isCustomer() || isAdmin();
-      // Only admins can create/edit products
+      allow read: if isAuthenticated(); // Any logged-in retailer can browse
+      allow write: if isAdmin(); // Admins only (pricing, stock management)
     }
 
-    // Orders Collection
+    // 3.5. Inventory Ledger
+    match /inventory/{productId} {
+      allow read: if isAuthenticated(); // Retailers need to know if item is in stock
+      allow write: if isAdmin(); // Admins manage stock. (Cloud functions will handle automated deductions later)
+    }
+
+    // 4. Orders (No Payment Gateway - Offline tracking)
     match /orders/{orderId} {
-      allow read: if isAdmin() || (isCustomer() && resource.data.customerId == request.auth.uid);
-      allow create: if isCustomer() && request.resource.data.customerId == request.auth.uid && request.resource.data.status == 'pending';
-      // Updates are done via Cloud Functions to prevent malicious state changes by customers
-      allow update: if isAdmin(); 
+      // Retailers can read their own orders. Admins can read all.
+      allow read: if isOwner(resource.data.customerId) || isAdmin();
+      
+      // Orders MUST be placed via Cloud Function (placeSecureOrder)
+      allow create: if false; 
+      
+      // Only admins can update status (Confirmed -> Dispatched -> Delivered)
+      allow update, delete: if isAdmin();
     }
 
-    // Order Items Collection
-    match /orderItems/{itemId} {
-      allow read: if isCustomer() || isAdmin();
-      allow create: if isCustomer(); // They can create line items when placing an order
-    }
-
-    // Bids Collection
-    match /bidSessions/{sessionId} {
-      allow read: if isCustomer() || isAdmin();
+    // 5. Live Bidding / Tenders
+    match /bids/{bidId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      // Tender subcollection
+      match /tenders/{tenderId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated(); // Retailers can submit tenders
+      }
     }
     
-    match /bids/{bidId} {
-      allow read: if isCustomer() || isAdmin();
-      allow create: if isCustomer() && request.resource.data.customerId == request.auth.uid;
+    // 6. Invoices
+    match /invoices/{invoiceId} {
+      allow read: if isOwner(resource.data.customerId) || isAdmin();
+      allow write: if isAdmin();
     }
   }
 }

@@ -1,0 +1,192 @@
+import { useState, useEffect } from 'react';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton } from '@mui/material';
+import { collection, getDocs, query, where, getFirestore, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
+import app from '../firebase';
+import { useUI } from '../context/UIContext';
+
+const db = getFirestore(app);
+
+export default function Inquiries() {
+  const { showConfirm, showMessage } = useUI();
+  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Negotiation Form Data
+  const [negotiatedPrice, setNegotiatedPrice] = useState('');
+  const [negotiatedQuantity, setNegotiatedQuantity] = useState('');
+
+  useEffect(() => { fetchInquiries(); }, []);
+
+  const fetchInquiries = async () => {
+    try {
+      const q = query(collection(db, 'orders'), where('status', '==', 'Inquiry'));
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort by latest (client side for now)
+      data.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+      setInquiries(data);
+    } catch (e) {
+      console.log('Error fetching inquiries', e);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    showConfirm("Are you sure you want to completely reject and delete this inquiry?", async () => {
+      try {
+        await deleteDoc(doc(db, 'orders', id));
+        fetchInquiries();
+        showMessage("Inquiry deleted successfully", "success");
+      } catch (e) {
+        console.error("Error deleting", e);
+        showMessage("Failed to delete.", "error");
+      }
+    });
+  };
+
+  const handleOpenEdit = (inquiry: any) => {
+    setEditingId(inquiry.id);
+    setNegotiatedPrice(inquiry.totalAmount?.toString() || '');
+    setNegotiatedQuantity(inquiry.totalQuantity?.toString() || '');
+    setOpen(true);
+  };
+
+  const handleApproveConvert = async (inquiryId: string) => {
+    showConfirm("Approve this inquiry and convert it into an Order?", async () => {
+      try {
+        await updateDoc(doc(db, 'orders', inquiryId), {
+          status: 'Confirmed',
+          paymentStatus: 'Pending',
+          updatedAt: new Date()
+        });
+        fetchInquiries();
+        showMessage("Inquiry converted to Order", "success");
+      } catch (e) {
+        console.error("Error approving", e);
+        showMessage("Failed to approve inquiry.", "error");
+      }
+    });
+  };
+
+  const handleSaveNegotiation = async () => {
+    if (!editingId) return;
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, 'orders', editingId), {
+        totalAmount: Number(negotiatedPrice),
+        totalQuantity: Number(negotiatedQuantity),
+        updatedAt: new Date()
+      });
+      setOpen(false);
+      fetchInquiries();
+      showMessage("Negotiation saved", "success");
+    } catch (e) {
+      console.error('Error updating inquiry:', e);
+      showMessage('Error updating inquiry.', "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box>
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+        <Box>
+          <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
+            INQUIRIES
+          </Typography>
+          <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
+            REVIEW AND NEGOTIATE NEW REQUESTS
+          </Typography>
+        </Box>
+      </Box>
+      <Box sx={{ borderBottom: '2px solid #000', mb: 4, mt: 2 }} />
+
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 900 }}>CUSTOMER ID</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>ITEMS</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>TOTAL QTY</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>REQUESTED PRICE</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>DATE</TableCell>
+              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {inquiries.map((row) => (
+              <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>{row.customerId}</TableCell>
+                <TableCell>
+                  {row.items?.map((item: any, i: number) => (
+                    <Box key={i} sx={{ fontSize: '0.8rem', color: '#666' }}>
+                      {item.quantity} x {item.productName}
+                    </Box>
+                  ))}
+                </TableCell>
+                <TableCell>{row.totalQuantity} units</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString()}</TableCell>
+                <TableCell sx={{ color: '#666', fontSize: '0.85rem' }}>
+                  {row.createdAt?.toDate().toLocaleDateString() || 'N/A'}
+                </TableCell>
+                <TableCell align="right">
+                  <Button 
+                    variant="contained" 
+                    color="success" 
+                    size="small" 
+                    startIcon={<CheckIcon />}
+                    onClick={() => handleApproveConvert(row.id)}
+                    sx={{ mr: 1, fontWeight: 700, borderRadius: 0 }}
+                  >
+                    APPROVE
+                  </Button>
+                  <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+            {inquiries.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                  NO PENDING INQUIRIES
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Edit Negotiation Dialog */}
+      <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 3 }}>
+          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
+            NEGOTIATE INQUIRY
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <TextField label="Negotiated Total Amount (₹)" type="number" fullWidth value={negotiatedPrice} onChange={(e) => setNegotiatedPrice(e.target.value)} />
+            <TextField label="Negotiated Total Quantity" type="number" fullWidth value={negotiatedQuantity} onChange={(e) => setNegotiatedQuantity(e.target.value)} />
+            <Typography sx={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
+              Update these values before approving the order if you have negotiated a different rate with the customer.
+            </Typography>
+          </Box>
+        </Box>
+        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+          <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
+          <Button variant="contained" onClick={handleSaveNegotiation} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE CHANGES'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}

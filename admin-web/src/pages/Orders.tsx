@@ -1,25 +1,35 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogActions, Stepper, Step, StepLabel } from '@mui/material';
-import { collection, getDocs } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogActions, Stepper, Step, StepLabel, IconButton, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import app from '../firebase';
 import { getFirestore } from 'firebase/firestore';
+import { useUI } from '../context/UIContext';
 
 const db = getFirestore(app);
-const functions = getFunctions(app);
 
 interface Order {
   id: string;
   customerId: string;
   status: string;
+  paymentStatus?: string;
   totalAmount: number;
 }
 
 export default function Orders() {
+  const { showConfirm, showMessage } = useUI();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  
+  // Edit Mode
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editStatus, setEditStatus] = useState('');
+  const [editPaymentStatus, setEditPaymentStatus] = useState('');
+  const [editTotal, setEditTotal] = useState('');
 
-  const statusSteps = ['Pending', 'Confirmed', 'Dispatched', 'Delivered'];
+  const statusSteps = ['Confirmed', 'Dispatched', 'Delivered'];
 
   const getStepIndex = (status: string) => {
     const idx = statusSteps.indexOf(status);
@@ -31,21 +41,77 @@ export default function Orders() {
   const fetchOrders = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'orders'));
-      setOrders(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[]);
+      let data = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[];
+      // Filter out Inquiries, we only want Approved orders here
+      data = data.filter(o => o.status !== 'Inquiry');
+      setOrders(data);
     } catch (e) {
       console.log('Error fetching orders', e);
     }
   };
 
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+  const handleUpdateDeliveryStatus = async (orderId: string, newStatus: string) => {
     try {
-      const updateOrderFn = httpsCallable(functions, 'updateOrderStatus');
-      await updateOrderFn({ orderId, newStatus });
+      await updateDoc(doc(db, 'orders', orderId), { status: newStatus, updatedAt: new Date() });
       fetchOrders();
-      setSelectedOrder(null);
+      if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: newStatus });
+      showMessage(`Delivery status updated to ${newStatus}`, "success");
     } catch (error: any) {
       console.error('Error updating status', error);
-      alert('Failed to update status: ' + error.message);
+      showMessage('Failed to update status', "error");
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (orderId: string, newPaymentStatus: string) => {
+    try {
+      await updateDoc(doc(db, 'orders', orderId), { paymentStatus: newPaymentStatus, updatedAt: new Date() });
+      fetchOrders();
+      if (selectedOrder) setSelectedOrder({ ...selectedOrder, paymentStatus: newPaymentStatus });
+      showMessage(`Payment status updated to ${newPaymentStatus}`, "success");
+    } catch (error: any) {
+      console.error('Error updating payment', error);
+      showMessage('Failed to update payment', "error");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    showConfirm("Are you sure you want to completely delete this order?", async () => {
+      try {
+        await deleteDoc(doc(db, 'orders', id));
+        fetchOrders();
+        showMessage("Order deleted successfully", "success");
+      } catch (e) {
+        console.error("Error deleting", e);
+        showMessage("Failed to delete.", "error");
+      }
+    });
+  };
+
+  const handleOpenEdit = (order: Order) => {
+    setEditingId(order.id);
+    setEditStatus(order.status || 'Confirmed');
+    setEditPaymentStatus(order.paymentStatus || 'Pending');
+    setEditTotal(order.totalAmount?.toString() || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+    setEditLoading(true);
+    try {
+      await updateDoc(doc(db, 'orders', editingId), {
+        status: editStatus,
+        paymentStatus: editPaymentStatus,
+        totalAmount: Number(editTotal),
+        updatedAt: new Date()
+      });
+      setEditingId(null);
+      fetchOrders();
+      showMessage("Order updated", "success");
+    } catch (e) {
+      console.error('Error updating order:', e);
+      showMessage('Error updating order.', "error");
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -62,10 +128,10 @@ export default function Orders() {
     <Box>
       {/* Page Header */}
       <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3, mb: 1 }}>
-        ORDERS
+        ORDERS & PAYMENTS
       </Typography>
       <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mb: 3 }}>
-        MANAGE DISPATCHES
+        MANAGE DISPATCHES AND FINANCES
       </Typography>
       <Box sx={{ borderBottom: '2px solid #000', mb: 4 }} />
 
@@ -73,36 +139,52 @@ export default function Orders() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ORDER ID</TableCell>
-              <TableCell>CUSTOMER</TableCell>
-              <TableCell>AMOUNT</TableCell>
-              <TableCell>STATUS</TableCell>
-              <TableCell>ACTION</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>ORDER ID</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>CUSTOMER</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>AMOUNT</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>DELIVERY STATUS</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>PAYMENT STATUS</TableCell>
+              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {orders.map((row) => {
               const sc = statusColor(row.status);
+              const pStatus = row.paymentStatus || 'Pending';
               return (
                 <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
                   <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>{row.id.substring(0, 8)}…</TableCell>
                   <TableCell>{row.customerId}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString() || '—'}</TableCell>
                   <TableCell>
-                    <Chip label={row.status} size="small" sx={{ backgroundColor: sc.bg, color: sc.fg }} />
+                    <Chip label={row.status} size="small" sx={{ backgroundColor: sc.bg, color: sc.fg, fontWeight: 700 }} />
                   </TableCell>
                   <TableCell>
-                    <Button variant="outlined" size="small" onClick={() => setSelectedOrder(row)}>
+                    <Chip 
+                      label={pStatus.toUpperCase()} 
+                      size="small" 
+                      color={pStatus === 'Done' ? 'success' : 'warning'} 
+                      sx={{ fontWeight: 700 }} 
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button variant="outlined" size="small" onClick={() => setSelectedOrder(row)} sx={{ mr: 1 }}>
                       Details
                     </Button>
+                    <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               );
             })}
             {orders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
-                  NO ORDERS YET
+                <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                  NO APPROVED ORDERS YET
                 </TableCell>
               </TableRow>
             )}
@@ -110,10 +192,10 @@ export default function Orders() {
         </Table>
       </TableContainer>
 
-      {/* Order Detail Dialog */}
+      {/* Order Detail & Action Dialog */}
       <Dialog open={!!selectedOrder} onClose={() => setSelectedOrder(null)} maxWidth="md" fullWidth>
         <Box sx={{ p: 3 }}>
-          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
+          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1.2rem', mb: 3 }}>
             ORDER: {selectedOrder?.id.substring(0, 8)}…
           </Typography>
 
@@ -134,32 +216,84 @@ export default function Orders() {
                 <Typography sx={{ fontWeight: 700 }}>{selectedOrder?.customerId}</Typography>
               </Box>
               <Box>
-                <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>TOTAL</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>TOTAL AMOUNT</Typography>
                 <Typography sx={{ fontWeight: 900, fontSize: '1.5rem' }}>₹{selectedOrder?.totalAmount?.toLocaleString()}</Typography>
               </Box>
             </Box>
           </Box>
 
-          <Box sx={{ borderTop: '2px solid #000', pt: 3 }}>
-            <Typography sx={{ fontWeight: 800, letterSpacing: 1, fontSize: '0.8rem', mb: 2 }}>ADMIN ACTIONS</Typography>
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              <Button variant="contained" size="small" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Confirmed')} disabled={selectedOrder?.status !== 'Pending'}>
-                Confirm
-              </Button>
-              <Button variant="contained" size="small" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Dispatched')} disabled={selectedOrder?.status !== 'Confirmed'}>
-                Dispatch
-              </Button>
-              <Button variant="contained" size="small" onClick={() => handleUpdateStatus(selectedOrder!.id, 'Delivered')} disabled={selectedOrder?.status !== 'Dispatched'}>
-                Deliver
-              </Button>
-              <Button variant="outlined" size="small">
-                Download Invoice
-              </Button>
+          <Box sx={{ borderTop: '2px solid #000', pt: 3, display: 'flex', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography sx={{ fontWeight: 800, letterSpacing: 1, fontSize: '0.8rem', mb: 2 }}>DELIVERY ACTIONS</Typography>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                <Button variant="contained" size="small" onClick={() => handleUpdateDeliveryStatus(selectedOrder!.id, 'Dispatched')} disabled={selectedOrder?.status !== 'Confirmed'}>
+                  Dispatch
+                </Button>
+                <Button variant="contained" size="small" onClick={() => handleUpdateDeliveryStatus(selectedOrder!.id, 'Delivered')} disabled={selectedOrder?.status !== 'Dispatched'}>
+                  Deliver
+                </Button>
+              </Box>
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 800, letterSpacing: 1, fontSize: '0.8rem', mb: 2 }}>PAYMENT ACTIONS</Typography>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                <Button 
+                  variant="outlined" 
+                  color="warning" 
+                  size="small" 
+                  onClick={() => handleUpdatePaymentStatus(selectedOrder!.id, 'Pending')} 
+                  disabled={selectedOrder?.paymentStatus === 'Pending'}
+                >
+                  Mark Pending
+                </Button>
+                <Button 
+                  variant="contained" 
+                  color="success" 
+                  size="small" 
+                  onClick={() => handleUpdatePaymentStatus(selectedOrder!.id, 'Done')} 
+                  disabled={selectedOrder?.paymentStatus === 'Done'}
+                >
+                  Mark Done
+                </Button>
+              </Box>
             </Box>
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '1px solid #E0E0E0', p: 2 }}>
-          <Button onClick={() => setSelectedOrder(null)}>Close</Button>
+          <Button onClick={() => setSelectedOrder(null)} sx={{ fontWeight: 700, color: '#000' }}>CLOSE</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Order Form Dialog (For manual override) */}
+      <Dialog open={!!editingId} onClose={() => !editLoading && setEditingId(null)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 3 }}>
+          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
+            EDIT ORDER DATA
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <FormControl fullWidth>
+              <InputLabel>Delivery Status</InputLabel>
+              <Select value={editStatus} label="Delivery Status" onChange={(e) => setEditStatus(e.target.value)}>
+                <MenuItem value="Confirmed">Confirmed</MenuItem>
+                <MenuItem value="Dispatched">Dispatched</MenuItem>
+                <MenuItem value="Delivered">Delivered</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Payment Status</InputLabel>
+              <Select value={editPaymentStatus} label="Payment Status" onChange={(e) => setEditPaymentStatus(e.target.value)}>
+                <MenuItem value="Pending">Pending</MenuItem>
+                <MenuItem value="Done">Done</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField label="Total Amount (₹)" type="number" fullWidth value={editTotal} onChange={(e) => setEditTotal(e.target.value)} />
+          </Box>
+        </Box>
+        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+          <Button onClick={() => setEditingId(null)} disabled={editLoading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
+          <Button variant="contained" onClick={handleSaveEdit} disabled={editLoading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+            {editLoading ? <CircularProgress size={20} color="inherit" /> : 'SAVE CHANGES'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

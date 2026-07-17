@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { collection, getDocs, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, IconButton } from '@mui/material';
+import { collection, getDocs, addDoc, serverTimestamp, setDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import app from '../firebase';
+import { useUI } from '../context/UIContext';
 
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -11,6 +14,7 @@ const storage = getStorage(app);
 interface Product {
   id: string;
   name: string;
+  category?: string;
   basePriceKg: number;
   moqKg: number;
   imageUrl: string;
@@ -18,17 +22,22 @@ interface Product {
 }
 
 export default function Products() {
+  const { showConfirm, showMessage } = useUI();
   const [products, setProducts] = useState<Product[]>([]);
+  const [dbCategories, setDbCategories] = useState<{id: string, name: string}[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   // Form State
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [inputUnit, setInputUnit] = useState('Quintal'); // Kg, Quintal, Ton
   const [pricePerUnit, setPricePerUnit] = useState('');
   const [moqInUnit, setMoqInUnit] = useState('');
   const [stockInUnit, setStockInUnit] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState('');
 
   // Unit Multipliers to convert to KG
   const getMultiplier = (unit: string) => {
@@ -37,7 +46,16 @@ export default function Products() {
     return 1; // Kg
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { fetchProducts(); fetchCategories(); }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'categories'));
+      setDbCategories(snap.docs.map(d => ({ id: d.id, name: d.data().name })));
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -68,9 +86,42 @@ export default function Products() {
     }
   };
 
+  const handleOpenNew = () => {
+    setEditingId(null);
+    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl('');
+    setOpen(true);
+  };
+
+  const handleOpenEdit = (product: Product) => {
+    setEditingId(product.id);
+    setName(product.name);
+    setCategory(product.category || '');
+    setInputUnit('Kg'); // Default to Kg for editing to show exact values
+    setPricePerUnit(product.basePriceKg.toString());
+    setMoqInUnit(product.moqKg.toString());
+    setStockInUnit((product.availableStockKg || 0).toString());
+    setExistingImageUrl(product.imageUrl);
+    setImageFile(null);
+    setOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    showConfirm("Are you sure you want to permanently delete this product and its inventory ledger?", async () => {
+      try {
+        await deleteDoc(doc(db, 'products', id));
+        await deleteDoc(doc(db, 'inventory', id));
+        fetchProducts();
+        showMessage("Product deleted", "success");
+      } catch (e) {
+        console.error("Error deleting", e);
+        showMessage("Failed to delete. Check console.", "error");
+      }
+    });
+  };
+
   const handleSave = async () => {
-    if (!name) {
-      alert('Please enter a product name.');
+    if (!name || !category) {
+      showMessage('Please enter a product name and category.', "error");
       return;
     }
     setLoading(true);
@@ -78,38 +129,54 @@ export default function Products() {
       const multiplier = getMultiplier(inputUnit);
       const basePriceKg = pricePerUnit ? Number(pricePerUnit) / multiplier : 0;
       const moqKg = moqInUnit ? Number(moqInUnit) * multiplier : 0;
-      const initialStockKg = stockInUnit ? Number(stockInUnit) * multiplier : 0;
+      const stockKg = stockInUnit ? Number(stockInUnit) * multiplier : 0;
 
-      let downloadUrl = '';
+      let downloadUrl = existingImageUrl;
       if (imageFile) {
         const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
         const snapshot = await uploadBytes(storageRef, imageFile);
         downloadUrl = await getDownloadURL(snapshot.ref);
       }
 
-      // 1. Create Product
-      const productRef = await addDoc(collection(db, 'products'), {
-        name,
-        basePriceKg,
-        moqKg,
-        imageUrl: downloadUrl,
-        createdAt: serverTimestamp(),
-      });
-
-      // 2. Create Initial Inventory Ledger
-      await setDoc(doc(db, 'inventory', productRef.id), {
-        totalStockKg: initialStockKg,
-        allocatedStockKg: 0,
-        availableStockKg: initialStockKg,
-        lastUpdated: serverTimestamp()
-      });
+      if (editingId) {
+        // Update Product
+        await updateDoc(doc(db, 'products', editingId), {
+          name,
+          category,
+          basePriceKg,
+          moqKg,
+          ...(imageFile ? { imageUrl: downloadUrl } : {})
+        });
+        // Update Inventory (overwrite total available for now)
+        await updateDoc(doc(db, 'inventory', editingId), {
+          availableStockKg: stockKg,
+          lastUpdated: serverTimestamp()
+        });
+      } else {
+        // Create Product
+        const productRef = await addDoc(collection(db, 'products'), {
+          name,
+          category,
+          basePriceKg,
+          moqKg,
+          imageUrl: downloadUrl,
+          createdAt: serverTimestamp(),
+        });
+        // Create Initial Inventory Ledger
+        await setDoc(doc(db, 'inventory', productRef.id), {
+          totalStockKg: stockKg,
+          allocatedStockKg: 0,
+          availableStockKg: stockKg,
+          lastUpdated: serverTimestamp()
+        });
+      }
 
       setOpen(false);
-      setName(''); setPricePerUnit(''); setMoqInUnit(''); setStockInUnit(''); setImageFile(null);
       fetchProducts();
+      showMessage("Product saved successfully", "success");
     } catch (e) {
-      console.error('Error creating product', e);
-      alert('Error uploading product. Make sure Storage Rules allow writes.');
+      console.error('Error saving product', e);
+      showMessage('Error saving product. Check rules or console.', "error");
     } finally {
       setLoading(false);
     }
@@ -132,10 +199,10 @@ export default function Products() {
             PRODUCTS & INVENTORY
           </Typography>
           <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
-            MANAGE CATALOG AND LIVE STOCK
+            MANAGE CATEGORIES, CATALOG, AND LIVE STOCK
           </Typography>
         </Box>
-        <Button variant="contained" onClick={() => setOpen(true)} sx={{ mt: 1, fontWeight: 700 }}>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ mt: 1, fontWeight: 700 }}>
           + ADD PRODUCT
         </Button>
       </Box>
@@ -146,10 +213,11 @@ export default function Products() {
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 900 }}>IMAGE</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>CATEGORY</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>PRODUCT NAME</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>BASE PRICE (PER KG)</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>MOQ</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>PRICE (PER KG)</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>AVAILABLE STOCK</TableCell>
+              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -160,25 +228,33 @@ export default function Products() {
                     <img
                       src={row.imageUrl}
                       alt={row.name}
-                      style={{ width: 56, height: 56, objectFit: 'cover', border: '2px solid #000' }}
+                      style={{ width: 48, height: 48, objectFit: 'cover', border: '2px solid #000' }}
                     />
                   ) : (
-                    <Box sx={{ width: 56, height: 56, border: '2px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F0F0' }}>
-                      <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, color: '#999' }}>NO IMG</Typography>
+                    <Box sx={{ width: 48, height: 48, border: '2px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F0F0' }}>
+                      <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: '#999' }}>NO IMG</Typography>
                     </Box>
                   )}
                 </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#666', textTransform: 'uppercase' }}>{row.category}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
                 <TableCell>₹{row.basePriceKg?.toLocaleString()} / Kg</TableCell>
-                <TableCell>{formatKg(row.moqKg)}</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: row.availableStockKg && row.availableStockKg > 0 ? 'green' : 'red' }}>
                   {formatKg(row.availableStockKg)}
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
             {products.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
                   NO PRODUCTS YET — ADD ONE ABOVE
                 </TableCell>
               </TableRow>
@@ -187,33 +263,46 @@ export default function Products() {
         </Table>
       </TableContainer>
 
-      {/* Add Product Dialog */}
+      {/* Add/Edit Product Dialog */}
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>
         <Box sx={{ p: 3 }}>
           <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1.2rem', mb: 3 }}>
-            ADD PRODUCT & INVENTORY
+            {editingId ? 'EDIT PRODUCT' : 'ADD PRODUCT & INVENTORY'}
           </Typography>
           
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <Button
               variant="outlined"
               component="label"
-              sx={{ height: 80, borderStyle: 'dashed', fontWeight: 700, letterSpacing: 1 }}
+              sx={{ height: 60, borderStyle: 'dashed', fontWeight: 700, letterSpacing: 1 }}
             >
-              {imageFile ? imageFile.name : 'UPLOAD IMAGE (PNG / JPG)'}
+              {imageFile ? imageFile.name : (existingImageUrl ? 'CHANGE IMAGE' : 'UPLOAD IMAGE (PNG / JPG)')}
               <input type="file" hidden accept="image/*" onChange={(e) => {
                 if (e.target.files && e.target.files[0]) setImageFile(e.target.files[0]);
               }} />
             </Button>
             
-            <TextField label="Product Name (e.g. Sona Masoori)" fullWidth value={name} onChange={e => setName(e.target.value)} />
+            <FormControl fullWidth required>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={category}
+                label="Category"
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                {dbCategories.map(cat => (
+                  <MenuItem key={cat.id} value={cat.name}>{cat.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField label="Product Name (e.g. Sona Masoori)" fullWidth required value={name} onChange={e => setName(e.target.value)} />
 
             {/* Unit Selector */}
             <FormControl fullWidth>
-              <InputLabel>Measurement Unit</InputLabel>
+              <InputLabel>Measurement Unit (For Data Entry)</InputLabel>
               <Select
                 value={inputUnit}
-                label="Measurement Unit"
+                label="Measurement Unit (For Data Entry)"
                 onChange={(e) => setInputUnit(e.target.value)}
               >
                 <MenuItem value="Kg">Kilograms (Kg)</MenuItem>
@@ -227,6 +316,7 @@ export default function Products() {
                 label={`Price (₹ per ${inputUnit})`} 
                 type="number" 
                 fullWidth 
+                required
                 value={pricePerUnit} 
                 onChange={e => setPricePerUnit(e.target.value)} 
               />
@@ -240,9 +330,10 @@ export default function Products() {
             </Box>
 
             <TextField 
-              label={`Initial Stock (in ${inputUnit}s)`} 
+              label={editingId ? `Update Total Stock (in ${inputUnit}s)` : `Initial Stock (in ${inputUnit}s)`} 
               type="number" 
               fullWidth 
+              required
               value={stockInUnit} 
               onChange={e => setStockInUnit(e.target.value)} 
             />
@@ -256,7 +347,7 @@ export default function Products() {
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
           <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
           <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE INVENTORY'}
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE'}
           </Button>
         </DialogActions>
       </Dialog>

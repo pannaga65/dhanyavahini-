@@ -1,24 +1,31 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { Box, Typography, List, ListItem, ListItemButton, ListItemText, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button } from '@mui/material'
+import { Box, Typography, List, ListItem, ListItemButton, ListItemText, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
+import NotificationsIcon from '@mui/icons-material/Notifications'
 import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth'
+import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore'
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Products from './pages/Products'
 import Orders from './pages/Orders'
+import Inquiries from './pages/Inquiries'
+import Settings from './pages/Settings'
 import Login from './pages/Login'
 import app from './firebase'
 import './index.css'
 
 const DRAWER_WIDTH = 220;
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 const NAV_ITEMS = [
   { text: 'DASHBOARD', path: '/' },
   { text: 'PRODUCTS', path: '/products' },
+  { text: 'INQUIRIES', path: '/inquiries' },
   { text: 'ORDERS', path: '/orders' },
   { text: 'CUSTOMERS', path: '/customers' },
+  { text: 'SETTINGS', path: '/settings' },
 ];
 
 function App() {
@@ -28,6 +35,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [inquiryCount, setInquiryCount] = useState(0);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -40,6 +48,15 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'orders'), where('status', '==', 'Inquiry'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setInquiryCount(snapshot.size);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const confirmSignOut = () => {
     setSignOutOpen(true);
@@ -109,9 +126,16 @@ function App() {
               >
                 <ListItemText
                   primary={
-                    <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', letterSpacing: 1.2 }}>
-                      {item.text}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', letterSpacing: 1.2 }}>
+                        {item.text}
+                      </Typography>
+                      {item.text === 'INQUIRIES' && inquiryCount > 0 && (
+                        <Box sx={{ backgroundColor: 'red', color: 'white', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900 }}>
+                          {inquiryCount}
+                        </Box>
+                      )}
+                    </Box>
                   }
                 />
               </ListItemButton>
@@ -167,6 +191,12 @@ function App() {
           <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', letterSpacing: 2 }}>
             ADMIN
           </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton color="inherit" onClick={() => navigate('/inquiries')} sx={{ mr: 1 }}>
+            <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { fontWeight: 900 } }}>
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -214,8 +244,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard userEmail={user.email} />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/inquiries" element={<Inquiries />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>

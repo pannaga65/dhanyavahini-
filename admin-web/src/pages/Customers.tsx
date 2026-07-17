@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Chip } from '@mui/material';
-import { collection, getDocs, query, where, getFirestore } from 'firebase/firestore';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Chip, IconButton } from '@mui/material';
+import { collection, getDocs, query, where, getFirestore, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import app from '../firebase';
+import { useUI } from '../context/UIContext';
 
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
 export default function Customers() {
+  const { showConfirm, showMessage } = useUI();
   const [customers, setCustomers] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({ email: '', displayName: '', tradeName: '', gstNumber: '' });
 
   useEffect(() => { fetchCustomers(); }, []);
@@ -25,17 +31,55 @@ export default function Customers() {
     }
   };
 
-  const handleCreateCustomer = async () => {
+  const handleOpenNew = () => {
+    setEditingId(null);
+    setFormData({ email: '', displayName: '', tradeName: '', gstNumber: '' });
+    setOpen(true);
+  };
+
+  const handleOpenEdit = (customer: any) => {
+    setEditingId(customer.id);
+    setFormData({ email: customer.email || '', displayName: customer.displayName || '', tradeName: customer.tradeName || '', gstNumber: customer.gstNumber || '' });
+    setOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    showConfirm("Are you sure you want to completely delete this customer profile?", async () => {
+      try {
+        await deleteDoc(doc(db, 'users', id));
+        fetchCustomers();
+        showMessage("Customer deleted", "success");
+      } catch (e) {
+        console.error("Error deleting", e);
+        showMessage("Failed to delete customer.", "error");
+      }
+    });
+  };
+
+  const handleSave = async () => {
     setLoading(true);
     try {
-      const createCustomerFn = httpsCallable(functions, 'createCustomer');
-      await createCustomerFn(formData);
-      setOpen(false);
-      setFormData({ email: '', displayName: '', tradeName: '', gstNumber: '' });
-      fetchCustomers();
+      if (editingId) {
+        // Edit existing customer profile
+        await updateDoc(doc(db, 'users', editingId), {
+          displayName: formData.displayName,
+          tradeName: formData.tradeName,
+          gstNumber: formData.gstNumber
+          // email is not updated here because it requires Auth update
+        });
+        setOpen(false);
+        fetchCustomers();
+      } else {
+        // Create new customer via Cloud Function
+        const createCustomerFn = httpsCallable(functions, 'createCustomer');
+        await createCustomerFn(formData);
+        setOpen(false);
+        fetchCustomers();
+      }
+      showMessage("Customer saved successfully", "success");
     } catch (error: any) {
-      console.error('Error creating customer:', error);
-      alert('Error creating customer: ' + error.message);
+      console.error('Error saving customer:', error);
+      showMessage('Error saving customer: ' + error.message, "error");
     } finally {
       setLoading(false);
     }
@@ -53,7 +97,7 @@ export default function Customers() {
             MANAGE PROFILES
           </Typography>
         </Box>
-        <Button variant="contained" onClick={() => setOpen(true)} sx={{ mt: 1 }}>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ mt: 1, fontWeight: 700 }}>
           + ADD CUSTOMER
         </Button>
       </Box>
@@ -63,11 +107,12 @@ export default function Customers() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>TRADE NAME</TableCell>
-              <TableCell>CONTACT</TableCell>
-              <TableCell>EMAIL</TableCell>
-              <TableCell>GST</TableCell>
-              <TableCell>STATUS</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>TRADE NAME</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>CONTACT</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>EMAIL</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>GST</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
+              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -87,11 +132,19 @@ export default function Customers() {
                     }}
                   />
                 </TableCell>
+                <TableCell align="right">
+                  <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
               </TableRow>
             ))}
             {customers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
                   NO CUSTOMERS YET — ADD ONE ABOVE
                 </TableCell>
               </TableRow>
@@ -100,23 +153,23 @@ export default function Customers() {
         </Table>
       </TableContainer>
 
-      {/* Add Customer Dialog */}
+      {/* Add/Edit Customer Dialog */}
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>
         <Box sx={{ p: 3 }}>
           <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
-            ADD NEW CUSTOMER
+            {editingId ? 'EDIT CUSTOMER' : 'ADD NEW CUSTOMER'}
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <TextField label="Trade Name (Business)" fullWidth value={formData.tradeName} onChange={(e) => setFormData({ ...formData, tradeName: e.target.value })} />
             <TextField label="Contact Name" fullWidth value={formData.displayName} onChange={(e) => setFormData({ ...formData, displayName: e.target.value })} />
-            <TextField label="Email Address" type="email" fullWidth value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+            <TextField label="Email Address" type="email" fullWidth disabled={!!editingId} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
             <TextField label="GST Number" fullWidth value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} />
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
-          <Button onClick={() => setOpen(false)} disabled={loading}>Cancel</Button>
-          <Button variant="contained" onClick={handleCreateCustomer} disabled={loading}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'CREATE CUSTOMER'}
+          <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
+          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE'}
           </Button>
         </DialogActions>
       </Dialog>

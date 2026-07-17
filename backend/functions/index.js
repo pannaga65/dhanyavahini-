@@ -1,8 +1,11 @@
 const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
 
-admin.initializeApp();
-const db = admin.firestore();
+initializeApp();
+const db = getFirestore();
+const auth = getAuth();
 
 // 1. Create Customer (Admin Only)
 exports.createCustomer = functions.https.onCall(async (data, context) => {
@@ -11,12 +14,12 @@ exports.createCustomer = functions.https.onCall(async (data, context) => {
   }
   const { email, displayName, tradeName, gstNumber } = data;
   try {
-    const userRecord = await admin.auth().createUser({
+    const userRecord = await auth.createUser({
       email: email,
       displayName: displayName,
       password: Math.random().toString(36).slice(-8) + "A1!", 
     });
-    await admin.auth().setCustomUserClaims(userRecord.uid, { customer: true });
+    await auth.setCustomUserClaims(userRecord.uid, { customer: true });
     await db.collection("users").doc(userRecord.uid).set({
       uid: userRecord.uid,
       role: "customer",
@@ -25,9 +28,9 @@ exports.createCustomer = functions.https.onCall(async (data, context) => {
       tradeName: tradeName,
       gstNumber: gstNumber,
       active: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
-    const link = await admin.auth().generatePasswordResetLink(email);
+    const link = await auth.generatePasswordResetLink(email);
     return { success: true, uid: userRecord.uid, resetLink: link };
   } catch (error) {
     throw new functions.https.HttpsError("internal", error.message);
@@ -47,7 +50,7 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
   try {
     await db.collection("orders").doc(orderId).update({
       status: newStatus,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      updatedAt: FieldValue.serverTimestamp()
     });
     return { success: true };
   } catch (error) {
@@ -59,14 +62,14 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
 exports.bootstrapAdmin = functions.https.onRequest(async (req, res) => {
   const adminEmail = "dhanyavahini@gmail.com";
   try {
-    const userRecord = await admin.auth().getUserByEmail(adminEmail);
-    await admin.auth().setCustomUserClaims(userRecord.uid, { admin: true });
-    await db.collection("users").doc(userRecord.uid).set({
+    const userRecord = await auth.getUserByEmail(adminEmail);
+    await auth.setCustomUserClaims(userRecord.uid, { admin: true });
+    await db.collection("admins").doc(userRecord.uid).set({
       uid: userRecord.uid,
-      role: "admin",
+      role: "superadmin",
       email: adminEmail,
       active: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     res.status(200).send(`Success! ${adminEmail} is now an Admin. You can now log into the React Dashboard.`);
   } catch (error) {

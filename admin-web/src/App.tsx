@@ -262,46 +262,48 @@ function App() {
       </Box>
 
       {/* ── Floating Notification Button ── */}
-      {inquiryCount > 0 && (
-        <>
-          <Fab 
-            color="error" 
-            aria-label="notifications" 
-            onClick={handleNotificationClick}
-            sx={{ position: 'fixed', bottom: 32, right: 32, zIndex: 9999 }}
-          >
-            <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#000', color: '#FFF', fontWeight: 900 } }}>
-              <NotificationsIcon />
-            </Badge>
-          </Fab>
-          
-          <Popover
-            open={openNotification}
-            anchorEl={anchorEl}
-            onClose={handleNotificationClose}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: -2 } } }}
-          >
-            <Box sx={{ p: 2, minWidth: 250 }}>
-              <Typography sx={{ fontWeight: 900, mb: 1, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>
-              <Box sx={{ borderBottom: '1px solid #000', mb: 1 }} />
-              <ListItemButton 
-                onClick={() => {
-                  handleNotificationClose();
-                  navigate('/inquiries');
-                }}
-                sx={{ backgroundColor: '#F9F9F9', border: '1px solid #EEE' }}
-              >
-                <ListItemText 
-                  primary={<Typography sx={{ fontWeight: 700 }}>You have {inquiryCount} pending Inquiries!</Typography>}
-                  secondary={<Typography sx={{ fontSize: '0.75rem', color: '#666', mt: 0.5 }}>Click here to review and negotiate.</Typography>}
-                />
-              </ListItemButton>
-            </Box>
-          </Popover>
-        </>
-      )}
+      <Fab 
+        color={inquiryCount > 0 ? "error" : "primary"} 
+        aria-label="notifications" 
+        onClick={handleNotificationClick}
+        sx={{ position: 'fixed', bottom: 32, right: 32, zIndex: 9999, backgroundColor: inquiryCount > 0 ? '#d32f2f' : '#000', '&:hover': { backgroundColor: inquiryCount > 0 ? '#c62828' : '#333' } }}
+      >
+        <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#000', fontWeight: 900 } }}>
+          <NotificationsIcon sx={{ color: '#FFF' }} />
+        </Badge>
+      </Fab>
+      
+      <Popover
+        open={openNotification}
+        anchorEl={anchorEl}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: -2, mb: 2 } } }}
+      >
+        <Box sx={{ p: 2, minWidth: 250 }}>
+          <Typography sx={{ fontWeight: 900, mb: 1, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>
+          <Box sx={{ borderBottom: '1px solid #000', mb: 1 }} />
+          {inquiryCount > 0 ? (
+            <ListItemButton 
+              onClick={() => {
+                handleNotificationClose();
+                navigate('/inquiries');
+              }}
+              sx={{ backgroundColor: '#FAFAFA', border: '1px solid #EEE' }}
+            >
+              <ListItemText 
+                primary={<Typography sx={{ fontWeight: 700 }}>You have {inquiryCount} pending Inquiries!</Typography>}
+                secondary={<Typography sx={{ fontSize: '0.75rem', color: '#666', mt: 0.5 }}>Click here to review and negotiate.</Typography>}
+              />
+            </ListItemButton>
+          ) : (
+            <Typography sx={{ fontSize: '0.85rem', color: '#999', py: 2, textAlign: 'center', fontWeight: 600 }}>
+              You have no new notifications.
+            </Typography>
+          )}
+        </Box>
+      </Popover>
 
       {/* ── Sign Out Confirmation Dialog ── */}
       <Dialog 

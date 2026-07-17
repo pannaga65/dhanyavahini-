@@ -266,7 +266,7 @@ function App() {
         color={inquiryCount > 0 ? "error" : "primary"} 
         aria-label="notifications" 
         onClick={handleNotificationClick}
-        sx={{ position: 'fixed', bottom: 32, right: 32, zIndex: 9999, backgroundColor: inquiryCount > 0 ? '#d32f2f' : '#000', '&:hover': { backgroundColor: inquiryCount > 0 ? '#c62828' : '#333' } }}
+        sx={{ position: 'fixed', top: { xs: 80, md: 32 }, right: 32, zIndex: 9999, backgroundColor: inquiryCount > 0 ? '#d32f2f' : '#000', '&:hover': { backgroundColor: inquiryCount > 0 ? '#c62828' : '#333' } }}
       >
         <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#000', fontWeight: 900 } }}>
           <NotificationsIcon sx={{ color: '#FFF' }} />

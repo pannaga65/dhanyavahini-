@@ -36,10 +36,11 @@ function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [inquiryCount, setInquiryCount] = useState(0);
+  const [dismissedCount, setDismissedCount] = useState(0);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const handleNotificationClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
+    setAnchorEl(anchorEl ? null : event.currentTarget);
   };
   const handleNotificationClose = () => {
     setAnchorEl(null);
@@ -62,7 +63,13 @@ function App() {
     if (!user) return;
     const q = query(collection(db, 'orders'), where('status', '==', 'Inquiry'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setInquiryCount(snapshot.size);
+      const newCount = snapshot.size;
+      setInquiryCount(prev => {
+        if (newCount > prev) {
+          setDismissedCount(0); // If a NEW inquiry drops, un-dismiss!
+        }
+        return newCount;
+      });
     });
     return () => unsubscribe();
   }, [user]);
@@ -263,7 +270,7 @@ function App() {
 
       {/* ── Floating Notification Button ── */}
       <Fab 
-        color={inquiryCount > 0 ? "error" : "primary"} 
+        color={inquiryCount - dismissedCount > 0 ? "error" : "primary"} 
         aria-label="notifications" 
         onClick={handleNotificationClick}
         sx={{ 
@@ -272,11 +279,11 @@ function App() {
           top: 32, 
           right: 32, 
           zIndex: 9999, 
-          backgroundColor: inquiryCount > 0 ? '#d32f2f' : '#000', 
-          '&:hover': { backgroundColor: inquiryCount > 0 ? '#c62828' : '#333' } 
+          backgroundColor: inquiryCount - dismissedCount > 0 ? '#d32f2f' : '#000', 
+          '&:hover': { backgroundColor: inquiryCount - dismissedCount > 0 ? '#c62828' : '#333' } 
         }}
       >
-        <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#000', fontWeight: 900 } }}>
+        <Badge badgeContent={Math.max(0, inquiryCount - dismissedCount)} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#000', fontWeight: 900 } }}>
           <NotificationsIcon sx={{ color: '#FFF' }} />
         </Badge>
       </Fab>
@@ -290,7 +297,18 @@ function App() {
         slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0, mt: 1, mb: 2 } } }}
       >
         <Box sx={{ p: 2, minWidth: 250 }}>
-          <Typography sx={{ fontWeight: 900, mb: 1, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography sx={{ fontWeight: 900, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>
+            {inquiryCount - dismissedCount > 0 && (
+              <Button 
+                size="small" 
+                onClick={() => setDismissedCount(inquiryCount)}
+                sx={{ fontSize: '0.65rem', color: '#666', minWidth: 'auto', p: 0, '&:hover': { color: '#000', backgroundColor: 'transparent' } }}
+              >
+                Mark as read
+              </Button>
+            )}
+          </Box>
           <Box sx={{ borderBottom: '1px solid #000', mb: 1 }} />
           {inquiryCount > 0 ? (
             <ListItemButton 
@@ -298,7 +316,7 @@ function App() {
                 handleNotificationClose();
                 navigate('/inquiries');
               }}
-              sx={{ backgroundColor: '#FAFAFA', border: '1px solid #EEE' }}
+              sx={{ backgroundColor: inquiryCount - dismissedCount > 0 ? '#FAFAFA' : '#FFF', border: '1px solid #EEE' }}
             >
               <ListItemText 
                 primary={<Typography sx={{ fontWeight: 700 }}>You have {inquiryCount} pending Inquiries!</Typography>}

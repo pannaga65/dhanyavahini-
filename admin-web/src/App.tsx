@@ -227,8 +227,10 @@ function App() {
       <Dialog 
         open={signOutOpen} 
         onClose={cancelSignOut}
-        PaperProps={{
-          sx: { border: '2px solid #000', borderRadius: 0 }
+        slotProps={{
+          paper: {
+            sx: { border: '2px solid #000', borderRadius: 0 }
+          }
         }}
       >
         <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1 }}>

@@ -18,6 +18,7 @@
   },
   "functions": {
     "source": "backend/functions",
+    "runtime": "nodejs20",
     "ignore": [
       "node_modules",
       ".git",

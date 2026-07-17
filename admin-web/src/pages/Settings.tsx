@@ -106,11 +106,14 @@ export default function Settings() {
             MANAGE CATEGORIES & CONFIGURATION
           </Typography>
         </Box>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ mt: 1, mr: { xs: 0, md: 10 }, fontWeight: 700 }}>
+      </Box>
+      <Box sx={{ borderBottom: '2px solid #000', mb: 3, mt: 2 }} />
+      
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 700 }}>
           + ADD CATEGORY
         </Button>
       </Box>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 4, mt: 2 }} />
 
       <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', mb: 2 }}>PRODUCT CATEGORIES</Typography>
       

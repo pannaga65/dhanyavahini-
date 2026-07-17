@@ -195,18 +195,21 @@ export default function Products() {
       {/* Page Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
         <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
+          <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.5rem', md: '2.5rem' }, letterSpacing: 2 }}>
             PRODUCTS & INVENTORY
           </Typography>
           <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
             MANAGE CATEGORIES, CATALOG, AND LIVE STOCK
           </Typography>
         </Box>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ mt: 1, mr: { xs: 0, md: 10 }, fontWeight: 700 }}>
+      </Box>
+      <Box sx={{ borderBottom: '2px solid #000', mb: 3, mt: 2 }} />
+      
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 700 }}>
           + ADD PRODUCT
         </Button>
       </Box>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 4, mt: 2 }} />
 
       <TableContainer>
         <Table>

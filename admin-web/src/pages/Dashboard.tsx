@@ -14,7 +14,7 @@ export default function Dashboard() {
         Overview
       </Typography>
 
-      <Typography variant="h6" fontWeight="600" mb={2} color="text.secondary">
+      <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.secondary' }}>
         Recent Orders
       </Typography>
 

@@ -237,12 +237,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.textLight),
                     title: const Text('Privacy Policy'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      // Placeholder for actual privacy policy URL
-                      final url = Uri.parse('https://example.com/privacy');
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(url);
-                      }
+                    onTap: () {
+                      context.push('/privacy-policy');
                     },
                   ),
                   const Divider(height: 1),

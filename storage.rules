@@ -23,6 +23,14 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    // ─── Banners Images ───
+    match /banners/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin()
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
     // ─── Default: Deny Everything Else ───
     match /{allPaths=**} {
       allow read, write: if false;

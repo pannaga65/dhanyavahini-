@@ -9,6 +9,7 @@ import 'screens/product_details_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/privacy_policy_screen.dart';
 
 import 'screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,6 +58,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/privacy-policy',
+      builder: (context, state) => const PrivacyPolicyScreen(),
     ),
   ],
 );

@@ -8,6 +8,9 @@ import 'screens/home_screen.dart';
 import 'screens/product_details_screen.dart';
 import 'screens/cart_screen.dart';
 
+import 'screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -16,6 +19,13 @@ void main() async {
 
 final _router = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) {
+    final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+    final isGoingToLogin = state.uri.toString() == '/login';
+    if (!isLoggedIn && !isGoingToLogin) return '/login';
+    if (isLoggedIn && isGoingToLogin) return '/';
+    return null;
+  },
   routes: [
     ShellRoute(
       builder: (context, state, child) => MainScaffold(child: child),
@@ -37,6 +47,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/cart',
       builder: (context, state) => const CartScreen(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
     ),
   ],
 );

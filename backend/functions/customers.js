@@ -1,9 +1,20 @@
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
+const nodemailer = require("nodemailer");
+const { getWelcomeEmailHtml } = require("./emailTemplates");
 
 const db = getFirestore();
 const auth = getAuth();
+
+// Configure the nodemailer transporter using environment variables
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 exports.createCustomer = functions.https.onCall(async (data, context) => {
   if (!context.auth || !context.auth.token.admin) {
@@ -40,6 +51,25 @@ exports.createCustomer = functions.https.onCall(async (data, context) => {
     });
     
     const link = await auth.generatePasswordResetLink(email);
+    
+    // Send the welcome email with the password reset link
+    const customerName = displayName || tradeName || "Customer";
+    const htmlBody = getWelcomeEmailHtml(customerName, link);
+    
+    try {
+      await transporter.sendMail({
+        from: `"Dhanyavahini" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "Welcome to Dhanyavahini - Setup Your Account",
+        html: htmlBody,
+      });
+      console.log(`Welcome email sent to ${email}`);
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+      // We don't throw here because the user is already created in Firebase.
+      // The admin can manually send them the link if the email fails.
+    }
+    
     return { success: true, uid: userRecord.uid, resetLink: link };
   } catch (error) {
     throw new functions.https.HttpsError("internal", error.message);

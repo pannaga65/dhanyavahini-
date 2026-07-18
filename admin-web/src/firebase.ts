@@ -10,6 +10,7 @@ const firebaseConfig = {
 };
 
 import { getMessaging, isSupported } from "firebase/messaging";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -20,5 +21,10 @@ export const messaging = async () => {
   }
   return null;
 };
+
+// Connect to local functions emulator in development
+if (window.location.hostname === 'localhost') {
+  connectFunctionsEmulator(getFunctions(app), '127.0.0.1', 5001);
+}
 
 export default app;

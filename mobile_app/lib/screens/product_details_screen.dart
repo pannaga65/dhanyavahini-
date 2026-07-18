@@ -33,7 +33,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
             quantity = product.moqKg;
             // if stock is lower than moq, we set to stock, or 0 if out of stock
             if (quantity > product.availableStockKg) {
-              quantity = product.availableStockKg;
+              quantity = product.availableStockKg.toInt();
             }
             isInitialized = true;
           }

@@ -42,7 +42,8 @@ final singleProductProvider = FutureProvider.family<ProductModel, String>((ref, 
   }
   
   final inventorySnap = await db.collection('inventory').doc(productId).get();
-  final rawStock = inventorySnap.exists ? inventorySnap.data()?['availableStockKg'] : 0;
+  final inventoryData = inventorySnap.data();
+  final rawStock = inventoryData != null ? inventoryData['availableStockKg'] : 0;
   final inventoryStock = (rawStock is num) ? rawStock.toDouble() : 0.0;
       
   return ProductModel.fromFirestore(

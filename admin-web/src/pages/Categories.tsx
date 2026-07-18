@@ -55,7 +55,7 @@ export default function Categories() {
   };
 
   const handleDelete = (id: string) => {
-    showConfirm('Delete Category', 'Are you sure you want to delete this category?', async () => {
+    showConfirm('Are you sure you want to delete this category?', async () => {
       try {
         await deleteDoc(doc(db, 'categories', id));
         showMessage('Category deleted successfully!', 'success');

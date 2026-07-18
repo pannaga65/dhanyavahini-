@@ -57,7 +57,7 @@ export default function Banners() {
   };
 
   const handleDelete = (id: string) => {
-    showConfirm('Delete Banner', 'Are you sure you want to delete this banner?', async () => {
+    showConfirm('Are you sure you want to delete this banner?', async () => {
       try {
         await deleteDoc(doc(db, 'banners', id));
         showMessage('Banner deleted successfully!', 'success');

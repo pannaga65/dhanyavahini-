@@ -24,7 +24,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if false; // Created exclusively by Cloud Function (createCustomer)
-      allow update: if isAdmin();
+      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
       allow delete: if false; // Soft deletes only (isActive: false)
     }
 
@@ -60,7 +60,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ─── 8. Audit Logs (Read-only for admins, written by Cloud Functions) ───
+    // ─── 8. Banners ───
+    match /banners/{bannerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ─── 9. Audit Logs (Read-only for admins, written by Cloud Functions) ───
     match /audit_logs/{logId} {
       allow read: if isAdmin();
       allow write: if false; // Written exclusively by Cloud Functions via Admin SDK

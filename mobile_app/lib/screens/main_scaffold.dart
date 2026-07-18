@@ -13,7 +13,8 @@ class MainScaffold extends StatelessWidget {
     int currentIndex = 0;
     if (location == '/') currentIndex = 0;
     if (location.startsWith('/orders')) currentIndex = 1;
-    if (location.startsWith('/cart')) currentIndex = 2;
+    if (location.startsWith('/profile')) currentIndex = 2;
+    if (location.startsWith('/cart')) currentIndex = 3;
 
     return Scaffold(
       body: child,
@@ -36,7 +37,8 @@ class MainScaffold extends StatelessWidget {
               children: [
                 _buildNavItem(context, icon: Icons.home_rounded, label: 'Home', isSelected: currentIndex == 0, route: '/'),
                 _buildNavItem(context, icon: Icons.shopping_bag_rounded, label: 'Orders', isSelected: currentIndex == 1, route: '/orders'),
-                _buildNavItem(context, icon: Icons.shopping_cart_outlined, label: 'Cart', isSelected: currentIndex == 2, route: '/cart'),
+                _buildNavItem(context, icon: Icons.person_rounded, label: 'Profile', isSelected: currentIndex == 2, route: '/profile'),
+                _buildNavItem(context, icon: Icons.shopping_cart_outlined, label: 'Cart', isSelected: currentIndex == 3, route: '/cart'),
               ],
             ),
           ),

@@ -7,6 +7,8 @@ import 'screens/main_scaffold.dart';
 import 'screens/home_screen.dart';
 import 'screens/product_details_screen.dart';
 import 'screens/cart_screen.dart';
+import 'screens/orders_screen.dart';
+import 'screens/profile_screen.dart';
 
 import 'screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,7 +38,11 @@ final _router = GoRouter(
         ),
         GoRoute(
           path: '/orders',
-          builder: (context, state) => const Scaffold(body: Center(child: Text('Orders Screen'))),
+          builder: (context, state) => const OrdersScreen(),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
         ),
       ],
     ),

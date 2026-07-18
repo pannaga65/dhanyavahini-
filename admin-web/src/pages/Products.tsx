@@ -156,6 +156,7 @@ export default function Products() {
           category,
           basePriceKg,
           moqKg,
+          isActive: true,
           ...(imageFile ? { imageUrl: downloadUrl } : {})
         });
         // Update Inventory (overwrite total available for now)
@@ -172,6 +173,7 @@ export default function Products() {
           moqKg,
           imageUrl: downloadUrl,
           createdAt: serverTimestamp(),
+          isActive: true,
         });
         // Create Initial Inventory Ledger
         await setDoc(doc(db, 'inventory', productRef.id), {

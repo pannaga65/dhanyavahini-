@@ -66,7 +66,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               final data = doc.data() as Map<String, dynamic>;
               
               final status = data['status'] ?? 'Inquiry';
-              final total = data['total'] ?? 0;
+              final total = data['totalAmount'] ?? data['total'] ?? 0;
               final items = (data['items'] as List<dynamic>?) ?? [];
               final dateStr = data['createdAt'] != null 
                   ? DateFormat('dd MMM yyyy, hh:mm a').format((data['createdAt'] as Timestamp).toDate()) 
@@ -189,8 +189,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('${item['quantity']} Kg x ${item['name']}'),
-                                Text(currencyFormat.format((item['price'] * item['quantity']))),
+                                Text('${item['quantityKg'] ?? item['quantity']} Kg x ${item['name']}'),
+                                Text(currencyFormat.format(item['lineTotal'] ?? ((item['basePriceKg'] ?? item['price'] ?? 0) * (item['quantityKg'] ?? item['quantity'] ?? 0)))),
                               ],
                             ),
                           );

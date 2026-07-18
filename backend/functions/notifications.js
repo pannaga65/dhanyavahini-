@@ -1,13 +1,12 @@
-const functions = require("firebase-functions/v1");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 const db = getFirestore();
 const messaging = getMessaging();
 
-exports.onOrderUpdate = functions.firestore
-  .document("orders/{orderId}")
-  .onWrite(async (change, context) => {
+exports.onOrderUpdate = onDocumentWritten("orders/{orderId}", async (event) => {
+    const change = event.data;
     // Exit if order is deleted
     if (!change.after.exists) return null;
     

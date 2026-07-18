@@ -1,18 +1,18 @@
-const functions = require("firebase-functions/v1");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 const db = getFirestore();
 
-exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
-  if (!context.auth || !context.auth.token.admin) {
-    throw new functions.https.HttpsError("permission-denied", "Only admins can update orders.");
+exports.updateOrderStatus = onCall(async (request) => {
+  if (!request.auth || !request.auth.token.admin) {
+    throw new HttpsError("permission-denied", "Only admins can update orders.");
   }
   
-  const { orderId, newStatus } = data;
+  const { orderId, newStatus } = request.data;
   const validStatuses = ["pending", "under review", "confirmed", "rejected", "delivered"];
   
   if (!validStatuses.includes(newStatus)) {
-    throw new functions.https.HttpsError("invalid-argument", "Invalid order status.");
+    throw new HttpsError("invalid-argument", "Invalid order status.");
   }
   
   try {
@@ -25,6 +25,6 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
     
     return { success: true };
   } catch (error) {
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });

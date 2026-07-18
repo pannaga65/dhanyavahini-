@@ -1,4 +1,4 @@
-const functions = require("firebase-functions/v1");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const nodemailer = require("nodemailer");
@@ -16,15 +16,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-exports.createCustomer = functions.https.onCall(async (data, context) => {
-  if (!context.auth || !context.auth.token.admin) {
-    throw new functions.https.HttpsError("permission-denied", "Only admins can create new customers.");
+exports.createCustomer = onCall(async (request) => {
+  if (!request.auth || !request.auth.token.admin) {
+    throw new HttpsError("permission-denied", "Only admins can create new customers.");
   }
   
   const { 
     email, displayName, tradeName, gstNumber, 
     panNumber, phoneNumber, billingAddress, mailingAddresses 
-  } = data;
+  } = request.data;
   
   try {
     const userRecord = await auth.createUser({
@@ -72,6 +72,6 @@ exports.createCustomer = functions.https.onCall(async (data, context) => {
     
     return { success: true, uid: userRecord.uid, resetLink: link };
   } catch (error) {
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });

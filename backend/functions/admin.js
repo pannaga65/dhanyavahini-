@@ -1,11 +1,11 @@
-const functions = require("firebase-functions/v1");
+const { onRequest } = require("firebase-functions/v2/https");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
 const db = getFirestore();
 const auth = getAuth();
 
-exports.bootstrapAdmin = functions.https.onRequest(async (req, res) => {
+exports.bootstrapAdmin = onRequest(async (req, res) => {
   const adminEmail = "dhanyavahini@gmail.com";
   try {
     const userRecord = await auth.getUserByEmail(adminEmail);

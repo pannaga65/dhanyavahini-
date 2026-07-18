@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Security Helper Functions
+    // ─── Security Helper Functions ───
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -14,54 +14,56 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // 1. Admins Collection (Separate from Users)
+    // ─── 1. Admins Collection ───
     match /admins/{adminId} {
-      // Any authenticated user can read their own admin doc (needed for login check)
       allow read: if isAuthenticated() && request.auth.uid == adminId;
-      // No one can write from the client — admins are added manually in the Firebase Console
-      allow write: if false;
+      allow write: if false; // Managed exclusively by Cloud Functions
     }
 
-    // 2. Users / Customers (Retailers, Distributors)
+    // ─── 2. Users / Customers ───
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if isAdmin(); // Only admins can create/approve customers
+      allow create: if false; // Created exclusively by Cloud Function (createCustomer)
+      allow update: if isAdmin();
+      allow delete: if false; // Soft deletes only (isActive: false)
     }
 
-    // 3. Products Catalog
+    // ─── 3. Products Catalog ───
     match /products/{productId} {
-      allow read: if isAuthenticated(); // Any logged-in retailer can browse
-      allow write: if isAdmin(); // Admins only (pricing, stock management)
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
-    // 3.5. Inventory Ledger
+    // ─── 4. Inventory Ledger ───
     match /inventory/{productId} {
-      allow read: if isAuthenticated(); // Retailers need to know if item is in stock
-      allow write: if isAdmin(); // Admins manage stock. (Cloud functions will handle automated deductions later)
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // Cloud Functions also update this via Admin SDK
     }
 
-    // 4. Orders (No Payment Gateway - Offline tracking)
+    // ─── 5. Orders ───
     match /orders/{orderId} {
-      // Retailers can read their own orders. Admins can read all.
       allow read: if isOwner(resource.data.customerId) || isAdmin();
-      
-      // Orders MUST be placed via Cloud Function (placeSecureOrder)
-      allow create: if false; 
-      
-      // Only admins can update status (Confirmed -> Dispatched -> Delivered)
-      allow update, delete: if isAdmin();
+      allow create: if false; // Created exclusively by Cloud Function (placeSecureOrder)
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
     
-    // 6. Invoices
+    // ─── 6. Invoices ───
     match /invoices/{invoiceId} {
       allow read: if isOwner(resource.data.customerId) || isAdmin();
       allow write: if isAdmin();
     }
 
-    // 7. Categories
+    // ─── 7. Categories ───
     match /categories/{categoryId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+    }
+
+    // ─── 8. Audit Logs (Read-only for admins, written by Cloud Functions) ───
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Written exclusively by Cloud Functions via Admin SDK
     }
   }
 }

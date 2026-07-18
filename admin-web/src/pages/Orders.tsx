@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogActions, Stepper, Step, StepLabel, IconButton, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import app from '../firebase';
@@ -8,6 +9,7 @@ import { getFirestore } from 'firebase/firestore';
 import { useUI } from '../context/UIContext';
 
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
 interface Order {
   id: string;
@@ -52,7 +54,8 @@ export default function Orders() {
 
   const handleUpdateDeliveryStatus = async (orderId: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, 'orders', orderId), { status: newStatus, updatedAt: new Date() });
+      const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
+      await updateOrderStatusFn({ orderId, newStatus });
       fetchOrders();
       if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: newStatus });
       showMessage(`Delivery status updated to ${newStatus}`, "success");
@@ -75,14 +78,15 @@ export default function Orders() {
   };
 
   const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to completely delete this order?", async () => {
+    showConfirm("Are you sure you want to delete this order?", async () => {
       try {
-        await deleteDoc(doc(db, 'orders', id));
+        const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
+        await updateOrderStatusFn({ orderId: id, newStatus: 'cancelled' });
         fetchOrders();
-        showMessage("Order deleted successfully", "success");
+        showMessage("Order cancelled", "success");
       } catch (e) {
-        console.error("Error deleting", e);
-        showMessage("Failed to delete.", "error");
+        console.error("Error cancelling", e);
+        showMessage("Failed to cancel order.", "error");
       }
     });
   };
@@ -98,10 +102,11 @@ export default function Orders() {
     if (!editingId) return;
     setEditLoading(true);
     try {
+      const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
+      await updateOrderStatusFn({ orderId: editingId, newStatus: editStatus });
+      // Update payment status separately (direct update is fine for this non-financial field)
       await updateDoc(doc(db, 'orders', editingId), {
-        status: editStatus,
         paymentStatus: editPaymentStatus,
-        totalAmount: Number(editTotal),
         updatedAt: new Date()
       });
       setEditingId(null);
@@ -286,7 +291,10 @@ export default function Orders() {
                 <MenuItem value="Done">Done</MenuItem>
               </Select>
             </FormControl>
-            <TextField label="Total Amount (₹)" type="number" fullWidth value={editTotal} onChange={(e) => setEditTotal(e.target.value)} />
+            <TextField label="Total Amount (₹)" type="number" fullWidth value={editTotal} disabled
+              InputProps={{ readOnly: true }}
+              helperText="Amount is calculated server-side and cannot be manually edited"
+            />
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>

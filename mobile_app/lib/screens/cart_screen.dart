@@ -116,12 +116,13 @@ class CartScreen extends ConsumerWidget {
                     if (cartItems.isEmpty) return;
                     
                     try {
-                      // Call the highly secure Cloud Function instead of trusting the client
                       final callable = FirebaseFunctions.instance.httpsCallable('placeSecureOrder');
                       
                       final itemsData = cartItems.map((item) => {
-                        'productId': item.productId,
-                        'quantity': item.quantity,
+                        return {
+                          'productId': item.productId,
+                          'quantity': item.quantity,
+                        };
                       }).toList();
                       
                       await callable.call({'items': itemsData});

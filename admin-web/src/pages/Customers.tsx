@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Chip, IconButton } from '@mui/material';
-import { collection, getDocs, query, where, getFirestore, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, getFirestore, updateDoc, doc } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -59,19 +59,46 @@ export default function Customers() {
   };
 
   const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to completely delete this customer profile?", async () => {
+    showConfirm("Are you sure you want to deactivate this customer?", async () => {
       try {
-        await deleteDoc(doc(db, 'users', id));
+        await updateDoc(doc(db, 'users', id), { isActive: false });
         fetchCustomers();
-        showMessage("Customer deleted", "success");
+        showMessage("Customer deactivated", "success");
       } catch (e) {
-        console.error("Error deleting", e);
-        showMessage("Failed to delete customer.", "error");
+        console.error("Error deactivating", e);
+        showMessage("Failed to deactivate customer.", "error");
       }
     });
   };
 
+  const handleRestore = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'users', id), { isActive: true });
+      fetchCustomers();
+      showMessage("Customer restored", "success");
+    } catch (e) {
+      console.error("Error restoring", e);
+      showMessage("Failed to restore customer.", "error");
+    }
+  };
+
   const handleSave = async () => {
+    // Client-side validation
+    if (!editingId) {
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRe.test(formData.email.trim())) {
+        showMessage('Please enter a valid email address.', 'error');
+        return;
+      }
+    }
+    if (formData.gstNumber && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gstNumber.trim().toUpperCase())) {
+      showMessage('Invalid GST number format (must be 15 characters).', 'error');
+      return;
+    }
+    if (formData.panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber.trim().toUpperCase())) {
+      showMessage('Invalid PAN number format (must be 10 characters).', 'error');
+      return;
+    }
     setLoading(true);
     try {
       if (editingId) {
@@ -146,11 +173,11 @@ export default function Customers() {
                 <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{row.gstNumber}</TableCell>
                 <TableCell>
                   <Chip
-                    label={row.active ? 'ACTIVE' : 'INACTIVE'}
+                    label={row.isActive !== false ? 'ACTIVE' : 'INACTIVE'}
                     size="small"
                     sx={{
-                      backgroundColor: row.active ? '#000' : '#E0E0E0',
-                      color: row.active ? '#FFF' : '#000',
+                      backgroundColor: row.isActive !== false ? '#000' : '#E0E0E0',
+                      color: row.isActive !== false ? '#FFF' : '#000',
                     }}
                   />
                 </TableCell>
@@ -158,9 +185,13 @@ export default function Customers() {
                   <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  {row.isActive !== false ? (
+                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  ) : (
+                    <Button size="small" onClick={() => handleRestore(row.id)} sx={{ fontWeight: 700, fontSize: '0.7rem' }}>RESTORE</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

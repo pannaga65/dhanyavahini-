@@ -7,5 +7,5 @@ initializeApp();
 Object.assign(exports, require('./customers'));
 Object.assign(exports, require('./orders'));
 Object.assign(exports, require('./admin'));
-
+Object.assign(exports, require('./placeSecureOrder'));
 Object.assign(exports, require('./notifications'));

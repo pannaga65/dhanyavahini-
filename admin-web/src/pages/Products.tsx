@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, IconButton } from '@mui/material';
-import { collection, getDocs, addDoc, serverTimestamp, setDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, serverTimestamp, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
@@ -59,26 +59,22 @@ export default function Products() {
 
   const fetchProducts = async () => {
     try {
-      const snapshot = await getDocs(collection(db, 'products'));
-      
-      const productsData = await Promise.all(snapshot.docs.map(async (productDoc) => {
-        const product = { id: productDoc.id, ...productDoc.data() } as Product;
-        
-        // Fetch inventory for this product
-        try {
-          const invSnapshot = await getDocs(collection(db, 'inventory'));
-          const invDoc = invSnapshot.docs.find(d => d.id === product.id);
-          if (invDoc) {
-            product.availableStockKg = invDoc.data().availableStockKg;
-          } else {
-            product.availableStockKg = 0;
-          }
-        } catch (e) {
-          product.availableStockKg = 0;
-        }
+      const [productSnapshot, inventorySnapshot] = await Promise.all([
+        getDocs(collection(db, 'products')),
+        getDocs(collection(db, 'inventory')),
+      ]);
 
+      // Build an inventory lookup map (O(1) access instead of N+1 queries)
+      const inventoryMap = new Map<string, number>();
+      inventorySnapshot.docs.forEach(d => {
+        inventoryMap.set(d.id, d.data().availableStockKg || 0);
+      });
+
+      const productsData = productSnapshot.docs.map(productDoc => {
+        const product = { id: productDoc.id, ...productDoc.data() } as Product;
+        product.availableStockKg = inventoryMap.get(product.id) || 0;
         return product;
-      }));
+      });
       
       setProducts(productsData);
     } catch (e) {
@@ -106,22 +102,37 @@ export default function Products() {
   };
 
   const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to permanently delete this product and its inventory ledger?", async () => {
+    showConfirm("Are you sure you want to deactivate this product? It will be hidden from the catalog.", async () => {
       try {
-        await deleteDoc(doc(db, 'products', id));
-        await deleteDoc(doc(db, 'inventory', id));
+        await updateDoc(doc(db, 'products', id), { isActive: false });
         fetchProducts();
-        showMessage("Product deleted", "success");
+        showMessage("Product deactivated", "success");
       } catch (e) {
-        console.error("Error deleting", e);
-        showMessage("Failed to delete. Check console.", "error");
+        console.error("Error deactivating", e);
+        showMessage("Failed to deactivate product.", "error");
       }
     });
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'products', id), { isActive: true });
+      fetchProducts();
+      showMessage("Product restored", "success");
+    } catch (e) {
+      console.error("Error restoring", e);
+      showMessage("Failed to restore product.", "error");
+    }
   };
 
   const handleSave = async () => {
     if (!name || !category) {
       showMessage('Please enter a product name and category.', "error");
+      return;
+    }
+    // File size validation (2 MB max)
+    if (imageFile && imageFile.size > 2 * 1024 * 1024) {
+      showMessage('Image must be smaller than 2 MB.', "error");
       return;
     }
     setLoading(true);
@@ -249,9 +260,13 @@ export default function Products() {
                   <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  {(row as any).isActive !== false ? (
+                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  ) : (
+                    <Button size="small" onClick={() => handleRestore(row.id)} sx={{ fontWeight: 700, fontSize: '0.7rem' }}>RESTORE</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

@@ -54,7 +54,7 @@ class CartScreen extends ConsumerWidget {
                           children: [
                             Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                             const SizedBox(height: 4),
-                            Text('${item.quantity} Quintals @ ${currencyFormat.format(item.price)}', 
+                            Text('${item.quantity} Kg @ ${currencyFormat.format(item.price)}/kg', 
                               style: const TextStyle(color: AppTheme.textLight)),
                           ],
                         ),

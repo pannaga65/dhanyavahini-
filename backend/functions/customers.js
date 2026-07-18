@@ -4,25 +4,20 @@ const { getAuth } = require("firebase-admin/auth");
 const nodemailer = require("nodemailer");
 const { getWelcomeEmailHtml } = require("./emailTemplates");
 
-const { defineSecret } = require("firebase-functions/params");
-
 const db = getFirestore();
 const auth = getAuth();
 
-// Define the secure secret that will hold the App Password
-const emailPass = defineSecret("EMAIL_PASS");
-
-exports.createCustomer = onCall({ secrets: [emailPass] }, async (request) => {
+exports.createCustomer = onCall(async (request) => {
   if (!request.auth || !request.auth.token.admin) {
     throw new HttpsError("permission-denied", "Only admins can create new customers.");
   }
   
-  // Configure the nodemailer transporter using the secure secret
+  // Configure the nodemailer transporter using environment variables (injected by Github Actions)
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: "dhanyavahini@gmail.com",
-      pass: emailPass.value(),
+      pass: process.env.EMAIL_PASS,
     },
   });
   

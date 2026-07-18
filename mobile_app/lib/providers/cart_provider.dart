@@ -9,8 +9,11 @@ class CartItem {
   CartItem({required this.productId, required this.name, required this.price, required this.quantity});
 }
 
-class CartNotifier extends StateNotifier<List<CartItem>> {
-  CartNotifier() : super([]);
+class CartNotifier extends Notifier<List<CartItem>> {
+  @override
+  List<CartItem> build() {
+    return [];
+  }
 
   void addItem(CartItem item) {
     final existingIndex = state.indexWhere((i) => i.productId == item.productId);
@@ -41,6 +44,6 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   double get total => subtotal + gst;
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
+final cartProvider = NotifierProvider<CartNotifier, List<CartItem>>(() {
   return CartNotifier();
 });

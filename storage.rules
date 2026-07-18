@@ -30,6 +30,14 @@ service firebase.storage {
         && request.resource.size < 2 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
+    
+    // ─── Categories Images ───
+    match /categories/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin()
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
 
     // ─── Default: Deny Everything Else ───
     match /{allPaths=**} {

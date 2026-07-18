@@ -8,11 +8,18 @@ import '../widgets/shimmer_loader.dart';
 import '../providers/product_provider.dart';
 import '../providers/banner_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? selectedCategory;
+
+  @override
+  Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
     final bannersAsync = ref.watch(bannersProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -135,7 +142,13 @@ class HomeScreen extends ConsumerWidget {
                           final catIcon = cat['iconUrl'] ?? '';
                           return GestureDetector(
                             onTap: () {
-                              // Future: filter products by category
+                              setState(() {
+                                if (selectedCategory == catName) {
+                                  selectedCategory = null; // deselect
+                                } else {
+                                  selectedCategory = catName;
+                                }
+                              });
                             },
                             child: Container(
                               margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -145,8 +158,13 @@ class HomeScreen extends ConsumerWidget {
                                     width: 60,
                                     height: 60,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.primaryAction.withValues(alpha: 0.1),
+                                      color: selectedCategory == catName 
+                                          ? AppTheme.primaryAction.withValues(alpha: 0.3)
+                                          : AppTheme.primaryAction.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
+                                      border: selectedCategory == catName 
+                                          ? Border.all(color: AppTheme.primaryAction, width: 2)
+                                          : null,
                                     ),
                                     child: catIcon.isNotEmpty
                                         ? ClipOval(
@@ -211,7 +229,11 @@ class HomeScreen extends ConsumerWidget {
               
               // 4. Products Grid
               productsAsync.when(
-                data: (products) {
+                data: (allProducts) {
+                  final products = selectedCategory == null 
+                      ? allProducts 
+                      : allProducts.where((p) => p.category.toLowerCase() == selectedCategory!.toLowerCase()).toList();
+
                   if (products.isEmpty) {
                     return const SliverToBoxAdapter(
                       child: Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No products available.', style: TextStyle(color: AppTheme.textLight)))),

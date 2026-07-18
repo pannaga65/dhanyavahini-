@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
@@ -118,7 +117,7 @@ class CartScreen extends ConsumerWidget {
                     try {
                       final callable = FirebaseFunctions.instance.httpsCallable('placeSecureOrder');
                       
-                      final itemsData = cartItems.map((item) => {
+                      final itemsData = cartItems.map((item) {
                         return {
                           'productId': item.productId,
                           'quantity': item.quantity,

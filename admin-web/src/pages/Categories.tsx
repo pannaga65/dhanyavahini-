@@ -30,7 +30,7 @@ export default function Categories() {
   const fetchCategories = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'categories'));
-      const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
       fetched.sort((a, b) => (a.order || 0) - (b.order || 0));
       setCategories(fetched);
     } catch (e) {

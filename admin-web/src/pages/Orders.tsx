@@ -292,7 +292,7 @@ export default function Orders() {
               </Select>
             </FormControl>
             <TextField label="Total Amount (₹)" type="number" fullWidth value={editTotal} disabled
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
               helperText="Amount is calculated server-side and cannot be manually edited"
             />
           </Box>

@@ -31,7 +31,7 @@ export default function Banners() {
   const fetchBanners = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'banners'));
-      const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
       fetched.sort((a, b) => (a.order || 0) - (b.order || 0));
       setBanners(fetched);
     } catch (e) {

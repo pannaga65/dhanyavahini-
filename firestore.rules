@@ -17,7 +17,8 @@ service cloud.firestore {
     // ─── 1. Admins Collection ───
     match /admins/{adminId} {
       allow read: if isAuthenticated() && request.auth.uid == adminId;
-      allow write: if false; // Managed exclusively by Cloud Functions
+      allow update: if isAuthenticated() && request.auth.uid == adminId;
+      allow create, delete: if false;
     }
 
     // ─── 2. Users / Customers ───

@@ -45,15 +45,15 @@ final _router = GoRouter(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
         ),
+        GoRoute(
+          path: '/cart',
+          builder: (context, state) => const CartScreen(),
+        ),
       ],
     ),
     GoRoute(
       path: '/product/:id',
       builder: (context, state) => ProductDetailsScreen(productId: state.pathParameters['id']!),
-    ),
-    GoRoute(
-      path: '/cart',
-      builder: (context, state) => const CartScreen(),
     ),
     GoRoute(
       path: '/login',

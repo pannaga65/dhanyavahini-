@@ -14,10 +14,11 @@ final productsProvider = FutureProvider<List<ProductModel>>((ref) async {
   // 2. Fetch all inventory docs
   final inventorySnapshot = await db.collection('inventory').get();
   
-  // 3. Map inventory for O(1) lookup
-  final inventoryMap = <String, int>{};
+  // 3. Map inventory for O(1) lookup — handle both int and double from Firestore
+  final inventoryMap = <String, double>{};
   for (var doc in inventorySnapshot.docs) {
-    inventoryMap[doc.id] = (doc.data()['availableStockKg'] ?? 0) as int;
+    final raw = doc.data()['availableStockKg'];
+    inventoryMap[doc.id] = (raw is num) ? raw.toDouble() : 0.0;
   }
   
   // 4. Combine into ProductModels
@@ -25,7 +26,7 @@ final productsProvider = FutureProvider<List<ProductModel>>((ref) async {
     return ProductModel.fromFirestore(
       doc.data(), 
       doc.id, 
-      inventoryStock: inventoryMap[doc.id] ?? 0
+      inventoryStock: inventoryMap[doc.id] ?? 0.0,
     );
   }).toList();
   
@@ -41,13 +42,19 @@ final singleProductProvider = FutureProvider.family<ProductModel, String>((ref, 
   }
   
   final inventorySnap = await db.collection('inventory').doc(productId).get();
-  final inventoryStock = inventorySnap.exists 
-      ? ((inventorySnap.data()?['availableStockKg'] ?? 0) as int) 
-      : 0;
+  final rawStock = inventorySnap.exists ? inventorySnap.data()?['availableStockKg'] : 0;
+  final inventoryStock = (rawStock is num) ? rawStock.toDouble() : 0.0;
       
   return ProductModel.fromFirestore(
     productSnap.data()!, 
     productSnap.id, 
-    inventoryStock: inventoryStock
+    inventoryStock: inventoryStock,
   );
+});
+
+// Categories provider for dynamic "Shop by Category"
+final categoriesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final db = FirebaseFirestore.instance;
+  final snapshot = await db.collection('categories').orderBy('order').get();
+  return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
 });

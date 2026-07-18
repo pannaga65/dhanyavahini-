@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
@@ -128,8 +129,12 @@ class CartScreen extends ConsumerWidget {
                       
                       cartNotifier.clear();
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order Placed Securely!')));
-                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: const Text('Order Placed Securely!'),
+                          backgroundColor: AppTheme.primaryAction,
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                        context.go('/orders');
                       }
                     } catch (e) {
                       if (context.mounted) {

@@ -15,285 +15,388 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(productsProvider);
     final bannersAsync = ref.watch(bannersProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Dhanyavahini'),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: AppTheme.textLight),
-            onPressed: () {},
-          )
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(productsProvider);
-          ref.invalidate(bannersProvider);
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Banner Carousel
-              bannersAsync.when(
-                data: (banners) {
-                  if (banners.isEmpty) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: CarouselSlider(
-                      options: CarouselOptions(
-                        height: 180.0,
-                        autoPlay: true,
-                        enlargeCenterPage: true,
-                        viewportFraction: 0.9,
-                        autoPlayInterval: const Duration(seconds: 4),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(productsProvider);
+            ref.invalidate(bannersProvider);
+            ref.invalidate(categoriesProvider);
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // App Bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Dhanyavahini', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 24)),
+                          const SizedBox(height: 2),
+                          const Text('Fresh grains at your doorstep', style: TextStyle(color: AppTheme.textLight, fontSize: 13)),
+                        ],
                       ),
-                      items: banners.map((banner) {
-                        return Builder(
-                          builder: (BuildContext context) {
-                            return GestureDetector(
-                              onTap: () {
-                                if (banner.redirectLink.isNotEmpty) {
-                                  context.push(banner.redirectLink);
-                                }
-                              },
-                              child: Container(
-                                width: MediaQuery.of(context).size.width,
-                                margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  color: Colors.white,
-                                  image: DecorationImage(
-                                    image: CachedNetworkImageProvider(banner.imageUrl),
-                                    fit: BoxFit.cover,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    )
-                                  ]
-                                ),
+                      CircleAvatar(
+                        backgroundColor: AppTheme.primaryAction.withValues(alpha: 0.1),
+                        child: IconButton(
+                          icon: const Icon(Icons.search, color: AppTheme.primaryAction),
+                          onPressed: () {},
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 1. Banner Carousel
+              SliverToBoxAdapter(
+                child: bannersAsync.when(
+                  data: (banners) {
+                    if (banners.isEmpty) return const SizedBox(height: 16);
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 20.0),
+                      child: CarouselSlider(
+                        options: CarouselOptions(
+                          height: 170.0,
+                          autoPlay: true,
+                          enlargeCenterPage: true,
+                          viewportFraction: 0.9,
+                          autoPlayInterval: const Duration(seconds: 4),
+                          autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                        ),
+                        items: banners.map((banner) {
+                          return GestureDetector(
+                            onTap: () {
+                              if (banner.redirectLink.isNotEmpty) {
+                                context.push(banner.redirectLink);
+                              }
+                            },
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.grey.shade200,
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4)),
+                                ],
                               ),
-                            );
-                          },
-                        );
-                      }).toList(),
+                              clipBehavior: Clip.antiAlias,
+                              child: CachedNetworkImage(
+                                imageUrl: banner.imageUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (ctx, url) => Container(color: Colors.grey.shade200),
+                                errorWidget: (ctx, url, err) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  },
+                  loading: () => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20),
+                    child: ShimmerLoader(width: double.infinity, height: 170, borderRadius: 20),
+                  ),
+                  error: (err, stack) => const SizedBox(height: 16),
+                ),
+              ),
+
+              // 2. Dynamic Categories
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                  child: Text('Shop by Category', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 100,
+                  child: categoriesAsync.when(
+                    data: (categories) {
+                      if (categories.isEmpty) {
+                        return const Center(child: Text('No categories yet', style: TextStyle(color: AppTheme.textLight)));
+                      }
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final cat = categories[index];
+                          final catName = cat['name'] ?? 'Unknown';
+                          final catIcon = cat['iconUrl'] ?? '';
+                          return GestureDetector(
+                            onTap: () {
+                              // Future: filter products by category
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryAction.withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: catIcon.isNotEmpty
+                                        ? ClipOval(
+                                            child: CachedNetworkImage(
+                                              imageUrl: catIcon,
+                                              fit: BoxFit.cover,
+                                              width: 60, height: 60,
+                                              placeholder: (ctx, url) => const Icon(Icons.category, color: AppTheme.primaryAction),
+                                              errorWidget: (ctx, url, err) => const Icon(Icons.category, color: AppTheme.primaryAction),
+                                            ),
+                                          )
+                                        : const Icon(Icons.category, color: AppTheme.primaryAction, size: 28),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: 70,
+                                    child: Text(
+                                      catName, 
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), 
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1, 
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: 5,
+                      itemBuilder: (ctx, i) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Column(children: [
+                          ShimmerLoader(width: 60, height: 60, borderRadius: 30),
+                          const SizedBox(height: 8),
+                          ShimmerLoader(width: 50, height: 12),
+                        ]),
+                      ),
                     ),
-                  );
-                },
-                loading: () => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20),
-                  child: ShimmerLoader(width: double.infinity, height: 180, borderRadius: 16),
-                ),
-                error: (err, stack) => const SizedBox.shrink(),
-              ),
-
-              const SizedBox(height: 24),
-              
-              // 2. Shop by Category (Static for now, can be dynamic later)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Shop by Category', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 100,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    _buildCategoryItem('Grains', Icons.grass),
-                    _buildCategoryItem('Pulses', Icons.eco),
-                    _buildCategoryItem('Spices', Icons.whatshot),
-                    _buildCategoryItem('Oils', Icons.water_drop),
-                    _buildCategoryItem('Flour', Icons.bakery_dining),
-                  ],
+                    error: (e, s) => const Center(child: Text('Error loading categories')),
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 24),
-
-              // 3. Featured Products
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Featured Products', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                    TextButton(
-                      onPressed: () {}, // Future expansion
-                      child: const Text('View All', style: TextStyle(color: AppTheme.primaryAction, fontWeight: FontWeight.bold)),
-                    )
-                  ],
+              // 3. Featured Products Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Featured Products', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
               ),
               
+              // 4. Products Grid
               productsAsync.when(
                 data: (products) {
                   if (products.isEmpty) {
-                    return const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('No products available.')));
+                    return const SliverToBoxAdapter(
+                      child: Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No products available.', style: TextStyle(color: AppTheme.textLight)))),
+                    );
                   }
-                  return GridView.builder(
+                  return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.72,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final product = products[index];
+                          return GestureDetector(
+                            onTap: () => context.push('/product/${product.id}'),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Product Image
+                                  Expanded(
+                                    flex: 3,
+                                    child: Container(
+                                      width: double.infinity,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFF5F5F5),
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: Stack(
+                                        children: [
+                                          product.imageUrl.isNotEmpty
+                                              ? CachedNetworkImage(
+                                                  imageUrl: product.imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                  placeholder: (ctx, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                                  errorWidget: (ctx, url, err) => const Center(child: Icon(Icons.inventory_2, color: AppTheme.textLight, size: 40)),
+                                                )
+                                              : const Center(child: Icon(Icons.inventory_2, color: AppTheme.textLight, size: 40)),
+                                          // Stock badge
+                                          Positioned(
+                                            top: 8, right: 8,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: product.availableStockKg > 0 
+                                                    ? AppTheme.primaryAction.withValues(alpha: 0.9) 
+                                                    : Colors.red.withValues(alpha: 0.9),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                product.availableStockKg > 0 ? 'In Stock' : 'Out',
+                                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  // Product Info
+                                  Expanded(
+                                    flex: 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            product.name, 
+                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                '₹${product.basePriceKg.toStringAsFixed(0)}/kg', 
+                                                style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryAction, fontSize: 14),
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.all(6),
+                                                decoration: BoxDecoration(
+                                                  color: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                child: const Icon(Icons.add, color: Colors.white, size: 16),
+                                              )
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        childCount: products.length,
+                      ),
+                    ),
+                  );
+                },
+                loading: () => SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  sliver: SliverGrid(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.72,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
                     ),
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return GestureDetector(
-                        onTap: () => context.push('/product/${product.id}'),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              )
-                            ],
-                          ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return Container(
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Image
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.background,
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: product.imageUrl.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          imageUrl: product.imageUrl,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : const Icon(Icons.inventory_2, color: AppTheme.textLight, size: 50),
-                                ),
-                              ),
-                              // Details
+                              Expanded(flex: 3, child: ShimmerLoader(width: double.infinity, height: double.infinity, borderRadius: 18)),
                               Expanded(
                                 flex: 2,
                                 child: Padding(
-                                  padding: const EdgeInsets.all(12.0),
+                                  padding: const EdgeInsets.all(12),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        product.name, 
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text('₹${product.basePriceKg}/kg', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryAction)),
-                                          Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(Icons.add, color: Colors.white, size: 16),
-                                          )
-                                        ],
-                                      )
+                                      ShimmerLoader(width: double.infinity, height: 14),
+                                      ShimmerLoader(width: 70, height: 14),
                                     ],
                                   ),
                                 ),
                               )
                             ],
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
-                loading: () => GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                        );
+                      },
+                      childCount: 4,
+                    ),
                   ),
-                  itemCount: 4,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                ),
+                error: (e, s) => SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
                       child: Column(
                         children: [
-                          const Expanded(flex: 3, child: ShimmerLoader(width: double.infinity, height: double.infinity, borderRadius: 16)),
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  ShimmerLoader(width: double.infinity, height: 16),
-                                  SizedBox(height: 8),
-                                  ShimmerLoader(width: 60, height: 16),
-                                ],
-                              ),
-                            ),
-                          )
+                          const Icon(Icons.cloud_off, size: 48, color: AppTheme.textLight),
+                          const SizedBox(height: 12),
+                          Text('Error loading products', style: const TextStyle(color: AppTheme.textLight)),
+                          const SizedBox(height: 4),
+                          Text('$e', style: const TextStyle(fontSize: 12, color: Colors.red), textAlign: TextAlign.center),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => ref.invalidate(productsProvider),
+                            child: const Text('Retry'),
+                          ),
                         ],
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
-                error: (e, s) => Center(child: Text('Error: $e')),
               ),
-              const SizedBox(height: 40),
+
+              // Bottom spacing
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryItem(String title, IconData icon) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryAction.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: AppTheme.primaryAction, size: 32),
-          ),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-        ],
       ),
     );
   }

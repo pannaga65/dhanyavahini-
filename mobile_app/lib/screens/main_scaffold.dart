@@ -23,7 +23,7 @@ class MainScaffold extends StatelessWidget {
           color: AppTheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, -5),
             )
@@ -54,7 +54,7 @@ class MainScaffold extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryAction.withOpacity(0.15) : Colors.transparent,
+          color: isSelected ? AppTheme.primaryAction.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Column(

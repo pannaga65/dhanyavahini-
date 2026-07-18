@@ -5,7 +5,7 @@ class ProductModel {
   final double basePriceKg;
   final int moqKg;
   final String imageUrl;
-  final int availableStockKg;
+  final double availableStockKg;
   final bool isActive;
 
   ProductModel({
@@ -19,13 +19,13 @@ class ProductModel {
     required this.isActive,
   });
 
-  factory ProductModel.fromFirestore(Map<String, dynamic> data, String id, {int inventoryStock = 0}) {
+  factory ProductModel.fromFirestore(Map<String, dynamic> data, String id, {double inventoryStock = 0.0}) {
     return ProductModel(
       id: id,
       name: data['name'] ?? '',
       category: data['category'] ?? '',
-      basePriceKg: (data['basePriceKg'] ?? 0).toDouble(),
-      moqKg: data['moqKg'] ?? 100, // Default 100kg if missing
+      basePriceKg: (data['basePriceKg'] is num) ? (data['basePriceKg'] as num).toDouble() : 0.0,
+      moqKg: (data['moqKg'] is num) ? (data['moqKg'] as num).toInt() : 100,
       imageUrl: data['imageUrl'] ?? '',
       availableStockKg: inventoryStock,
       isActive: data['isActive'] ?? true,

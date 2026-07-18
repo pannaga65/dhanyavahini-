@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Typography, Box, TextField, Button, CircularProgress } from '@mui/material';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useSnackbar } from '../context/SnackbarContext';
+import { useSnackbar } from '../context/UIContext';
 
 export default function Settings() {
   const [gstRate, setGstRate] = useState<string>('');

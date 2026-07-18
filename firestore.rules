@@ -37,7 +37,8 @@ service cloud.firestore {
     // ─── 4. Inventory Ledger ───
     match /inventory/{productId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin(); // Cloud Functions also update this via Admin SDK
+      allow update: if isAuthenticated(); // Allowed for direct client order placement
+      allow write: if isAdmin();
     }
 
     // ─── 5. Orders ───

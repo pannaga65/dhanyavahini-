@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Typography, Box, TextField, Button, CircularProgress } from '@mui/material';
 import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
 import app from '../firebase';
-import { useSnackbar } from '../context/UIContext';
+import { useUI } from '../context/UIContext';
 
 const db = getFirestore(app);
 
@@ -10,7 +10,7 @@ export default function Settings() {
   const [gstRate, setGstRate] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { showMessage } = useSnackbar();
+  const { showMessage } = useUI();
 
   useEffect(() => {
     fetchSettings();

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Typography, Box, TextField, Button, CircularProgress } from '@mui/material';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
+import app from '../firebase';
 import { useSnackbar } from '../context/UIContext';
+
+const db = getFirestore(app);
 
 export default function Settings() {
   const [gstRate, setGstRate] = useState<string>('');

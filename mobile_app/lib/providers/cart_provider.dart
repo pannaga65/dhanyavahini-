@@ -40,8 +40,8 @@ class CartNotifier extends Notifier<List<CartItem>> {
   }
 
   double get subtotal => state.fold(0, (sum, item) => sum + (item.price * item.quantity));
-  double get gst => subtotal * 0.05; // 5% GST for grains
-  double get total => subtotal + gst;
+  double getGst(double rate) => subtotal * rate;
+  double getTotal(double rate) => subtotal + getGst(rate);
 }
 
 final cartProvider = NotifierProvider<CartNotifier, List<CartItem>>(() {

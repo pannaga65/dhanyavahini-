@@ -43,7 +43,7 @@ service cloud.firestore {
     // ─── 5. Orders ───
     match /orders/{orderId} {
       allow read: if isOwner(resource.data.customerId) || isAdmin();
-      allow create: if false; // Created exclusively by Cloud Function (placeSecureOrder)
+      allow create: if isOwner(request.resource.data.customerId) && request.resource.data.status == 'Inquiry';
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }

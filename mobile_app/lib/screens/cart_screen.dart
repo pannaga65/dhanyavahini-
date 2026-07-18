@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../providers/cart_provider.dart';
+import '../providers/settings_provider.dart';
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -14,6 +16,15 @@ class CartScreen extends ConsumerWidget {
     final cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    
+    final settingsAsync = ref.watch(settingsProvider);
+    final gstRate = settingsAsync.when(
+      data: (settings) => (settings['gstRate'] as num?)?.toDouble() ?? 0.05,
+      loading: () => 0.05,
+      error: (_, __) => 0.05,
+    );
+    final gstAmount = cartNotifier.getGst(gstRate);
+    final totalAmount = cartNotifier.getTotal(gstRate);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -62,7 +73,26 @@ class CartScreen extends ConsumerWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () => cartNotifier.removeItem(item.productId),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Remove Item?'),
+                              content: const Text('Are you sure you want to remove this item from your cart?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                  onPressed: () {
+                                    cartNotifier.removeItem(item.productId);
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('REMOVE', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       )
                     ],
                   ),
@@ -91,8 +121,8 @@ class CartScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('GST (5%)', style: TextStyle(color: AppTheme.textLight)),
-                  Text(currencyFormat.format(cartNotifier.gst), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('GST (${(gstRate * 100).toStringAsFixed(0)}%)', style: const TextStyle(color: AppTheme.textLight)),
+                  Text(currencyFormat.format(gstAmount), style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
               const Divider(height: 32),
@@ -100,7 +130,7 @@ class CartScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(currencyFormat.format(cartNotifier.total), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryAction)),
+                  Text(currencyFormat.format(totalAmount), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryAction)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -115,22 +145,73 @@ class CartScreen extends ConsumerWidget {
                   onPressed: () async {
                     if (cartItems.isEmpty) return;
                     
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Place Order?'),
+                        content: Text('Are you sure you want to place this order for ${currencyFormat.format(totalAmount)}?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryAction),
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('CONFIRM', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    );
+                    
+                    if (confirm != true) return;
+                    
                     try {
-                      final callable = FirebaseFunctions.instance.httpsCallable('placeSecureOrder');
+                      final db = FirebaseFirestore.instance;
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) throw Exception("Not logged in");
+
+                      final batch = db.batch();
+                      final orderRef = db.collection('orders').doc();
                       
+                      // 1. Create order
                       final itemsData = cartItems.map((item) {
                         return {
                           'productId': item.productId,
-                          'quantity': item.quantity,
+                          'name': item.name,
+                          'quantityKg': item.quantity,
+                          'basePriceKg': item.price,
+                          'lineTotal': item.price * item.quantity,
                         };
                       }).toList();
                       
-                      await callable.call({'items': itemsData});
+                      batch.set(orderRef, {
+                        'customerId': user.uid,
+                        'customerName': user.displayName ?? "Customer",
+                        'items': itemsData,
+                        'subtotal': cartNotifier.subtotal,
+                        'gstRate': gstRate,
+                        'gstAmount': gstAmount,
+                        'totalAmount': totalAmount,
+                        'status': 'Inquiry',
+                        'paymentStatus': 'Pending',
+                        'createdAt': FieldValue.serverTimestamp(),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
+
+                      // 2. Decrement inventory securely
+                      for (var item in cartItems) {
+                        final invRef = db.collection('inventory').doc(item.productId);
+                        batch.update(invRef, {
+                          'availableStockKg': FieldValue.increment(-item.quantity),
+                          'allocatedStockKg': FieldValue.increment(item.quantity),
+                          'lastUpdated': FieldValue.serverTimestamp(),
+                        });
+                      }
+
+                      await batch.commit();
                       
                       cartNotifier.clear();
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text('Order Placed Securely!'),
+                          content: const Text('Order Placed Successfully!'),
                           backgroundColor: AppTheme.primaryAction,
                           behavior: SnackBarBehavior.floating,
                         ));

@@ -332,8 +332,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       leading: const Icon(Icons.logout, color: Colors.red),
                       title: const Text('Log Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                       onTap: () async {
-                        await FirebaseAuth.instance.signOut();
-                        if (context.mounted) context.go('/login');
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Log Out?'),
+                            content: const Text('Are you sure you want to log out of your account?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('LOG OUT', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await FirebaseAuth.instance.signOut();
+                          if (context.mounted) context.go('/login');
+                        }
                       },
                     ),
                   ],

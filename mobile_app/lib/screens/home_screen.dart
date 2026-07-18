@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -24,7 +25,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final bannersAsync = ref.watch(bannersProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Exit App?'),
+            content: const Text('Are you sure you want to exit the app?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: AppTheme.primaryAction))),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryAction),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('EXIT', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+        if (shouldExit == true) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
         child: RefreshIndicator(
@@ -418,6 +442,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
+        ),
         ),
       ),
     );

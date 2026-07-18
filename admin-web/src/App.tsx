@@ -129,13 +129,16 @@ function App() {
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Logo */}
-      <Box sx={{ px: 3, pt: 5, pb: 2 }}>
-        <Typography sx={{ fontWeight: 900, fontSize: '1.6rem', letterSpacing: 3, lineHeight: 1 }}>
-          ADMIN
-        </Typography>
-        <Typography sx={{ fontWeight: 600, fontSize: '0.65rem', color: '#999', letterSpacing: 2, mt: 0.5 }}>
-          DHANYAVAHINI CMS
-        </Typography>
+      <Box sx={{ px: 3, pt: 5, pb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <img src="/logo.png" alt="Logo" style={{ width: 45, height: 45, objectFit: 'contain' }} />
+        <Box>
+          <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', letterSpacing: 2, lineHeight: 1 }}>
+            ADMIN
+          </Typography>
+          <Typography sx={{ fontWeight: 600, fontSize: '0.65rem', color: '#999', letterSpacing: 2, mt: 0.5 }}>
+            DHANYAVAHINI
+          </Typography>
+        </Box>
       </Box>
 
       <Box sx={{ borderBottom: '2px solid #000', mx: 3, mb: 3 }} />

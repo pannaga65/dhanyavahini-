@@ -26,6 +26,7 @@ interface Order {
 export default function Orders() {
   const { showConfirm, showMessage } = useUI();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customersMap, setCustomersMap] = useState<Record<string, any>>({});
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   
   // Edit Mode
@@ -54,6 +55,12 @@ export default function Orders() {
       let data = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[];
       // Filter out Inquiries, we only want Approved orders here
       data = data.filter(o => o.status !== 'Inquiry');
+      // Fetch customers for fallback
+      const custSnap = await getDocs(collection(db, 'users'));
+      const cmap: Record<string, any> = {};
+      custSnap.forEach(d => { cmap[d.id] = d.data(); });
+      setCustomersMap(cmap);
+
       setOrders(data);
     } catch (e) {
       console.log('Error fetching orders', e);
@@ -211,7 +218,9 @@ export default function Orders() {
               return (
                 <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
                   <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>ORD-{row.id.substring(0, 6).toUpperCase()}</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>{row.customerName || 'Unknown Customer'}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>
+                    {row.customerName || customersMap[row.customerId]?.displayName || customersMap[row.customerId]?.tradeName || 'Unknown Customer'}
+                  </TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString() || '—'}</TableCell>
                   <TableCell>
                     <Chip label={row.status} size="small" sx={{ backgroundColor: sc.bg, color: sc.fg, fontWeight: 700 }} />
@@ -290,7 +299,9 @@ export default function Orders() {
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <Box>
                 <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>CUSTOMER</Typography>
-                <Typography sx={{ fontWeight: 700 }}>{selectedOrder?.customerName || 'Unknown Customer'}</Typography>
+                <Typography sx={{ fontWeight: 700 }}>
+                  {selectedOrder?.customerName || (selectedOrder ? (customersMap[selectedOrder.customerId]?.displayName || customersMap[selectedOrder.customerId]?.tradeName) : '') || 'Unknown Customer'}
+                </Typography>
               </Box>
               <Box>
                 <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>TOTAL AMOUNT</Typography>

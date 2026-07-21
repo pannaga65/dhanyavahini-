@@ -157,7 +157,7 @@ export default function Customers() {
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 900 }}>TRADE NAME</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>CONTACT</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>CUSTOMER NAME</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>EMAIL</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>GST</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
@@ -214,7 +214,7 @@ export default function Customers() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <TextField label="Trade Name (Business)" fullWidth value={formData.tradeName} onChange={(e) => setFormData({ ...formData, tradeName: e.target.value })} />
-            <TextField label="Contact Name" fullWidth value={formData.displayName} onChange={(e) => setFormData({ ...formData, displayName: e.target.value })} />
+            <TextField label="Customer Name" fullWidth value={formData.displayName} onChange={(e) => setFormData({ ...formData, displayName: e.target.value })} />
             <TextField label="Email Address" type="email" fullWidth disabled={!!editingId} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
             <TextField label="Phone Number" fullWidth value={formData.phoneNumber} onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} />
             <Box sx={{ display: 'flex', gap: 2 }}>

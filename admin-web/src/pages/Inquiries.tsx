@@ -13,6 +13,7 @@ const db = getFirestore(app);
 export default function Inquiries() {
   const { showConfirm, showMessage } = useUI();
   const [inquiries, setInquiries] = useState<any[]>([]);
+  const [customersMap, setCustomersMap] = useState<Record<string, any>>({});
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -34,6 +35,12 @@ export default function Inquiries() {
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       // Sort by latest (client side for now)
       data.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+      // Fetch customers for fallback
+      const custSnap = await getDocs(collection(db, 'users'));
+      const cmap: Record<string, any> = {};
+      custSnap.forEach(d => { cmap[d.id] = d.data(); });
+      setCustomersMap(cmap);
+
       setInquiries(data);
     } catch (e) {
       console.log('Error fetching inquiries', e);
@@ -172,7 +179,9 @@ export default function Inquiries() {
             {inquiries.map((row) => (
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
                 <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>ORD-{row.id.substring(0, 6).toUpperCase()}</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>{row.customerName || 'Unknown Customer'}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>
+                  {row.customerName || customersMap[row.customerId]?.displayName || customersMap[row.customerId]?.tradeName || 'Unknown Customer'}
+                </TableCell>
                 <TableCell>
                   {row.items?.map((item: any, i: number) => (
                     <Box key={i} sx={{ fontSize: '0.8rem', color: '#666' }}>

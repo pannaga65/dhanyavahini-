@@ -235,7 +235,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             final projectId = FirebaseFirestore.instance.app.options.projectId;
                             final url = Uri.parse('https://us-central1-$projectId.cloudfunctions.net/downloadInvoice?orderId=${doc.id}');
                             try {
-                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                              await launchUrl(url, mode: LaunchMode.inAppBrowserView);
                             } catch (e) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(

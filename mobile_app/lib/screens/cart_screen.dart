@@ -185,9 +185,17 @@ class CartScreen extends ConsumerWidget {
                         };
                       }).toList();
                       
+                      final customerName = (userData['displayName']?.toString().isNotEmpty == true)
+                          ? userData['displayName']
+                          : (userData['tradeName']?.toString().isNotEmpty == true)
+                              ? userData['tradeName']
+                              : (user.displayName?.isNotEmpty == true)
+                                  ? user.displayName
+                                  : "Customer";
+
                       batch.set(orderRef, {
                         'customerId': user.uid,
-                        'customerName': user.displayName ?? "Customer",
+                        'customerName': customerName,
                         'customerGst': customerGst,
                         'billingAddress': billingAddress,
                         'shippingAddress': shippingAddress,

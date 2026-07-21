@@ -226,10 +226,12 @@ export default function Customers() {
             <Box>
               <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', mb: 1 }}>MAILING ADDRESSES</Typography>
               {formData.mailingAddresses.map((addr, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}>
                   <TextField 
                     size="small" 
                     fullWidth 
+                    multiline
+                    rows={2}
                     placeholder="Mailing Address" 
                     value={addr} 
                     onChange={(e) => {

@@ -195,8 +195,11 @@ exports.downloadInvoice = onRequest(async (req, res) => {
           background: #fafafa;
         }
         @media print {
+          @page {
+            margin: 0; /* This removes the default browser headers/footers (URL & Date) */
+          }
           body {
-            padding: 0;
+            padding: 20px; /* Add padding back so content doesn't hit paper edge */
             background: #fff;
           }
           .container {
@@ -256,7 +259,7 @@ exports.downloadInvoice = onRequest(async (req, res) => {
           <div class="col-right">
             <p class="bold">Consignee (Ship to)</p>
             <h3>${escapeHtml(safe(order.customerName, "Customer"))}</h3>
-            <p class="muted">${escapeHtml(safe(order.shippingAddress || order.billingAddress, "Address not provided"))}</p>
+            <p class="muted">${escapeHtml(safe(dispatch.shippingAddress || order.shippingAddress || order.billingAddress, "Address not provided"))}</p>
             <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(order.customerGst, "Unregistered"))}</p>
           </div>
         </div>

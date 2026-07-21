@@ -556,6 +556,7 @@ export default function Orders() {
         onSave={handleSaveDispatch}
         isApprovalMode={false}
         initialData={editDispatchOrder?.dispatchDetails}
+        customer={editDispatchOrder ? customersMap[editDispatchOrder.customerId] : null}
       />
     </Box>
   );

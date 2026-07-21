@@ -7,6 +7,7 @@ export interface DispatchData {
   destination?: string;
   lrNumber?: string;
   motorVehicleNo?: string;
+  shippingAddress?: string;
 }
 
 interface DispatchDialogProps {
@@ -17,9 +18,10 @@ interface DispatchDialogProps {
   loading: boolean;
   initialData?: DispatchData;
   isApprovalMode?: boolean;
+  customer?: any;
 }
 
-export default function DispatchDialog({ open, onClose, onSave, onSkip, loading, initialData, isApprovalMode }: DispatchDialogProps) {
+export default function DispatchDialog({ open, onClose, onSave, onSkip, loading, initialData, isApprovalMode, customer }: DispatchDialogProps) {
   const [formData, setFormData] = useState<DispatchData>({});
 
   useEffect(() => {
@@ -47,6 +49,36 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
         </Typography>
         
         <Grid container spacing={2}>
+          {customer && (
+            <Grid size={{ xs: 12 }}>
+              <FormControl fullWidth>
+                <InputLabel>Shipping Address (Consignee)</InputLabel>
+                <Select
+                  value={formData.shippingAddress || customer.billingAddress || ''}
+                  label="Shipping Address (Consignee)"
+                  onChange={(e) => handleChange('shippingAddress', e.target.value as string)}
+                  sx={{ whiteSpace: 'pre-wrap' }}
+                >
+                  {customer.billingAddress && (
+                    <MenuItem value={customer.billingAddress}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Billing Address</Typography>
+                      <Typography sx={{ fontSize: '0.75rem', color: '#666', ml: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {customer.billingAddress.replace(/\n/g, ', ')}
+                      </Typography>
+                    </MenuItem>
+                  )}
+                  {customer.mailingAddresses?.map((addr: string, idx: number) => addr.trim() !== '' && (
+                    <MenuItem key={`mail-${idx}`} value={addr}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Mailing Address {idx + 1}</Typography>
+                      <Typography sx={{ fontSize: '0.75rem', color: '#666', ml: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {addr.replace(/\n/g, ', ')}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth>
               <InputLabel>Mode/Terms of Payment</InputLabel>

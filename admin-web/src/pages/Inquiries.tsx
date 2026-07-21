@@ -276,6 +276,7 @@ export default function Inquiries() {
         onSave={handleSaveDispatch}
         onSkip={handleSkipDispatch}
         isApprovalMode={true}
+        customer={approvingId ? customersMap[inquiries.find(i => i.id === approvingId)?.customerId || ''] : null}
       />
     </Box>
   );

@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_provider.dart';
+import '../widgets/sticky_cart_banner.dart';
 
 class ProductDetailsScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -98,70 +99,76 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
         error: (error, stack) => Center(child: Text('Error loading product: $error')),
       ),
       bottomNavigationBar: productAsync.whenOrNull(
-        data: (product) => Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: AppTheme.softShadow,
-          ),
-          child: SafeArea(
-            child: Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove),
-                        onPressed: product.availableStockKg <= 0 ? null : () {
-                          if (quantity > product.moqKg) {
-                            setState(() => quantity -= 50); // Decrement by 50kg at a time
-                            if (quantity < product.moqKg) quantity = product.moqKg;
-                          }
-                        },
+        data: (product) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const StickyCartBanner(),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: AppTheme.softShadow,
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      Text('$quantity Kg', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: product.availableStockKg <= 0 ? null : () {
-                          if (quantity + 50 <= product.availableStockKg) {
-                            setState(() => quantity += 50); // Increment by 50kg at a time
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cannot exceed available stock of ${product.availableStockKg} Kg')));
-                          }
-                        },
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove),
+                            onPressed: product.availableStockKg <= 0 ? null : () {
+                              if (quantity > product.moqKg) {
+                                setState(() => quantity -= 50); // Decrement by 50kg at a time
+                                if (quantity < product.moqKg) quantity = product.moqKg;
+                              }
+                            },
+                          ),
+                          Text('$quantity Kg', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: product.availableStockKg <= 0 ? null : () {
+                              if (quantity + 50 <= product.availableStockKg) {
+                                setState(() => quantity += 50); // Increment by 50kg at a time
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cannot exceed available stock of ${product.availableStockKg} Kg')));
+                              }
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: product.availableStockKg <= 0 ? null : () {
-                      ref.read(cartProvider.notifier).addItem(
-                        CartItem(
-                          productId: widget.productId,
-                          name: product.name,
-                          price: product.basePriceKg,
-                          quantity: quantity,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added $quantity Kg to Cart!')));
-                    },
-                    child: Text(product.availableStockKg > 0 ? 'Add to Cart' : 'Out of Stock', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  ),
+                        onPressed: product.availableStockKg <= 0 ? null : () {
+                          ref.read(cartProvider.notifier).addItem(
+                            CartItem(
+                              productId: widget.productId,
+                              name: product.name,
+                              price: product.basePriceKg,
+                              quantity: quantity,
+                              gstPercentage: product.gstPercentage,
+                            ),
+                          );
+                        },
+                        child: Text(product.availableStockKg > 0 ? 'Add to Cart' : 'Out of Stock', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

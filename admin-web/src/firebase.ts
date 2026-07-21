@@ -10,7 +10,6 @@ const firebaseConfig = {
 };
 
 import { getMessaging, isSupported } from "firebase/messaging";
-import { getFunctions } from "firebase/functions";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

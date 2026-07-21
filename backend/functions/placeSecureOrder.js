@@ -4,8 +4,6 @@ const { isPositiveNumber } = require("./validation");
 
 const db = getFirestore();
 
-const GST_RATE = 0.05; // 5% GST for grains
-
 /**
  * placeSecureOrder
  * 
@@ -47,6 +45,7 @@ exports.placeSecureOrder = onCall(async (request) => {
     const result = await db.runTransaction(async (transaction) => {
       const orderItems = [];
       let subtotal = 0;
+      let totalGstAmount = 0;
 
       // 3a. For each item, fetch the canonical product and inventory docs
       for (const item of items) {
@@ -87,9 +86,13 @@ exports.placeSecureOrder = onCall(async (request) => {
           );
         }
 
-        // 3e. Calculate line total using SERVER-SIDE prices
+        // 3e. Calculate line total and line GST using SERVER-SIDE prices
         const lineTotal = product.basePriceKg * requestedKg;
+        const itemGstPercentage = (typeof product.gstPercentage === 'number') ? product.gstPercentage : 5; // Default 5% for legacy products
+        const lineGst = lineTotal * (itemGstPercentage / 100);
+        
         subtotal += lineTotal;
+        totalGstAmount += lineGst;
 
         orderItems.push({
           productId: item.productId,
@@ -98,6 +101,8 @@ exports.placeSecureOrder = onCall(async (request) => {
           basePriceKg: product.basePriceKg,
           quantityKg: requestedKg,
           lineTotal: lineTotal,
+          gstPercentage: itemGstPercentage,
+          lineGst: lineGst,
         });
 
         // 3f. Deduct stock atomically
@@ -109,7 +114,7 @@ exports.placeSecureOrder = onCall(async (request) => {
       }
 
       // 3g. Calculate totals server-side
-      const gstAmount = Math.round(subtotal * GST_RATE * 100) / 100;
+      const gstAmount = Math.round(totalGstAmount * 100) / 100;
       const totalAmount = Math.round((subtotal + gstAmount) * 100) / 100;
 
       // 3h. Fetch customer info for the order snapshot
@@ -124,7 +129,6 @@ exports.placeSecureOrder = onCall(async (request) => {
         customerEmail: userData.email || "",
         items: orderItems,
         subtotal: subtotal,
-        gstRate: GST_RATE,
         gstAmount: gstAmount,
         totalAmount: totalAmount,
         status: "Inquiry",

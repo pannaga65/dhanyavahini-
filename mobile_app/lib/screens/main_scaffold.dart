@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../widgets/sticky_cart_banner.dart';
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -18,31 +19,37 @@ class MainScaffold extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            )
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(context, icon: Icons.home_rounded, label: 'Home', isSelected: currentIndex == 0, route: '/'),
-                _buildNavItem(context, icon: Icons.shopping_bag_rounded, label: 'Orders', isSelected: currentIndex == 1, route: '/orders'),
-                _buildNavItem(context, icon: Icons.person_rounded, label: 'Profile', isSelected: currentIndex == 2, route: '/profile'),
-                _buildNavItem(context, icon: Icons.shopping_cart_outlined, label: 'Cart', isSelected: currentIndex == 3, route: '/cart'),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const StickyCartBanner(),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
+                )
               ],
             ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(context, icon: Icons.home_rounded, label: 'Home', isSelected: currentIndex == 0, route: '/'),
+                    _buildNavItem(context, icon: Icons.shopping_bag_rounded, label: 'Orders', isSelected: currentIndex == 1, route: '/orders'),
+                    _buildNavItem(context, icon: Icons.person_rounded, label: 'Profile', isSelected: currentIndex == 2, route: '/profile'),
+                    _buildNavItem(context, icon: Icons.shopping_cart_outlined, label: 'Cart', isSelected: currentIndex == 3, route: '/cart'),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -50,32 +57,26 @@ class MainScaffold extends StatelessWidget {
   Widget _buildNavItem(BuildContext context, {required IconData icon, required String label, required bool isSelected, required String route}) {
     return GestureDetector(
       onTap: () => context.go(route),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryAction.withValues(alpha: 0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               color: isSelected ? AppTheme.primaryAction : AppTheme.textLight,
-              size: 28,
+              size: 26,
             ),
-            if (isSelected) ...[
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: AppTheme.primaryAction,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppTheme.primaryAction : AppTheme.textLight,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-            ]
+            ),
           ],
         ),
       ),

@@ -12,6 +12,8 @@ import 'screens/profile_screen.dart';
 import 'screens/privacy_policy_screen.dart';
 
 import 'screens/login_screen.dart';
+import 'screens/category_screen.dart';
+import 'screens/all_products_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
@@ -62,6 +64,14 @@ final _router = GoRouter(
     GoRoute(
       path: '/privacy-policy',
       builder: (context, state) => const PrivacyPolicyScreen(),
+    ),
+    GoRoute(
+      path: '/category/:name',
+      builder: (context, state) => CategoryScreen(categoryName: state.pathParameters['name']!),
+    ),
+    GoRoute(
+      path: '/all-products',
+      builder: (context, state) => const AllProductsScreen(),
     ),
   ],
 );

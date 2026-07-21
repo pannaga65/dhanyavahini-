@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../providers/cart_provider.dart';
-import '../providers/settings_provider.dart';
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -17,14 +16,8 @@ class CartScreen extends ConsumerWidget {
     final cartNotifier = ref.read(cartProvider.notifier);
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     
-    final settingsAsync = ref.watch(settingsProvider);
-    final gstRate = settingsAsync.when(
-      data: (settings) => (settings['gstRate'] as num?)?.toDouble() ?? 0.05,
-      loading: () => 0.05,
-      error: (_, __) => 0.05,
-    );
-    final gstAmount = cartNotifier.getGst(gstRate);
-    final totalAmount = cartNotifier.getTotal(gstRate);
+    final gstAmount = cartNotifier.totalGst;
+    final totalAmount = cartNotifier.total;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -121,7 +114,7 @@ class CartScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('GST (${(gstRate * 100).toStringAsFixed(0)}%)', style: const TextStyle(color: AppTheme.textLight)),
+                  Text('Total GST', style: const TextStyle(color: AppTheme.textLight)),
                   Text(currencyFormat.format(gstAmount), style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -179,6 +172,8 @@ class CartScreen extends ConsumerWidget {
                           'quantityKg': item.quantity,
                           'basePriceKg': item.price,
                           'lineTotal': item.price * item.quantity,
+                          'gstPercentage': item.gstPercentage,
+                          'lineGst': (item.price * item.quantity) * (item.gstPercentage / 100),
                         };
                       }).toList();
                       
@@ -187,7 +182,6 @@ class CartScreen extends ConsumerWidget {
                         'customerName': user.displayName ?? "Customer",
                         'items': itemsData,
                         'subtotal': cartNotifier.subtotal,
-                        'gstRate': gstRate,
                         'gstAmount': gstAmount,
                         'totalAmount': totalAmount,
                         'status': 'Inquiry',

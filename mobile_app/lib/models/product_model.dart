@@ -7,6 +7,7 @@ class ProductModel {
   final String imageUrl;
   final double availableStockKg;
   final bool isActive;
+  final double gstPercentage;
 
   ProductModel({
     required this.id,
@@ -17,6 +18,7 @@ class ProductModel {
     required this.imageUrl,
     required this.availableStockKg,
     required this.isActive,
+    required this.gstPercentage,
   });
 
   factory ProductModel.fromFirestore(Map<String, dynamic> data, String id, {double inventoryStock = 0.0}) {
@@ -29,6 +31,7 @@ class ProductModel {
       imageUrl: data['imageUrl'] ?? '',
       availableStockKg: inventoryStock,
       isActive: data['isActive'] ?? true,
+      gstPercentage: (data['gstPercentage'] is num) ? (data['gstPercentage'] as num).toDouble() : 5.0,
     );
   }
 }

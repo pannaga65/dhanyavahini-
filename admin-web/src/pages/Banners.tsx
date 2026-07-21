@@ -137,11 +137,8 @@ export default function Banners() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', letterSpacing: 1 }}>
-          BANNERS
-        </Typography>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ mr: { md: 8 }, backgroundColor: '#000', color: '#FFF', borderRadius: 0, fontWeight: 700, px: 3, '&:hover': { backgroundColor: '#333' } }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#000', color: '#FFF', borderRadius: 0, fontWeight: 700, px: 3, '&:hover': { backgroundColor: '#333' } }}>
           + ADD BANNER
         </Button>
       </Box>

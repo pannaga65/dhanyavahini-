@@ -68,13 +68,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ─── 7. Categories ───
-    match /categories/{categoryId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+    // ─── 9. Farmers ───
+    match /farmers/{farmerId} {
+      allow read, write: if isAdmin();
     }
 
-    // ─── 9. Audit Logs (Read-only for admins, written by Cloud Functions) ───
+    // ─── 10. Audit Logs (Read-only for admins, written by Cloud Functions) ───
     match /audit_logs/{logId} {
       allow read: if isAdmin();
       allow write: if false; // Written exclusively by Cloud Functions via Admin SDK

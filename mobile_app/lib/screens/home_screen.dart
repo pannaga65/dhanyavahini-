@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../widgets/shimmer_loader.dart';
 import '../providers/product_provider.dart';
 import '../providers/banner_provider.dart';
+import '../providers/cart_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -17,8 +18,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String? selectedCategory;
-
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
@@ -166,13 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           final catIcon = cat['iconUrl'] ?? '';
                           return GestureDetector(
                             onTap: () {
-                              setState(() {
-                                if (selectedCategory == catName) {
-                                  selectedCategory = null; // deselect
-                                } else {
-                                  selectedCategory = catName;
-                                }
-                              });
+                              context.push('/category/$catName');
                             },
                             child: Container(
                               margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -182,13 +175,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     width: 60,
                                     height: 60,
                                     decoration: BoxDecoration(
-                                      color: selectedCategory == catName 
-                                          ? AppTheme.primaryAction.withValues(alpha: 0.3)
-                                          : AppTheme.primaryAction.withValues(alpha: 0.1),
+                                      color: AppTheme.primaryAction.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
-                                      border: selectedCategory == catName 
-                                          ? Border.all(color: AppTheme.primaryAction, width: 2)
-                                          : null,
                                     ),
                                     child: catIcon.isNotEmpty
                                         ? ClipOval(
@@ -246,43 +234,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Featured Products', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      TextButton(
+                        onPressed: () => context.push('/all-products'),
+                        child: const Text('See All', style: TextStyle(color: AppTheme.primaryAction, fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
                 ),
               ),
               
-              // 4. Products Grid
-              productsAsync.when(
-                data: (allProducts) {
-                  final products = selectedCategory == null 
-                      ? allProducts 
-                      : allProducts.where((p) => p.category.toLowerCase() == selectedCategory!.toLowerCase()).toList();
+              // 4. Products Horizontal List
+              SliverToBoxAdapter(
+                child: productsAsync.when(
+                  data: (allProducts) {
+                    if (allProducts.isEmpty) {
+                      return const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No products available.', style: TextStyle(color: AppTheme.textLight))));
+                    }
+                    // Take first 6 as featured
+                    final products = allProducts.take(6).toList();
 
-                  if (products.isEmpty) {
-                    return const SliverToBoxAdapter(
-                      child: Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No products available.', style: TextStyle(color: AppTheme.textLight)))),
-                    );
-                  }
-                  return SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.72,
-                        crossAxisSpacing: 14,
-                        mainAxisSpacing: 14,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
+                    return SizedBox(
+                      height: 260, // Fixed height for horizontal list
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
                           final product = products[index];
                           return GestureDetector(
                             onTap: () => context.push('/product/${product.id}'),
                             child: Container(
+                              width: 160,
+                              margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(18),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4)),
                                 ],
                               ),
                               child: Column(
@@ -353,13 +341,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                 '₹${product.basePriceKg.toStringAsFixed(0)}/kg', 
                                                 style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryAction, fontSize: 14),
                                               ),
-                                              Container(
-                                                padding: const EdgeInsets.all(6),
-                                                decoration: BoxDecoration(
-                                                  color: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
-                                                  borderRadius: BorderRadius.circular(10),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  if (product.availableStockKg > 0) {
+                                                    ref.read(cartProvider.notifier).addItem(
+                                                      CartItem(
+                                                        productId: product.id,
+                                                        name: product.name,
+                                                        price: product.basePriceKg,
+                                                        quantity: product.moqKg > 0 ? product.moqKg : 1, // Quick add moq
+                                                        gstPercentage: product.gstPercentage,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(6),
+                                                  decoration: BoxDecoration(
+                                                    color: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  child: const Icon(Icons.add, color: Colors.white, size: 16),
                                                 ),
-                                                child: const Icon(Icons.add, color: Colors.white, size: 16),
                                               )
                                             ],
                                           )
@@ -372,23 +375,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                           );
                         },
-                        childCount: products.length,
                       ),
-                    ),
-                  );
-                },
-                loading: () => SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.72,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
+                    );
+                  },
+                  loading: () => SizedBox(
+                    height: 260,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: 4,
+                      itemBuilder: (context, index) {
                         return Container(
+                          width: 160,
+                          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
                           child: Column(
                             children: [
@@ -411,19 +410,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         );
                       },
-                      childCount: 4,
                     ),
                   ),
-                ),
-                error: (e, s) => SliverToBoxAdapter(
-                  child: Center(
+                  error: (e, s) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         children: [
                           const Icon(Icons.cloud_off, size: 48, color: AppTheme.textLight),
                           const SizedBox(height: 12),
-                          Text('Error loading products', style: const TextStyle(color: AppTheme.textLight)),
+                          const Text('Error loading products', style: TextStyle(color: AppTheme.textLight)),
                           const SizedBox(height: 4),
                           Text('$e', style: const TextStyle(fontSize: 12, color: Colors.red), textAlign: TextAlign.center),
                           const SizedBox(height: 16),

@@ -7,12 +7,10 @@ import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } fr
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
-import Products from './pages/Products'
 import Orders from './pages/Orders'
 import Inquiries from './pages/Inquiries'
+import Farmers from './pages/Farmers'
 import Settings from './pages/Settings'
-import Banners from './pages/Banners'
-import Categories from './pages/Categories'
 import Login from './pages/Login'
 import app, { messaging } from './firebase'
 import { getToken } from 'firebase/messaging'
@@ -24,12 +22,10 @@ const db = getFirestore(app);
 
 const NAV_ITEMS = [
   { text: 'DASHBOARD', path: '/' },
-  { text: 'PRODUCTS', path: '/products' },
   { text: 'INQUIRIES', path: '/inquiries' },
   { text: 'ORDERS', path: '/orders' },
   { text: 'CUSTOMERS', path: '/customers' },
-  { text: 'CATEGORIES', path: '/categories' },
-  { text: 'BANNERS', path: '/banners' },
+  { text: 'FARMERS', path: '/farmers' },
   { text: 'SETTINGS', path: '/settings' },
 ];
 
@@ -290,10 +286,8 @@ function App() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/inquiries" element={<Inquiries />} />
           <Route path="/customers" element={<Customers />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/banners" element={<Banners />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/farmers" element={<Farmers />} />
+          <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>

@@ -5,8 +5,9 @@ class CartItem {
   final String name;
   final double price;
   final int quantity;
+  final double gstPercentage;
   
-  CartItem({required this.productId, required this.name, required this.price, required this.quantity});
+  CartItem({required this.productId, required this.name, required this.price, required this.quantity, required this.gstPercentage});
 }
 
 class CartNotifier extends Notifier<List<CartItem>> {
@@ -24,6 +25,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
         name: item.name,
         price: item.price,
         quantity: state[existingIndex].quantity + item.quantity,
+        gstPercentage: item.gstPercentage,
       );
       state = updatedList;
     } else {
@@ -40,8 +42,8 @@ class CartNotifier extends Notifier<List<CartItem>> {
   }
 
   double get subtotal => state.fold(0, (sum, item) => sum + (item.price * item.quantity));
-  double getGst(double rate) => subtotal * rate;
-  double getTotal(double rate) => subtotal + getGst(rate);
+  double get totalGst => state.fold(0, (sum, item) => sum + (item.price * item.quantity * (item.gstPercentage / 100)));
+  double get total => subtotal + totalGst;
 }
 
 final cartProvider = NotifierProvider<CartNotifier, List<CartItem>>(() {

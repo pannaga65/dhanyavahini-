@@ -19,6 +19,7 @@ interface Product {
   moqKg: number;
   imageUrl: string;
   availableStockKg?: number; // Fetched from inventory collection
+  gstPercentage?: number;
 }
 
 export default function Products() {
@@ -38,6 +39,7 @@ export default function Products() {
   const [stockInUnit, setStockInUnit] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState('');
+  const [gstPercentage, setGstPercentage] = useState('5'); // Default 5%
 
   // Unit Multipliers to convert to KG
   const getMultiplier = (unit: string) => {
@@ -84,7 +86,7 @@ export default function Products() {
 
   const handleOpenNew = () => {
     setEditingId(null);
-    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl('');
+    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl(''); setGstPercentage('5');
     setOpen(true);
   };
 
@@ -98,6 +100,7 @@ export default function Products() {
     setStockInUnit((product.availableStockKg || 0).toString());
     setExistingImageUrl(product.imageUrl);
     setImageFile(null);
+    setGstPercentage((product.gstPercentage ?? 5).toString());
     setOpen(true);
   };
 
@@ -141,6 +144,7 @@ export default function Products() {
       const basePriceKg = pricePerUnit ? Number(pricePerUnit) / multiplier : 0;
       const moqKg = moqInUnit ? Number(moqInUnit) * multiplier : 0;
       const stockKg = stockInUnit ? Number(stockInUnit) * multiplier : 0;
+      const gstNum = gstPercentage ? Number(gstPercentage) : 5;
 
       let downloadUrl = existingImageUrl;
       if (imageFile) {
@@ -157,6 +161,7 @@ export default function Products() {
           basePriceKg,
           moqKg,
           isActive: true,
+          gstPercentage: gstNum,
           ...(imageFile ? { imageUrl: downloadUrl } : {})
         });
         // Update Inventory (overwrite total available for now)
@@ -174,6 +179,7 @@ export default function Products() {
           imageUrl: downloadUrl,
           createdAt: serverTimestamp(),
           isActive: true,
+          gstPercentage: gstNum,
         });
         // Create Initial Inventory Ledger
         await setDoc(doc(db, 'inventory', productRef.id), {
@@ -205,19 +211,6 @@ export default function Products() {
 
   return (
     <Box>
-      {/* Page Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-        <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.5rem', md: '2.5rem' }, letterSpacing: 2 }}>
-            PRODUCTS & INVENTORY
-          </Typography>
-          <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
-            MANAGE CATEGORIES, CATALOG, AND LIVE STOCK
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 3, mt: 2 }} />
-      
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
         <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 700 }}>
           + ADD PRODUCT
@@ -316,6 +309,15 @@ export default function Products() {
             </FormControl>
 
             <TextField label="Product Name (e.g. Sona Masoori)" fullWidth required value={name} onChange={e => setName(e.target.value)} />
+            
+            <TextField 
+              label="GST Percentage (%)" 
+              type="number" 
+              fullWidth 
+              required
+              value={gstPercentage} 
+              onChange={e => setGstPercentage(e.target.value)} 
+            />
 
             {/* Unit Selector */}
             <FormControl fullWidth>

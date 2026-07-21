@@ -1,60 +1,31 @@
-import { useState, useEffect } from 'react';
-import { Typography, Box, TextField, Button, CircularProgress } from '@mui/material';
-import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
-import app from '../firebase';
-import { useUI } from '../context/UIContext';
-
-const db = getFirestore(app);
+import { Typography, Box, Tabs, Tab } from '@mui/material';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import Products from './Products';
+import Categories from './Categories';
+import Banners from './Banners';
 
 export default function Settings() {
-  const [gstRate, setGstRate] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { showMessage } = useUI();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const docSnap = await getDoc(doc(db, 'settings', 'global'));
-      if (docSnap.exists() && docSnap.data().gstRate !== undefined) {
-        // Convert from decimal (e.g. 0.05) to percentage (5) for UI
-        const rateDecimal = docSnap.data().gstRate;
-        setGstRate((rateDecimal * 100).toString());
-      } else {
-        setGstRate('5'); // default fallback
-      }
-    } catch (e) {
-      console.error(e);
-      showMessage('Failed to load settings', 'error');
-    } finally {
-      setLoading(false);
-    }
+  // Determine which tab is active based on the URL path
+  const currentTab = () => {
+    if (location.pathname.includes('/settings/categories')) return 1;
+    if (location.pathname.includes('/settings/banners')) return 2;
+    return 0; // Default to products
   };
 
-  const handleSave = async () => {
-    const rateNum = parseFloat(gstRate);
-    if (isNaN(rateNum) || rateNum < 0) {
-      showMessage('Please enter a valid GST percentage', 'error');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // Convert back to decimal for database
-      const rateDecimal = rateNum / 100;
-      await setDoc(doc(db, 'settings', 'global'), {
-        gstRate: rateDecimal
-      }, { merge: true });
-      
-      showMessage('Settings saved successfully!', 'success');
-    } catch (e) {
-      console.error(e);
-      showMessage('Failed to save settings', 'error');
-    } finally {
-      setSaving(false);
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    switch (newValue) {
+      case 0:
+        navigate('/settings/products');
+        break;
+      case 1:
+        navigate('/settings/categories');
+        break;
+      case 2:
+        navigate('/settings/banners');
+        break;
     }
   };
 
@@ -63,50 +34,41 @@ export default function Settings() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
         <Box>
           <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
-            SETTINGS
+            SETTINGS HUB
           </Typography>
           <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
-            GLOBAL CONFIGURATION
+            MANAGE APP CONFIGURATION AND CONTENT
           </Typography>
         </Box>
       </Box>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 4, mt: 2 }} />
       
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Box sx={{ p: 4, backgroundColor: '#fff', border: '1px solid #E0E0E0', borderRadius: 2, maxWidth: 600 }}>
-          <Typography sx={{ fontWeight: 700, mb: 3, fontSize: '1.2rem' }}>
-            Tax Configuration
-          </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <TextField 
-              label="GST Rate (%)" 
-              variant="outlined" 
-              type="number"
-              value={gstRate}
-              onChange={(e) => setGstRate(e.target.value)}
-              sx={{ width: 150 }}
-              disabled={saving}
-            />
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleSave}
-              disabled={saving}
-              sx={{ height: 56, fontWeight: 700, px: 4 }}
-            >
-              {saving ? <CircularProgress size={24} color="inherit" /> : 'SAVE'}
-            </Button>
-          </Box>
-          <Typography sx={{ color: '#999', fontSize: '0.85rem', mt: 2 }}>
-            This GST rate will automatically be applied to all new orders placed in the mobile app.
-          </Typography>
-        </Box>
-      )}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 3, mb: 3 }}>
+        <Tabs 
+          value={currentTab()} 
+          onChange={handleTabChange} 
+          textColor="inherit"
+          indicatorColor="primary"
+          sx={{
+            '& .MuiTab-root': { fontWeight: 700, letterSpacing: 1 },
+            '& .Mui-selected': { color: '#000' },
+            '& .MuiTabs-indicator': { backgroundColor: '#000', height: 3 }
+          }}
+        >
+          <Tab label="PRODUCTS" />
+          <Tab label="CATEGORIES" />
+          <Tab label="BANNERS" />
+        </Tabs>
+      </Box>
+      
+      <Box sx={{ pt: 1 }}>
+        <Routes>
+          <Route path="products" element={<Products />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="banners" element={<Banners />} />
+          <Route path="/" element={<Navigate to="products" replace />} />
+          <Route path="*" element={<Navigate to="products" replace />} />
+        </Routes>
+      </Box>
     </Box>
   );
 }

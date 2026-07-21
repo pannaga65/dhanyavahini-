@@ -34,7 +34,21 @@ exports.downloadInvoice = onRequest(async (req, res) => {
     const profileSnap = await db.collection("settings").doc("businessProfile").get();
     const profile = profileSnap.exists ? profileSnap.data() : {};
 
+    // Fetch live customer details to handle updates
+    let customer = {};
+    if (order.customerId) {
+      const customerSnap = await db.collection("users").doc(order.customerId).get();
+      if (customerSnap.exists) {
+        customer = customerSnap.data();
+      }
+    }
+
+    const customerName = customer.tradeName || customer.displayName || order.customerName;
+    const customerGst = customer.gstNumber || order.customerGst;
+    const customerBillingAddress = customer.billingAddress || order.billingAddress;
     const dispatch = order.dispatchDetails || {};
+    // Shipping address defaults to the one selected during dispatch, otherwise live billing address, otherwise order billing address
+    const shippingAddress = dispatch.shippingAddress || customerBillingAddress;
 
     // Date formatting
     const invoiceDateStr = order.invoiceDate
@@ -249,18 +263,19 @@ exports.downloadInvoice = onRequest(async (req, res) => {
           </div>
         </div>
 
-        <div class="row">
+        <!-- Customer Details Section -->
+        <div class="row section-margin">
           <div class="col-left">
             <p class="bold">Buyer (Bill to)</p>
-            <h3>${escapeHtml(safe(order.customerName, "Customer"))}</h3>
-            <p class="muted">${escapeHtml(safe(order.billingAddress, "Address not provided"))}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(order.customerGst, "Unregistered"))}</p>
+            <h3>${escapeHtml(safe(customerName, "Customer"))}</h3>
+            <p class="muted">${escapeHtml(safe(customerBillingAddress, "Address not provided"))}</p>
+            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(customerGst, "Unregistered"))}</p>
           </div>
           <div class="col-right">
             <p class="bold">Consignee (Ship to)</p>
-            <h3>${escapeHtml(safe(order.customerName, "Customer"))}</h3>
-            <p class="muted">${escapeHtml(safe(dispatch.shippingAddress || order.shippingAddress || order.billingAddress, "Address not provided"))}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(order.customerGst, "Unregistered"))}</p>
+            <h3>${escapeHtml(safe(customerName, "Customer"))}</h3>
+            <p class="muted">${escapeHtml(safe(shippingAddress, "Address not provided"))}</p>
+            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(customerGst, "Unregistered"))}</p>
           </div>
         </div>
 

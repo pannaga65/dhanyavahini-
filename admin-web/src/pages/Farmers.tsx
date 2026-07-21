@@ -317,7 +317,7 @@ export default function Farmers() {
               label="Bank Account Number"
               fullWidth
               required
-              inputProps={{ maxLength: 18 } as any}
+              slotProps={{ htmlInput: { maxLength: 18 } } as any}
               value={formData.accountNumber}
               onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/\D/g, '') })}
             />
@@ -326,7 +326,7 @@ export default function Farmers() {
                 label="IFSC Code"
                 fullWidth
                 required
-                inputProps={{ maxLength: 11, style: { textTransform: 'uppercase' } } as any}
+                slotProps={{ htmlInput: { maxLength: 11, style: { textTransform: 'uppercase' } } } as any}
                 value={formData.ifscCode}
                 onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value.toUpperCase() })}
               />

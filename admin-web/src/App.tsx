@@ -223,7 +223,10 @@ function App() {
           <IconButton
             color="inherit"
             edge="start"
-            onClick={handleDrawerToggle}
+            onClick={(e) => {
+              (e.currentTarget as HTMLElement).blur();
+              handleDrawerToggle();
+            }}
             sx={{ mr: 2, display: { md: 'none' } }}
           >
             <MenuIcon />

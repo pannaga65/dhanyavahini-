@@ -7,7 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import app from '../firebase';
 import { getFirestore, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { useUI } from '../context/UIContext';
-import DispatchDialog, { DispatchData } from '../components/DispatchDialog';
+import DispatchDialog, { type DispatchData } from '../components/DispatchDialog';
 
 const db = getFirestore(app);
 const functions = getFunctions(app);

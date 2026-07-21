@@ -6,7 +6,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
-import DispatchDialog, { DispatchData } from '../components/DispatchDialog';
+import DispatchDialog, { type DispatchData } from '../components/DispatchDialog';
 
 const db = getFirestore(app);
 

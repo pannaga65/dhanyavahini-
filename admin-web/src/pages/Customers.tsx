@@ -19,7 +19,7 @@ export default function Customers() {
   
   const [formData, setFormData] = useState({ 
     email: '', displayName: '', tradeName: '', gstNumber: '', 
-    panNumber: '', phoneNumber: '', billingAddress: '', shippingAddress: '' 
+    panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''] 
   });
 
   useEffect(() => { fetchCustomers(); }, []);
@@ -38,7 +38,7 @@ export default function Customers() {
     setEditingId(null);
     setFormData({ 
       email: '', displayName: '', tradeName: '', gstNumber: '', 
-      panNumber: '', phoneNumber: '', billingAddress: '', shippingAddress: '' 
+      panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''] 
     });
     setOpen(true);
   };
@@ -53,7 +53,7 @@ export default function Customers() {
       panNumber: customer.panNumber || '',
       phoneNumber: customer.phoneNumber || '',
       billingAddress: customer.billingAddress || '',
-      shippingAddress: customer.shippingAddress || ''
+      mailingAddresses: (customer.mailingAddresses && customer.mailingAddresses.length > 0) ? customer.mailingAddresses : ['']
     });
     setOpen(true);
   };
@@ -110,7 +110,7 @@ export default function Customers() {
           panNumber: formData.panNumber,
           phoneNumber: formData.phoneNumber,
           billingAddress: formData.billingAddress,
-          shippingAddress: formData.shippingAddress
+          mailingAddresses: formData.mailingAddresses.filter(a => a.trim() !== '')
           // email is not updated here because it requires Auth update
         });
         setOpen(false);
@@ -221,8 +221,39 @@ export default function Customers() {
               <TextField label="GST Number" fullWidth value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} />
               <TextField label="PAN Number" fullWidth value={formData.panNumber} onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })} />
             </Box>
-            <TextField label="Billing Address (Registered)" fullWidth multiline rows={2} value={formData.billingAddress} onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })} />
-            <TextField label="Shipping Address (Consignee)" fullWidth multiline rows={2} value={formData.shippingAddress} onChange={(e) => setFormData({ ...formData, shippingAddress: e.target.value })} />
+            <TextField label="Billing Address" fullWidth multiline rows={2} value={formData.billingAddress} onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })} />
+            
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', mb: 1 }}>MAILING ADDRESSES</Typography>
+              {formData.mailingAddresses.map((addr, index) => (
+                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}>
+                  <TextField 
+                    size="small" 
+                    fullWidth 
+                    multiline
+                    rows={2}
+                    placeholder="Mailing Address" 
+                    value={addr} 
+                    onChange={(e) => {
+                      const newAddrs = [...formData.mailingAddresses];
+                      newAddrs[index] = e.target.value;
+                      setFormData({ ...formData, mailingAddresses: newAddrs });
+                    }} 
+                  />
+                  {formData.mailingAddresses.length > 1 && (
+                    <IconButton size="small" onClick={() => {
+                      const newAddrs = formData.mailingAddresses.filter((_, i) => i !== index);
+                      setFormData({ ...formData, mailingAddresses: newAddrs });
+                    }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+              ))}
+              <Button size="small" onClick={() => setFormData({ ...formData, mailingAddresses: [...formData.mailingAddresses, ''] })}>
+                + ADD ANOTHER MAILING ADDRESS
+              </Button>
+            </Box>
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>

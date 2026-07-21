@@ -67,14 +67,14 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
                       </Typography>
                     </MenuItem>
                   )}
-                  {customer.mailingAddresses?.map((addr: string, idx: number) => addr.trim() !== '' && (
-                    <MenuItem key={`mail-${idx}`} value={addr}>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Mailing Address {idx + 1}</Typography>
+                  {customer.shippingAddress && (
+                    <MenuItem value={customer.shippingAddress}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Shipping Address (Mobile App)</Typography>
                       <Typography sx={{ fontSize: '0.75rem', color: '#666', ml: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {addr.replace(/\n/g, ', ')}
+                        {customer.shippingAddress.replace(/\n/g, ', ')}
                       </Typography>
                     </MenuItem>
-                  ))}
+                  )}
                 </Select>
               </FormControl>
             </Grid>

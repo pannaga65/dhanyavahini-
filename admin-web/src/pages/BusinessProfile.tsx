@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, CircularProgress, Grid, Card, CardContent, Slide, Divider, IconButton } from '@mui/material';
+import { Box, Typography, TextField, Button, CircularProgress, Grid, Card, CardContent, Slide } from '@mui/material';
 import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import StorefrontIcon from '@mui/icons-material/Storefront';
@@ -123,7 +123,7 @@ export default function BusinessProfile() {
 
       <Grid container spacing={3}>
         {/* Company Details Card */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card elevation={0} sx={{ border: '1px solid #E0E0E0', borderRadius: 3, h: '100%' }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -173,7 +173,7 @@ export default function BusinessProfile() {
         </Grid>
 
         {/* Address Details Card */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card elevation={0} sx={{ border: '1px solid #E0E0E0', borderRadius: 3, h: '100%' }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -195,7 +195,7 @@ export default function BusinessProfile() {
         </Grid>
 
         {/* Bank & Invoice Configuration Card */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Card elevation={0} sx={{ border: '1px solid #E0E0E0', borderRadius: 3 }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -204,16 +204,16 @@ export default function BusinessProfile() {
               </Box>
               
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <TextField variant="outlined" label="Bank Name" fullWidth value={formData.bankName} onChange={(e) => handleChange('bankName', e.target.value)} />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <TextField variant="outlined" label="Account Number" fullWidth value={formData.accountNumber} onChange={(e) => handleChange('accountNumber', e.target.value)} />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <TextField variant="outlined" label="IFSC Code" fullWidth value={formData.ifscCode} onChange={(e) => handleChange('ifscCode', e.target.value.toUpperCase())} />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <TextField variant="outlined" label="Branch Name" fullWidth value={formData.branch} onChange={(e) => handleChange('branch', e.target.value)} />
                 </Grid>
               </Grid>

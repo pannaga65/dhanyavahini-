@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogActions, Stepper, Step, StepLabel, IconButton, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, Divider, InputAdornment } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogActions, IconButton, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, Divider, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -56,11 +56,6 @@ export default function Orders() {
   const [dispatchLoading, setDispatchLoading] = useState(false);
 
   const statusSteps = ['Confirmed', 'Dispatched', 'Delivered'];
-
-  const getStepIndex = (status: string) => {
-    const idx = statusSteps.indexOf(status);
-    return idx >= 0 ? idx : 0;
-  };
 
   useEffect(() => { fetchOrders(); }, []);
 

@@ -39,6 +39,14 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    // ─── Settings Images (Logo) ───
+    match /settings/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
     // ─── Default: Deny Everything Else ───
     match /{allPaths=**} {
       allow read, write: if false;

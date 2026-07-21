@@ -17,14 +17,17 @@ exports.downloadInvoice = onRequest(async (req, res) => {
     }
     const order = orderSnap.data();
 
-    // Verify payment status (optional, but requested by user to only show when Paid)
-    // Actually, we check this in the frontend to show the button, but we can also enforce it here.
+    // Verify payment status (enforced server-side as well as hidden client-side)
     if (order.paymentStatus !== "Done") {
       return res.status(403).send("Invoice is not available until payment is Done.");
     }
-    
+
     if (!order.invoiceNo) {
-      return res.status(403).send("Invoice number has not been generated for this order yet. Please fill dispatch details in the admin panel.");
+      return res
+        .status(403)
+        .send(
+          "Invoice number has not been generated for this order yet. Please fill dispatch details in the admin panel."
+        );
     }
 
     // Fetch business profile
@@ -32,83 +35,140 @@ exports.downloadInvoice = onRequest(async (req, res) => {
     const profile = profileSnap.exists ? profileSnap.data() : {};
 
     const dispatch = order.dispatchDetails || {};
-    
+
     // Date formatting
-    const invoiceDateStr = order.invoiceDate 
-      ? new Date(order.invoiceDate.toDate()).toLocaleDateString('en-IN') 
-      : new Date().toLocaleDateString('en-IN');
+    const invoiceDateStr = order.invoiceDate
+      ? new Date(order.invoiceDate.toDate()).toLocaleDateString("en-IN")
+      : new Date().toLocaleDateString("en-IN");
 
     // Number formatting
-    const formatCurrency = (amount) => {
-      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+    const formatCurrency = (amount) =>
+      new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount || 0);
+
+    // Small helper to avoid "undefined"/"null" leaking into the HTML
+    const safe = (val, fallback = "-") =>
+      val === undefined || val === null || val === "" ? fallback : val;
+
+    // Escape user-controlled strings before interpolating into HTML
+    const escapeHtml = (str) => {
+      if (str === undefined || str === null) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     };
 
-    // Calculate taxes (Assuming intra-state CGST/SGST half-and-half for now, or just total GST)
-    // For simplicity, we just display the total GST amount. 
-    
+    const itemsHtml = (order.items || [])
+      .map(
+        (item, idx) => `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td>${escapeHtml(item.name)}</td>
+            <td>${escapeHtml(safe(item.hsnCode))}</td>
+            <td class="text-center">${escapeHtml(item.quantityKg)}</td>
+            <td class="text-right">${formatCurrency(item.basePriceKg)}</td>
+            <td class="text-center">Kg</td>
+            <td class="text-right">${formatCurrency(item.lineTotal)}</td>
+          </tr>`
+      )
+      .join("");
+
     // Build HTML string
     const html = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>Invoice - ${order.invoiceNo}</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invoice - ${escapeHtml(order.invoiceNo)}</title>
       <style>
+        * {
+          box-sizing: border-box;
+        }
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Segoe UI', Arial, sans-serif;
           margin: 0;
-          padding: 20px;
-          color: #000;
-          font-size: 12px;
+          padding: 24px;
+          color: #1a1a1a;
+          font-size: 13px;
+          background: #f4f4f5;
         }
         .container {
           width: 100%;
-          max-width: 800px;
+          max-width: 820px;
           margin: 0 auto;
-          border: 1px solid #000;
+          background: #fff;
+          border: 1px solid #d0d0d0;
+          border-radius: 6px;
+          overflow: hidden;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .header-title {
           text-align: center;
-          font-size: 18px;
-          font-weight: bold;
-          border-bottom: 1px solid #000;
-          padding: 8px;
+          font-size: 20px;
+          font-weight: 700;
+          letter-spacing: 1px;
+          background: #fafafa;
+          border-bottom: 1px solid #d0d0d0;
+          padding: 14px;
+          text-transform: uppercase;
         }
         .row {
           display: flex;
-          border-bottom: 1px solid #000;
+          border-bottom: 1px solid #d0d0d0;
         }
         .col-left {
           width: 50%;
-          border-right: 1px solid #000;
-          padding: 10px;
+          border-right: 1px solid #d0d0d0;
+          padding: 14px 16px;
         }
         .col-right {
           width: 50%;
-          padding: 10px;
+          padding: 14px 16px;
         }
         .grid-2 {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 5px;
+          gap: 10px;
+          margin-bottom: 8px;
+        }
+        .grid-2 > div {
+          flex: 1;
         }
         .bold {
-          font-weight: bold;
+          font-weight: 700;
+        }
+        .muted {
+          color: #555;
         }
         h2, h3, p {
-          margin: 0 0 5px 0;
+          margin: 0 0 6px 0;
+        }
+        h2 {
+          font-size: 16px;
+        }
+        h3 {
+          font-size: 14px;
         }
         table {
           width: 100%;
           border-collapse: collapse;
         }
         th, td {
-          border: 1px solid #000;
-          padding: 8px;
+          border: 1px solid #d0d0d0;
+          padding: 8px 10px;
           text-align: left;
         }
         th {
-          background-color: #f9f9f9;
+          background-color: #fafafa;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+        tbody tr:nth-child(odd) td {
+          background-color: #fcfcfc;
         }
         .text-right {
           text-align: right;
@@ -116,64 +176,72 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         .text-center {
           text-align: center;
         }
-        .no-border-top {
-          border-top: none;
+        .totals-row td {
+          background-color: #fafafa !important;
         }
-        .no-border-bottom {
-          border-bottom: none;
+        .grand-total td {
+          font-size: 14px;
+          background-color: #f0f0f0 !important;
+        }
+        .bank-details {
+          padding: 14px 16px;
+        }
+        .footer-note {
+          text-align: center;
+          padding: 14px;
+          font-size: 12px;
+          color: #666;
+          border-top: 1px solid #d0d0d0;
+          background: #fafafa;
         }
         @media print {
-          body { padding: 0; }
-          .container { border: 1px solid #000; }
+          body {
+            padding: 0;
+            background: #fff;
+          }
+          .container {
+            border: 1px solid #000;
+            border-radius: 0;
+            box-shadow: none;
+          }
         }
       </style>
     </head>
     <body>
       <div class="container">
-        <div class="header-title">BILL OF SUPPLY</div>
-        
+        <div class="header-title">Bill of Supply</div>
+
         <div class="row">
           <div class="col-left">
-            <h2>${profile.companyName || 'YOUR COMPANY NAME'}</h2>
-            <p>${profile.addressLine1 || ''}</p>
-            <p>${profile.addressLine2 || ''}</p>
-            <p>${profile.city || ''}, ${profile.state || ''} - ${profile.pincode || ''}</p>
-            <p>Email: ${profile.email || ''}</p>
-            <p>Phone: ${profile.phone || ''}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${profile.gstin || ''}</p>
-            <p><span class="bold">UDYAM Reg No:</span> ${profile.udyam || ''}</p>
+            ${
+              profile.logoUrl
+                ? `<img src="${escapeHtml(profile.logoUrl)}" alt="Logo" style="max-width: 150px; max-height: 60px; margin-bottom: 10px;" />`
+                : ""
+            }
+            <h2>${escapeHtml(safe(profile.companyName, "YOUR COMPANY NAME"))}</h2>
+            <p class="muted">${escapeHtml(safe(profile.addressLine1, ""))}</p>
+            <p class="muted">${escapeHtml(safe(profile.addressLine2, ""))}</p>
+            <p class="muted">${escapeHtml(safe(profile.city, ""))}, ${escapeHtml(safe(profile.state, ""))} - ${escapeHtml(safe(profile.pincode, ""))}</p>
+            <p class="muted">Email: ${escapeHtml(safe(profile.email, ""))}</p>
+            <p class="muted">Phone: ${escapeHtml(safe(profile.phone, ""))}</p>
+            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(profile.gstin, ""))}</p>
+            <p><span class="bold">UDYAM Reg No:</span> ${escapeHtml(safe(profile.udyam, ""))}</p>
           </div>
           <div class="col-right">
             <div class="grid-2">
-              <div><span class="bold">Invoice No.</span><br/>${order.invoiceNo || ''}</div>
+              <div><span class="bold">Invoice No.</span><br/>${escapeHtml(order.invoiceNo)}</div>
               <div><span class="bold">Dated</span><br/>${invoiceDateStr}</div>
             </div>
             <div class="grid-2">
-              <div><span class="bold">Delivery Note</span><br/>${dispatch.deliveryNote || '-'}</div>
-              <div><span class="bold">Mode/Terms of Payment</span><br/>${dispatch.paymentTerms || '-'}</div>
+              <div><span class="bold">Mode/Terms of Payment</span><br/>${escapeHtml(safe(dispatch.paymentTerms))}</div>
+              <div><span class="bold">Destination</span><br/>${escapeHtml(safe(dispatch.destination))}</div>
             </div>
             <div class="grid-2">
-              <div><span class="bold">Reference No. & Date.</span><br/>${dispatch.referenceNo || '-'}</div>
-              <div><span class="bold">Other References</span><br/>-</div>
-            </div>
-            <div class="grid-2">
-              <div><span class="bold">Buyer's Order No.</span><br/>${dispatch.buyerOrderNo || '-'}</div>
-              <div><span class="bold">Dated</span><br/>-</div>
-            </div>
-            <div class="grid-2">
-              <div><span class="bold">Dispatch Doc No.</span><br/>${dispatch.dispatchDocNo || '-'}</div>
-              <div><span class="bold">Delivery Note Date</span><br/>-</div>
-            </div>
-            <div class="grid-2">
-              <div><span class="bold">Dispatched through</span><br/>${dispatch.dispatchedThrough || '-'}</div>
-              <div><span class="bold">Destination</span><br/>${dispatch.destination || '-'}</div>
-            </div>
-            <div class="grid-2">
-              <div><span class="bold">Bill of Lading/LR-RR No.</span><br/>${dispatch.lrNumber || '-'}</div>
-              <div><span class="bold">Motor Vehicle No.</span><br/>${dispatch.motorVehicleNo || '-'}</div>
+              <div><span class="bold">Dispatched through</span><br/>${escapeHtml(safe(dispatch.dispatchedThrough))}</div>
+              <div><span class="bold">Motor Vehicle No.</span><br/>${escapeHtml(safe(dispatch.motorVehicleNo))}</div>
             </div>
             <div class="grid-2" style="margin-bottom:0;">
-              <div><span class="bold">Terms of Delivery</span><br/>${dispatch.termsOfDelivery || '-'}</div>
+              <div><span class="bold">Bill of Lading/LR-RR No.</span><br/>${escapeHtml(safe(dispatch.lrNumber))}</div>
             </div>
           </div>
         </div>
@@ -181,15 +249,15 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         <div class="row">
           <div class="col-left">
             <p class="bold">Buyer (Bill to)</p>
-            <h3>${order.customerName || 'Customer'}</h3>
-            <p>${order.billingAddress || 'Address not provided'}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${order.customerGst || 'Unregistered'}</p>
+            <h3>${escapeHtml(safe(order.customerName, "Customer"))}</h3>
+            <p class="muted">${escapeHtml(safe(order.billingAddress, "Address not provided"))}</p>
+            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(order.customerGst, "Unregistered"))}</p>
           </div>
           <div class="col-right">
             <p class="bold">Consignee (Ship to)</p>
-            <h3>${order.customerName || 'Customer'}</h3>
-            <p>${order.shippingAddress || order.billingAddress || 'Address not provided'}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${order.customerGst || 'Unregistered'}</p>
+            <h3>${escapeHtml(safe(order.customerName, "Customer"))}</h3>
+            <p class="muted">${escapeHtml(safe(order.shippingAddress || order.billingAddress, "Address not provided"))}</p>
+            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(order.customerGst, "Unregistered"))}</p>
           </div>
         </div>
 
@@ -197,67 +265,53 @@ exports.downloadInvoice = onRequest(async (req, res) => {
           <thead>
             <tr>
               <th class="text-center" style="width:5%;">Sl No.</th>
-              <th style="width:35%;">Description of Goods</th>
-              <th style="width:15%;">HSN/SAC</th>
+              <th style="width:33%;">Description of Goods</th>
+              <th style="width:13%;">HSN/SAC</th>
               <th class="text-center" style="width:10%;">Quantity</th>
               <th class="text-right" style="width:15%;">Rate</th>
               <th class="text-center" style="width:5%;">Per</th>
-              <th class="text-right" style="width:15%;">Amount</th>
+              <th class="text-right" style="width:19%;">Amount</th>
             </tr>
           </thead>
           <tbody>
-            ${(order.items || []).map((item, idx) => `
-              <tr>
-                <td class="text-center">${idx + 1}</td>
-                <td>${item.name}</td>
-                <td>${item.hsnCode || '-'}</td>
-                <td class="text-center">${item.quantityKg}</td>
-                <td class="text-right">${formatCurrency(item.basePriceKg)}</td>
-                <td class="text-center">Kg</td>
-                <td class="text-right">${formatCurrency(item.lineTotal)}</td>
-              </tr>
-            `).join('')}
-            <tr>
+            ${itemsHtml}
+            <tr class="totals-row">
               <td colspan="6" class="text-right bold">Subtotal</td>
-              <td class="text-right">${formatCurrency(order.subtotal || 0)}</td>
+              <td class="text-right">${formatCurrency(order.subtotal)}</td>
             </tr>
-            <tr>
+            <tr class="totals-row">
               <td colspan="6" class="text-right bold">Total GST</td>
-              <td class="text-right">${formatCurrency(order.gstAmount || 0)}</td>
+              <td class="text-right">${formatCurrency(order.gstAmount)}</td>
             </tr>
-            <tr>
+            <tr class="grand-total">
               <td colspan="6" class="text-right bold">Total Amount</td>
-              <td class="text-right bold">${formatCurrency(order.totalAmount || 0)}</td>
+              <td class="text-right bold">${formatCurrency(order.totalAmount)}</td>
             </tr>
           </tbody>
         </table>
 
-        <div class="row" style="border-bottom:none;">
-          <div class="col-left" style="border-right: none;">
-            <p class="bold">Company's Bank Details</p>
-            <p>Bank Name: <span class="bold">${profile.bankName || ''}</span></p>
-            <p>A/c No: <span class="bold">${profile.accountNumber || ''}</span></p>
-            <p>Branch & IFSC Code: <span class="bold">${profile.branch || ''} ${profile.ifscCode || ''}</span></p>
-          </div>
-          <div class="col-right" style="text-align:right;">
-            <p class="bold">for ${profile.companyName || 'YOUR COMPANY NAME'}</p>
-            <br/><br/><br/>
-            <p>Authorised Signatory</p>
-          </div>
+        <div class="bank-details">
+          <p class="bold">Company's Bank Details</p>
+          <p>Bank Name: <span class="bold">${escapeHtml(safe(profile.bankName, ""))}</span></p>
+          <p>A/c No: <span class="bold">${escapeHtml(safe(profile.accountNumber, ""))}</span></p>
+          <p>Branch &amp; IFSC Code: <span class="bold">${escapeHtml(safe(profile.branch, ""))} ${escapeHtml(safe(profile.ifscCode, ""))}</span></p>
         </div>
 
+        <div class="footer-note">
+          This is a computer generated invoice and does not require a signature.
+        </div>
       </div>
       <script>
         // Auto-print when opened
-        window.onload = function() {
+        window.onload = function () {
           window.print();
-        }
+        };
       </script>
     </body>
     </html>
     `;
 
-    res.set('Content-Type', 'text/html');
+    res.set("Content-Type", "text/html");
     res.status(200).send(html);
   } catch (error) {
     console.error("Error generating invoice:", error);

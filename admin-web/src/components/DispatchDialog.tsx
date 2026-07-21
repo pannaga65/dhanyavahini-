@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, CircularProgress, Dialog, DialogActions, Grid } from '@mui/material';
+import { Box, Typography, TextField, Button, CircularProgress, Dialog, DialogActions, Grid, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 export interface DispatchData {
-  deliveryNote?: string;
   paymentTerms?: string;
-  referenceNo?: string;
-  buyerOrderNo?: string;
-  dispatchDocNo?: string;
   dispatchedThrough?: string;
   destination?: string;
   lrNumber?: string;
   motorVehicleNo?: string;
-  termsOfDelivery?: string;
 }
 
 interface DispatchDialogProps {
@@ -53,22 +48,25 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
         
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Delivery Note" fullWidth value={formData.deliveryNote || ''} onChange={(e) => handleChange('deliveryNote', e.target.value)} />
+            <FormControl fullWidth>
+              <InputLabel>Mode/Terms of Payment</InputLabel>
+              <Select
+                value={formData.paymentTerms || ''}
+                label="Mode/Terms of Payment"
+                onChange={(e) => handleChange('paymentTerms', e.target.value as string)}
+              >
+                <MenuItem value="UPI">UPI</MenuItem>
+                <MenuItem value="NEFT/RTGS">NEFT / RTGS</MenuItem>
+                <MenuItem value="Cash">Cash</MenuItem>
+                <MenuItem value="Cheque">Cheque</MenuItem>
+                <MenuItem value="To Pay">To Pay</MenuItem>
+                <MenuItem value="Advance">Advance</MenuItem>
+                <MenuItem value="Credit">Credit</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Mode/Terms of Payment" fullWidth value={formData.paymentTerms || ''} onChange={(e) => handleChange('paymentTerms', e.target.value)} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Reference No. & Date" fullWidth value={formData.referenceNo || ''} onChange={(e) => handleChange('referenceNo', e.target.value)} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Buyer's Order No. & Date" fullWidth value={formData.buyerOrderNo || ''} onChange={(e) => handleChange('buyerOrderNo', e.target.value)} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Dispatch Doc No. / Date" fullWidth value={formData.dispatchDocNo || ''} onChange={(e) => handleChange('dispatchDocNo', e.target.value)} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Dispatched Through" fullWidth value={formData.dispatchedThrough || ''} onChange={(e) => handleChange('dispatchedThrough', e.target.value)} />
+            <TextField label="Dispatched Through (e.g. VRL Logistics)" fullWidth value={formData.dispatchedThrough || ''} onChange={(e) => handleChange('dispatchedThrough', e.target.value)} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Destination" fullWidth value={formData.destination || ''} onChange={(e) => handleChange('destination', e.target.value)} />
@@ -78,9 +76,6 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Motor Vehicle No." fullWidth value={formData.motorVehicleNo || ''} onChange={(e) => handleChange('motorVehicleNo', e.target.value)} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Terms of Delivery" fullWidth value={formData.termsOfDelivery || ''} onChange={(e) => handleChange('termsOfDelivery', e.target.value)} />
           </Grid>
         </Grid>
       </Box>

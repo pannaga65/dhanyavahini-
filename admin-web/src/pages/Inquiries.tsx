@@ -75,10 +75,22 @@ export default function Inquiries() {
     if (!approvingId) return;
     setDispatchLoading(true);
     try {
-      await updateDoc(doc(db, 'orders', approvingId), {
-        status: 'Confirmed',
-        paymentStatus: 'Pending',
-        updatedAt: serverTimestamp()
+      await runTransaction(db, async (transaction) => {
+        const orderCounterRef = doc(db, 'settings', 'orderCounter');
+        const orderCounterSnap = await transaction.get(orderCounterRef);
+        let nextOrderSeq = 1;
+        if (orderCounterSnap.exists()) {
+          nextOrderSeq = orderCounterSnap.data().seq + 1;
+        }
+        transaction.set(orderCounterRef, { seq: nextOrderSeq }, { merge: true });
+        const orderNo = `ORD-${nextOrderSeq.toString().padStart(3, '0')}`;
+
+        transaction.update(doc(db, 'orders', approvingId), {
+          status: 'Confirmed',
+          paymentStatus: 'Pending',
+          orderNo: orderNo,
+          updatedAt: serverTimestamp()
+        });
       });
       fetchInquiries();
       showMessage("Inquiry converted to Order", "success");
@@ -103,13 +115,22 @@ export default function Inquiries() {
           nextSeq = counterSnap.data().seq + 1;
         }
         transaction.set(counterRef, { seq: nextSeq }, { merge: true });
-        
         const invoiceNo = `INV-${nextSeq.toString().padStart(3, '0')}`;
+        
+        const orderCounterRef = doc(db, 'settings', 'orderCounter');
+        const orderCounterSnap = await transaction.get(orderCounterRef);
+        let nextOrderSeq = 1;
+        if (orderCounterSnap.exists()) {
+          nextOrderSeq = orderCounterSnap.data().seq + 1;
+        }
+        transaction.set(orderCounterRef, { seq: nextOrderSeq }, { merge: true });
+        const orderNo = `ORD-${nextOrderSeq.toString().padStart(3, '0')}`;
         
         const orderRef = doc(db, 'orders', approvingId);
         transaction.update(orderRef, {
           status: 'Confirmed',
           paymentStatus: 'Pending',
+          orderNo: orderNo,
           invoiceNo,
           invoiceDate: serverTimestamp(),
           dispatchDetails: data,

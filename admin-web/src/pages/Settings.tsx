@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import Products from './Products';
 import Categories from './Categories';
 import Banners from './Banners';
+import BusinessProfile from './BusinessProfile';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -10,20 +11,25 @@ export default function Settings() {
 
   // Determine which tab is active based on the URL path
   const currentTab = () => {
-    if (location.pathname.includes('/settings/categories')) return 1;
-    if (location.pathname.includes('/settings/banners')) return 2;
-    return 0; // Default to products
+    if (location.pathname.includes('/settings/profile')) return 0;
+    if (location.pathname.includes('/settings/products')) return 1;
+    if (location.pathname.includes('/settings/categories')) return 2;
+    if (location.pathname.includes('/settings/banners')) return 3;
+    return 1; // Default to products
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     switch (newValue) {
       case 0:
-        navigate('/settings/products');
+        navigate('/settings/profile');
         break;
       case 1:
-        navigate('/settings/categories');
+        navigate('/settings/products');
         break;
       case 2:
+        navigate('/settings/categories');
+        break;
+      case 3:
         navigate('/settings/banners');
         break;
     }
@@ -54,6 +60,7 @@ export default function Settings() {
             '& .MuiTabs-indicator': { backgroundColor: '#000', height: 3 }
           }}
         >
+          <Tab label="PROFILE" />
           <Tab label="PRODUCTS" />
           <Tab label="CATEGORIES" />
           <Tab label="BANNERS" />
@@ -62,11 +69,12 @@ export default function Settings() {
       
       <Box sx={{ pt: 1 }}>
         <Routes>
+          <Route path="profile" element={<BusinessProfile />} />
           <Route path="products" element={<Products />} />
           <Route path="categories" element={<Categories />} />
           <Route path="banners" element={<Banners />} />
-          <Route path="/" element={<Navigate to="products" replace />} />
-          <Route path="*" element={<Navigate to="products" replace />} />
+          <Route path="/" element={<Navigate to="profile" replace />} />
+          <Route path="*" element={<Navigate to="profile" replace />} />
         </Routes>
       </Box>
     </Box>

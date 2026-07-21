@@ -20,6 +20,7 @@ interface Product {
   imageUrl: string;
   availableStockKg?: number; // Fetched from inventory collection
   gstPercentage?: number;
+  hsnCode?: string;
 }
 
 export default function Products() {
@@ -40,6 +41,7 @@ export default function Products() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState('');
   const [gstPercentage, setGstPercentage] = useState('5'); // Default 5%
+  const [hsnCode, setHsnCode] = useState('');
 
   // Unit Multipliers to convert to KG
   const getMultiplier = (unit: string) => {
@@ -86,7 +88,7 @@ export default function Products() {
 
   const handleOpenNew = () => {
     setEditingId(null);
-    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl(''); setGstPercentage('5');
+    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl(''); setGstPercentage('5'); setHsnCode('');
     setOpen(true);
   };
 
@@ -101,6 +103,7 @@ export default function Products() {
     setExistingImageUrl(product.imageUrl);
     setImageFile(null);
     setGstPercentage((product.gstPercentage ?? 5).toString());
+    setHsnCode(product.hsnCode || '');
     setOpen(true);
   };
 
@@ -162,6 +165,7 @@ export default function Products() {
           moqKg,
           isActive: true,
           gstPercentage: gstNum,
+          hsnCode,
           ...(imageFile ? { imageUrl: downloadUrl } : {})
         });
         // Update Inventory (overwrite total available for now)
@@ -180,6 +184,7 @@ export default function Products() {
           createdAt: serverTimestamp(),
           isActive: true,
           gstPercentage: gstNum,
+          hsnCode,
         });
         // Create Initial Inventory Ledger
         await setDoc(doc(db, 'inventory', productRef.id), {
@@ -224,6 +229,7 @@ export default function Products() {
               <TableCell sx={{ fontWeight: 900 }}>IMAGE</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>CATEGORY</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>PRODUCT NAME</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>HSN</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>PRICE (PER KG)</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>AVAILABLE STOCK</TableCell>
               <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
@@ -247,6 +253,7 @@ export default function Products() {
                 </TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#666', textTransform: 'uppercase' }}>{row.category}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
+                <TableCell>{row.hsnCode || '-'}</TableCell>
                 <TableCell>₹{row.basePriceKg?.toLocaleString()} / Kg</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: row.availableStockKg && row.availableStockKg > 0 ? 'green' : 'red' }}>
                   {formatKg(row.availableStockKg)}
@@ -267,7 +274,7 @@ export default function Products() {
             ))}
             {products.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
                   NO PRODUCTS YET — ADD ONE ABOVE
                 </TableCell>
               </TableRow>
@@ -310,6 +317,13 @@ export default function Products() {
 
             <TextField label="Product Name (e.g. Sona Masoori)" fullWidth required value={name} onChange={e => setName(e.target.value)} />
             
+            <TextField 
+              label="HSN / SAC Code" 
+              fullWidth 
+              value={hsnCode} 
+              onChange={e => setHsnCode(e.target.value)} 
+            />
+
             <TextField 
               label="GST Percentage (%)" 
               type="number" 

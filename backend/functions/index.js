@@ -9,3 +9,4 @@ Object.assign(exports, require('./orders'));
 Object.assign(exports, require('./admin'));
 Object.assign(exports, require('./placeSecureOrder'));
 Object.assign(exports, require('./notifications'));
+Object.assign(exports, require('./invoice'));

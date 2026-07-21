@@ -5,8 +5,9 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import app from '../firebase';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { useUI } from '../context/UIContext';
+import DispatchDialog, { DispatchData } from '../components/DispatchDialog';
 
 const db = getFirestore(app);
 const functions = getFunctions(app);
@@ -17,6 +18,8 @@ interface Order {
   status: string;
   paymentStatus?: string;
   totalAmount: number;
+  invoiceNo?: string;
+  dispatchDetails?: DispatchData;
 }
 
 export default function Orders() {
@@ -30,6 +33,10 @@ export default function Orders() {
   const [editStatus, setEditStatus] = useState('');
   const [editPaymentStatus, setEditPaymentStatus] = useState('');
   const [editTotal, setEditTotal] = useState('');
+
+  // Dispatch Edit State
+  const [editDispatchOrder, setEditDispatchOrder] = useState<Order | null>(null);
+  const [dispatchLoading, setDispatchLoading] = useState(false);
 
   const statusSteps = ['Confirmed', 'Dispatched', 'Delivered'];
 
@@ -120,6 +127,50 @@ export default function Orders() {
     }
   };
 
+  const handleSaveDispatch = async (data: DispatchData) => {
+    if (!editDispatchOrder) return;
+    setDispatchLoading(true);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const orderRef = doc(db, 'orders', editDispatchOrder.id);
+        
+        let invoiceNo = editDispatchOrder.invoiceNo;
+        // If they skipped generating an invoice previously, generate it now
+        if (!invoiceNo) {
+          const counterRef = doc(db, 'settings', 'invoiceCounter');
+          const counterSnap = await transaction.get(counterRef);
+          let nextSeq = 1;
+          if (counterSnap.exists()) {
+            nextSeq = counterSnap.data().seq + 1;
+          }
+          transaction.set(counterRef, { seq: nextSeq }, { merge: true });
+          invoiceNo = `INV-${nextSeq.toString().padStart(3, '0')}`;
+          
+          transaction.update(orderRef, {
+            invoiceNo,
+            invoiceDate: serverTimestamp(),
+            dispatchDetails: data,
+            updatedAt: serverTimestamp()
+          });
+        } else {
+          // Just update the dispatch details
+          transaction.update(orderRef, {
+            dispatchDetails: data,
+            updatedAt: serverTimestamp()
+          });
+        }
+      });
+      fetchOrders();
+      showMessage("Dispatch details updated successfully", "success");
+      setEditDispatchOrder(null);
+    } catch (e) {
+      console.error("Error saving dispatch details:", e);
+      showMessage("Failed to update dispatch details", "error");
+    } finally {
+      setDispatchLoading(false);
+    }
+  };
+
   const statusColor = (status: string) => {
     switch (status) {
       case 'Confirmed': return { bg: '#000', fg: '#FFF' };
@@ -158,8 +209,8 @@ export default function Orders() {
               const pStatus = row.paymentStatus || 'Pending';
               return (
                 <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                  <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>{row.id.substring(0, 8)}…</TableCell>
-                  <TableCell>{row.customerId}</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>ORD-{row.id.substring(0, 6).toUpperCase()}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{row.customerName || 'Unknown Customer'}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString() || '—'}</TableCell>
                   <TableCell>
                     <Chip label={row.status} size="small" sx={{ backgroundColor: sc.bg, color: sc.fg, fontWeight: 700 }} />
@@ -172,7 +223,27 @@ export default function Orders() {
                       sx={{ fontWeight: 700 }} 
                     />
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                    {row.paymentStatus === 'Done' && row.invoiceNo && (
+                      <Button 
+                        variant="contained" 
+                        size="small" 
+                        onClick={() => {
+                          const isLocal = window.location.hostname === 'localhost';
+                          const projectId = app.options.projectId;
+                          const url = isLocal 
+                            ? `http://127.0.0.1:5001/${projectId}/us-central1/downloadInvoice?orderId=${row.id}`
+                            : `https://us-central1-${projectId}.cloudfunctions.net/downloadInvoice?orderId=${row.id}`;
+                          window.open(url, '_blank');
+                        }} 
+                        sx={{ mr: 1, backgroundColor: '#000', color: '#FFF', fontSize: '0.7rem' }}
+                      >
+                        Print Invoice
+                      </Button>
+                    )}
+                    <Button variant="outlined" size="small" onClick={() => setEditDispatchOrder(row)} sx={{ mr: 1, borderColor: '#000', color: '#000', fontSize: '0.7rem' }}>
+                      Dispatch Info
+                    </Button>
                     <Button variant="outlined" size="small" onClick={() => setSelectedOrder(row)} sx={{ mr: 1 }}>
                       Details
                     </Button>
@@ -201,7 +272,7 @@ export default function Orders() {
       <Dialog open={!!selectedOrder} onClose={() => setSelectedOrder(null)} maxWidth="md" fullWidth>
         <Box sx={{ p: 3 }}>
           <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1.2rem', mb: 3 }}>
-            ORDER: {selectedOrder?.id.substring(0, 8)}…
+            ORDER: ORD-{selectedOrder?.id.substring(0, 6).toUpperCase()}
           </Typography>
 
           <Box sx={{ mb: 4 }}>
@@ -218,7 +289,7 @@ export default function Orders() {
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <Box>
                 <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>CUSTOMER</Typography>
-                <Typography sx={{ fontWeight: 700 }}>{selectedOrder?.customerId}</Typography>
+                <Typography sx={{ fontWeight: 700 }}>{selectedOrder?.customerName || 'Unknown Customer'}</Typography>
               </Box>
               <Box>
                 <Typography sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: 1, color: '#999', mb: 0.5 }}>TOTAL AMOUNT</Typography>
@@ -304,6 +375,16 @@ export default function Orders() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dispatch Dialog */}
+      <DispatchDialog 
+        open={!!editDispatchOrder}
+        onClose={() => setEditDispatchOrder(null)}
+        loading={dispatchLoading}
+        onSave={handleSaveDispatch}
+        isApprovalMode={false}
+        initialData={editDispatchOrder?.dispatchDetails}
+      />
     </Box>
   );
 }

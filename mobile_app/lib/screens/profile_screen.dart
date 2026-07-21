@@ -48,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'gstNumber': '',
             'phoneNumber': user!.phoneNumber ?? '',
             'billingAddress': '',
+            'shippingAddress': '',
           };
           isLoading = false;
         });
@@ -67,6 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final phoneController = TextEditingController(text: userData?['phoneNumber']);
     final gstController = TextEditingController(text: userData?['gstNumber']);
     final addressController = TextEditingController(text: userData?['billingAddress']);
+    final shippingAddressController = TextEditingController(text: userData?['shippingAddress']);
     bool saving = false;
 
     showModalBottomSheet(
@@ -135,8 +137,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     TextFormField(
                       controller: addressController,
                       decoration: InputDecoration(
-                        labelText: 'Billing Address',
-                        prefixIcon: const Icon(Icons.location_on_outlined),
+                        labelText: 'Billing Address (Registered)',
+                        prefixIcon: const Icon(Icons.location_city_outlined),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: shippingAddressController,
+                      decoration: InputDecoration(
+                        labelText: 'Shipping Address (Consignee)',
+                        prefixIcon: const Icon(Icons.local_shipping_outlined),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       maxLines: 2,
@@ -160,6 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 'phoneNumber': phoneController.text,
                                 'gstNumber': gstController.text,
                                 'billingAddress': addressController.text,
+                                'shippingAddress': shippingAddressController.text,
                               }, SetOptions(merge: true));
                               await _fetchUserData();
                               if (mounted) {
@@ -299,7 +312,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(),
                     _buildDetailRow(Icons.phone, 'Phone', userData?['phoneNumber'] ?? 'Not set'),
                     const Divider(),
-                    _buildDetailRow(Icons.location_on, 'Billing Address', userData?['billingAddress'] ?? 'Not set'),
+                    _buildDetailRow(Icons.location_city, 'Billing Address', userData?['billingAddress'] ?? 'Not set'),
+                    const Divider(),
+                    _buildDetailRow(Icons.local_shipping, 'Shipping Address', userData?['shippingAddress'] ?? 'Not set'),
                   ],
                 ),
               ),

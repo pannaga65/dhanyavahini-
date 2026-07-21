@@ -62,7 +62,7 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    
+
     // Request Push Notification Permissions & Token
     const setupNotifications = async () => {
       try {
@@ -70,10 +70,10 @@ function App() {
         if (msg) {
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
-             const token = await getToken(msg, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
-             if (token) {
-                await updateDoc(doc(db, 'admins', user.uid), { fcmToken: token });
-             }
+            const token = await getToken(msg, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
+            if (token) {
+              await updateDoc(doc(db, 'admins', user.uid), { fcmToken: token });
+            }
           }
         }
       } catch (e) {
@@ -81,7 +81,7 @@ function App() {
       }
     };
     setupNotifications();
-    
+
     const q = query(collection(db, 'orders'), where('status', '==', 'Inquiry'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newCount = snapshot.size;
@@ -207,13 +207,13 @@ function App() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#FFF', width: '100%' }}>
-      
+
       {/* ── Mobile AppBar ── */}
-      <AppBar 
-        position="fixed" 
+      <AppBar
+        position="fixed"
         elevation={0}
-        sx={{ 
-          display: { md: 'none' }, 
+        sx={{
+          display: { md: 'none' },
           backgroundColor: '#FFF',
           borderBottom: '2px solid #000',
           color: '#000'
@@ -293,25 +293,25 @@ function App() {
       </Box>
 
       {/* ── Floating Notification Button ── */}
-      <Fab 
-        color={inquiryCount - dismissedCount > 0 ? "error" : "primary"} 
-        aria-label="notifications" 
+      <Fab
+        color={inquiryCount - dismissedCount > 0 ? "error" : "primary"}
+        aria-label="notifications"
         onClick={handleNotificationClick}
-        sx={{ 
-          display: { xs: 'none', md: 'flex' }, 
-          position: 'fixed', 
-          top: 32, 
-          right: 32, 
-          zIndex: 9999, 
-          backgroundColor: inquiryCount - dismissedCount > 0 ? '#d32f2f' : '#000', 
-          '&:hover': { backgroundColor: inquiryCount - dismissedCount > 0 ? '#c62828' : '#333' } 
+        sx={{
+          display: { xs: 'none', md: 'flex' },
+          position: 'fixed',
+          top: 32,
+          right: 32,
+          zIndex: 9999,
+          backgroundColor: inquiryCount - dismissedCount > 0 ? '#d32f2f' : '#000',
+          '&:hover': { backgroundColor: inquiryCount - dismissedCount > 0 ? '#c62828' : '#333' }
         }}
       >
         <Badge badgeContent={Math.max(0, inquiryCount - dismissedCount)} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#000', fontWeight: 900 } }}>
           <NotificationsIcon sx={{ color: '#FFF' }} />
         </Badge>
       </Fab>
-      
+
       <Popover
         open={openNotification}
         anchorEl={anchorEl}
@@ -324,8 +324,8 @@ function App() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography sx={{ fontWeight: 900, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>
             {inquiryCount - dismissedCount > 0 && (
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 onClick={() => setDismissedCount(inquiryCount)}
                 sx={{ fontSize: '0.65rem', color: '#666', minWidth: 'auto', p: 0, '&:hover': { color: '#000', backgroundColor: 'transparent' } }}
               >
@@ -335,14 +335,14 @@ function App() {
           </Box>
           <Box sx={{ borderBottom: '1px solid #000', mb: 1 }} />
           {inquiryCount > 0 ? (
-            <ListItemButton 
+            <ListItemButton
               onClick={() => {
                 handleNotificationClose();
                 navigate('/inquiries');
               }}
               sx={{ backgroundColor: inquiryCount - dismissedCount > 0 ? '#FAFAFA' : '#FFF', border: '1px solid #EEE' }}
             >
-              <ListItemText 
+              <ListItemText
                 primary={<Typography sx={{ fontWeight: 700 }}>You have {inquiryCount} pending Inquiries!</Typography>}
                 secondary={<Typography sx={{ fontSize: '0.75rem', color: '#666', mt: 0.5 }}>Click here to review and negotiate.</Typography>}
               />
@@ -356,8 +356,8 @@ function App() {
       </Popover>
 
       {/* ── Sign Out Confirmation Dialog ── */}
-      <Dialog 
-        open={signOutOpen} 
+      <Dialog
+        open={signOutOpen}
         onClose={cancelSignOut}
         slotProps={{
           paper: {
@@ -374,15 +374,15 @@ function App() {
           </Typography>
         </Box>
         <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button 
-            onClick={cancelSignOut} 
+          <Button
+            onClick={cancelSignOut}
             sx={{ color: '#000', fontWeight: 700 }}
           >
             CANCEL
           </Button>
-          <Button 
-            onClick={handleSignOut} 
-            variant="contained" 
+          <Button
+            onClick={handleSignOut}
+            variant="contained"
             sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0, '&:hover': { backgroundColor: '#333' } }}
           >
             SIGN OUT

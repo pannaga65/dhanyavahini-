@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton } from '@mui/material';
-import { collection, getDocs, query, where, getFirestore, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, getFirestore, updateDoc, doc, deleteDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
+import DispatchDialog, { DispatchData } from '../components/DispatchDialog';
 
 const db = getFirestore(app);
 
@@ -19,6 +20,10 @@ export default function Inquiries() {
   // Negotiation Form Data
   const [negotiatedPrice, setNegotiatedPrice] = useState('');
   const [negotiatedQuantity, setNegotiatedQuantity] = useState('');
+
+  // Dispatch Dialog State
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [dispatchLoading, setDispatchLoading] = useState(false);
 
   useEffect(() => { fetchInquiries(); }, []);
 
@@ -55,21 +60,64 @@ export default function Inquiries() {
     setOpen(true);
   };
 
-  const handleApproveConvert = async (inquiryId: string) => {
-    showConfirm("Approve this inquiry and convert it into an Order?", async () => {
-      try {
-        await updateDoc(doc(db, 'orders', inquiryId), {
+  const handleApproveConvert = (inquiryId: string) => {
+    setApprovingId(inquiryId);
+  };
+
+  const handleSkipDispatch = async () => {
+    if (!approvingId) return;
+    setDispatchLoading(true);
+    try {
+      await updateDoc(doc(db, 'orders', approvingId), {
+        status: 'Confirmed',
+        paymentStatus: 'Pending',
+        updatedAt: serverTimestamp()
+      });
+      fetchInquiries();
+      showMessage("Inquiry converted to Order", "success");
+      setApprovingId(null);
+    } catch (e) {
+      console.error("Error approving", e);
+      showMessage("Failed to approve inquiry.", "error");
+    } finally {
+      setDispatchLoading(false);
+    }
+  };
+
+  const handleSaveDispatch = async (data: DispatchData) => {
+    if (!approvingId) return;
+    setDispatchLoading(true);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const counterRef = doc(db, 'settings', 'invoiceCounter');
+        const counterSnap = await transaction.get(counterRef);
+        let nextSeq = 1;
+        if (counterSnap.exists()) {
+          nextSeq = counterSnap.data().seq + 1;
+        }
+        transaction.set(counterRef, { seq: nextSeq }, { merge: true });
+        
+        const invoiceNo = `INV-${nextSeq.toString().padStart(3, '0')}`;
+        
+        const orderRef = doc(db, 'orders', approvingId);
+        transaction.update(orderRef, {
           status: 'Confirmed',
           paymentStatus: 'Pending',
-          updatedAt: new Date()
+          invoiceNo,
+          invoiceDate: serverTimestamp(),
+          dispatchDetails: data,
+          updatedAt: serverTimestamp()
         });
-        fetchInquiries();
-        showMessage("Inquiry converted to Order", "success");
-      } catch (e) {
-        console.error("Error approving", e);
-        showMessage("Failed to approve inquiry.", "error");
-      }
-    });
+      });
+      fetchInquiries();
+      showMessage("Order confirmed and Dispatch Details saved!", "success");
+      setApprovingId(null);
+    } catch (e) {
+      console.error("Error saving dispatch", e);
+      showMessage("Failed to save dispatch details.", "error");
+    } finally {
+      setDispatchLoading(false);
+    }
   };
 
   const handleSaveNegotiation = async () => {
@@ -111,7 +159,8 @@ export default function Inquiries() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 900 }}>CUSTOMER ID</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>ORDER ID</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>CUSTOMER NAME</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>ITEMS</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>TOTAL QTY</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>REQUESTED PRICE</TableCell>
@@ -122,7 +171,8 @@ export default function Inquiries() {
           <TableBody>
             {inquiries.map((row) => (
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>{row.customerId}</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>ORD-{row.id.substring(0, 6).toUpperCase()}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>{row.customerName || 'Unknown Customer'}</TableCell>
                 <TableCell>
                   {row.items?.map((item: any, i: number) => (
                     <Box key={i} sx={{ fontSize: '0.8rem', color: '#666' }}>
@@ -187,6 +237,16 @@ export default function Inquiries() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dispatch Dialog on Approval */}
+      <DispatchDialog 
+        open={!!approvingId}
+        onClose={() => setApprovingId(null)}
+        loading={dispatchLoading}
+        onSave={handleSaveDispatch}
+        onSkip={handleSkipDispatch}
+        isApprovalMode={true}
+      />
     </Box>
   );
 }

@@ -161,6 +161,14 @@ class CartScreen extends ConsumerWidget {
                       final user = FirebaseAuth.instance.currentUser;
                       if (user == null) throw Exception("Not logged in");
 
+                      // Fetch user profile to get addresses and GST details
+                      final userDoc = await db.collection('users').doc(user.uid).get();
+                      final userData = userDoc.data() ?? {};
+                      
+                      final billingAddress = userData['billingAddress'] ?? '';
+                      final shippingAddress = userData['shippingAddress'] ?? '';
+                      final customerGst = userData['gstNumber'] ?? '';
+
                       final batch = db.batch();
                       final orderRef = db.collection('orders').doc();
                       
@@ -180,6 +188,9 @@ class CartScreen extends ConsumerWidget {
                       batch.set(orderRef, {
                         'customerId': user.uid,
                         'customerName': user.displayName ?? "Customer",
+                        'customerGst': customerGst,
+                        'billingAddress': billingAddress,
+                        'shippingAddress': shippingAddress,
                         'items': itemsData,
                         'subtotal': cartNotifier.subtotal,
                         'gstAmount': gstAmount,

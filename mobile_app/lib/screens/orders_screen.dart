@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -66,6 +67,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
               final data = doc.data() as Map<String, dynamic>;
               
               final status = data['status'] ?? 'Inquiry';
+              final paymentStatus = data['paymentStatus'] ?? 'Pending';
+              final invoiceNo = data['invoiceNo'];
               final total = data['totalAmount'] ?? data['total'] ?? 0;
               final items = (data['items'] as List<dynamic>?) ?? [];
               final dateStr = data['createdAt'] != null 
@@ -98,7 +101,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Order #${doc.id.substring(0, 8).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text('Order #ORD-${doc.id.substring(0, 6).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                               const SizedBox(height: 4),
                               Text(dateStr, style: const TextStyle(color: AppTheme.textLight, fontSize: 12)),
                             ],
@@ -213,7 +216,30 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           Text(currencyFormat.format(total), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryAction)),
                         ],
                       ),
-                    )
+                    ),
+
+                    if (paymentStatus == 'Done' && invoiceNo != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.download, size: 18),
+                          label: const Text('Download Invoice'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primaryAction,
+                            side: const BorderSide(color: AppTheme.primaryAction),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () async {
+                            final projectId = FirebaseFirestore.instance.app.options.projectId;
+                            final url = Uri.parse('https://us-central1-$projectId.cloudfunctions.net/downloadInvoice?orderId=${doc.id}');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                        ),
+                      )
                   ],
                 ),
               );

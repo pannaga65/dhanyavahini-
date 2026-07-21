@@ -166,7 +166,8 @@ class CartScreen extends ConsumerWidget {
                       final userData = userDoc.data() ?? {};
                       
                       final billingAddress = userData['billingAddress'] ?? '';
-                      final shippingAddress = userData['shippingAddress'] ?? '';
+                      final shippingList = userData['mailingAddresses'] as List<dynamic>?;
+                      final shippingAddress = (shippingList != null && shippingList.isNotEmpty) ? shippingList.first.toString() : '';
                       final customerGst = userData['gstNumber'] ?? '';
 
                       final batch = db.batch();

@@ -48,7 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'gstNumber': '',
             'phoneNumber': user!.phoneNumber ?? '',
             'billingAddress': '',
-            'shippingAddress': '',
+            'mailingAddresses': [''],
           };
           isLoading = false;
         });
@@ -68,7 +68,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final phoneController = TextEditingController(text: userData?['phoneNumber']);
     final gstController = TextEditingController(text: userData?['gstNumber']);
     final addressController = TextEditingController(text: userData?['billingAddress']);
-    final shippingAddressController = TextEditingController(text: userData?['shippingAddress']);
+    final shippingList = userData?['mailingAddresses'] as List<dynamic>?;
+    final initialShipping = (shippingList != null && shippingList.isNotEmpty) ? shippingList.first.toString() : '';
+    final shippingAddressController = TextEditingController(text: initialShipping);
     bool saving = false;
 
     showModalBottomSheet(
@@ -172,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 'phoneNumber': phoneController.text,
                                 'gstNumber': gstController.text,
                                 'billingAddress': addressController.text,
-                                'shippingAddress': shippingAddressController.text,
+                                'mailingAddresses': [shippingAddressController.text],
                               }, SetOptions(merge: true));
                               await _fetchUserData();
                               if (mounted) {
@@ -314,7 +316,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(),
                     _buildDetailRow(Icons.location_city, 'Billing Address', userData?['billingAddress'] ?? 'Not set'),
                     const Divider(),
-                    _buildDetailRow(Icons.local_shipping, 'Shipping Address', userData?['shippingAddress'] ?? 'Not set'),
+                    _buildDetailRow(Icons.local_shipping, 'Shipping Address', (() {
+                      final list = userData?['mailingAddresses'] as List<dynamic>?;
+                      final addr = (list != null && list.isNotEmpty) ? list.first.toString() : '';
+                      return addr.isNotEmpty ? addr : 'Not set';
+                    })()),
                   ],
                 ),
               ),

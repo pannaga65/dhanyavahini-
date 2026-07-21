@@ -15,6 +15,7 @@ const functions = getFunctions(app);
 interface Order {
   id: string;
   customerId: string;
+  customerName?: string;
   status: string;
   paymentStatus?: string;
   totalAmount: number;

@@ -55,8 +55,6 @@ export default function Orders() {
   const [editDispatchOrder, setEditDispatchOrder] = useState<Order | null>(null);
   const [dispatchLoading, setDispatchLoading] = useState(false);
 
-  const statusSteps = ['Confirmed', 'Dispatched', 'Delivered'];
-
   useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {

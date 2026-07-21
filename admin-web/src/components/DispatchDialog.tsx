@@ -52,34 +52,34 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
         </Typography>
         
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Delivery Note" fullWidth value={formData.deliveryNote || ''} onChange={(e) => handleChange('deliveryNote', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Mode/Terms of Payment" fullWidth value={formData.paymentTerms || ''} onChange={(e) => handleChange('paymentTerms', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Reference No. & Date" fullWidth value={formData.referenceNo || ''} onChange={(e) => handleChange('referenceNo', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Buyer's Order No. & Date" fullWidth value={formData.buyerOrderNo || ''} onChange={(e) => handleChange('buyerOrderNo', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Dispatch Doc No. / Date" fullWidth value={formData.dispatchDocNo || ''} onChange={(e) => handleChange('dispatchDocNo', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Dispatched Through" fullWidth value={formData.dispatchedThrough || ''} onChange={(e) => handleChange('dispatchedThrough', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Destination" fullWidth value={formData.destination || ''} onChange={(e) => handleChange('destination', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Bill of Lading / LR-RR No." fullWidth value={formData.lrNumber || ''} onChange={(e) => handleChange('lrNumber', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Motor Vehicle No." fullWidth value={formData.motorVehicleNo || ''} onChange={(e) => handleChange('motorVehicleNo', e.target.value)} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Terms of Delivery" fullWidth value={formData.termsOfDelivery || ''} onChange={(e) => handleChange('termsOfDelivery', e.target.value)} />
           </Grid>
         </Grid>

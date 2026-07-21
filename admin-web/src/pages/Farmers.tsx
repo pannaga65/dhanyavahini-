@@ -188,12 +188,14 @@ export default function Farmers() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           sx={{ width: { xs: '100%', sm: 350 }, backgroundColor: '#FFF' }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }
           } as any}
         />
         <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 700 }}>
@@ -276,7 +278,7 @@ export default function Farmers() {
               label="Aadhar Number"
               fullWidth
               required
-              inputProps={{ maxLength: 12 } as any}
+              slotProps={{ htmlInput: { maxLength: 12 } } as any}
               value={formData.aadharNumber}
               onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value.replace(/\D/g, '') })}
               helperText="Must be exactly 12 digits"
@@ -286,20 +288,24 @@ export default function Farmers() {
                 label="Primary Mobile"
                 fullWidth
                 required
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">+91</InputAdornment>,
+                slotProps={{
+                  input: {
+                    startAdornment: <InputAdornment position="start">+91</InputAdornment>,
+                  },
+                  htmlInput: { maxLength: 10 }
                 } as any}
-                inputProps={{ maxLength: 10 } as any}
                 value={formData.phoneNumber.replace('+91', '')}
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value.replace(/\D/g, '') })}
               />
               <TextField
                 label="Alt Mobile (Optional)"
                 fullWidth
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">+91</InputAdornment>,
+                slotProps={{
+                  input: {
+                    startAdornment: <InputAdornment position="start">+91</InputAdornment>,
+                  },
+                  htmlInput: { maxLength: 10 }
                 } as any}
-                inputProps={{ maxLength: 10 } as any}
                 value={formData.altPhoneNumber.replace('+91', '')}
                 onChange={(e) => setFormData({ ...formData, altPhoneNumber: e.target.value.replace(/\D/g, '') })}
               />

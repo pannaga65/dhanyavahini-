@@ -69,7 +69,7 @@ export default function BusinessProfile() {
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#666', mb: 2 }}>BASIC DETAILS</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField label="Company Name" fullWidth required value={formData.companyName} onChange={(e) => handleChange('companyName', e.target.value)} />
@@ -80,7 +80,7 @@ export default function BusinessProfile() {
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#666', mb: 2 }}>ADDRESS DETAILS</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField label="Address Line 1" fullWidth required value={formData.addressLine1} onChange={(e) => handleChange('addressLine1', e.target.value)} />
@@ -93,7 +93,7 @@ export default function BusinessProfile() {
           </Box>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#666', mb: 2, mt: 2 }}>BANK DETAILS (FOR INVOICE)</Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <TextField label="Bank Name" sx={{ flex: 1, minWidth: 200 }} value={formData.bankName} onChange={(e) => handleChange('bankName', e.target.value)} />

@@ -24,8 +24,8 @@ service cloud.firestore {
     // ─── 2. Users / Customers ───
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if false; // Created exclusively by Cloud Function (createCustomer)
-      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
+      allow create: if isOwner(userId); // Allow users to create their initial profile
+      allow update: if isAdmin() || (isOwner(userId) && (request.resource.data.role == resource.data.role || !('role' in request.resource.data)));
       allow delete: if false; // Soft deletes only (isActive: false)
     }
 
@@ -77,6 +77,12 @@ service cloud.firestore {
     match /audit_logs/{logId} {
       allow read: if isAdmin();
       allow write: if false; // Written exclusively by Cloud Functions via Admin SDK
+    }
+
+    // ─── 11. Settings (Global Config) ───
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

@@ -7,6 +7,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
+import PrintIcon from '@mui/icons-material/Print';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
@@ -608,6 +609,9 @@ export default function Procurement() {
                             <Button size="small" variant="outlined" onClick={() => handleOpenPayment(order.id)} sx={{ mr: 1, fontWeight: 700 }}>
                               PAY
                             </Button>
+                            <IconButton onClick={() => window.open(`/print-bill/${order.id}`, '_blank')} size="small" sx={{ mr: 1 }} title="Print Bill">
+                              <PrintIcon fontSize="small" />
+                            </IconButton>
                             <IconButton onClick={() => handleOpenEditBill(order)} size="small" sx={{ mr: 1 }}>
                               <EditIcon fontSize="small" />
                             </IconButton>

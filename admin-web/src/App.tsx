@@ -12,6 +12,7 @@ import Inquiries from './pages/Inquiries'
 import Farmers from './pages/Farmers'
 import Procurement from './pages/Procurement'
 import Loans from './pages/Loans'
+import PrintBill from './pages/PrintBill'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Inventory from './pages/Inventory'
@@ -297,6 +298,7 @@ function App() {
           <Route path="/farmers" element={<Farmers />} />
           <Route path="/procurement" element={<Procurement />} />
           <Route path="/loans" element={<Loans />} />
+          <Route path="/print-bill/:id" element={<PrintBill />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

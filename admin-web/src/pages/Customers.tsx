@@ -4,6 +4,7 @@ import { collection, getDocs, query, where, getFirestore, updateDoc, doc } from 
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
@@ -19,7 +20,8 @@ export default function Customers() {
   
   const [formData, setFormData] = useState({ 
     email: '', displayName: '', tradeName: '', gstNumber: '', 
-    panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''] 
+    panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''],
+    lastKnownLocation: null as any
   });
 
   useEffect(() => { fetchCustomers(); }, []);
@@ -38,7 +40,8 @@ export default function Customers() {
     setEditingId(null);
     setFormData({ 
       email: '', displayName: '', tradeName: '', gstNumber: '', 
-      panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''] 
+      panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''],
+      lastKnownLocation: null
     });
     setOpen(true);
   };
@@ -53,7 +56,8 @@ export default function Customers() {
       panNumber: customer.panNumber || '',
       phoneNumber: customer.phoneNumber || '',
       billingAddress: customer.billingAddress || '',
-      mailingAddresses: (customer.mailingAddresses && customer.mailingAddresses.length > 0) ? customer.mailingAddresses : ['']
+      mailingAddresses: (customer.mailingAddresses && customer.mailingAddresses.length > 0) ? customer.mailingAddresses : [''],
+      lastKnownLocation: customer.lastKnownLocation || null
     });
     setOpen(true);
   };
@@ -254,6 +258,22 @@ export default function Customers() {
                 + ADD ANOTHER MAILING ADDRESS
               </Button>
             </Box>
+
+            {/* GPS Location Display */}
+            {formData.lastKnownLocation && (
+              <Box sx={{ mt: 1, p: 2, backgroundColor: '#F5F5F5', borderRadius: 2 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#000', mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocationOnIcon sx={{ fontSize: 16, color: '#FF0000' }} /> LAST KNOWN GPS LOCATION
+                </Typography>
+                <Typography sx={{ fontSize: '0.9rem', color: '#333', fontWeight: 600 }}>
+                  {formData.lastKnownLocation.address || 'Unknown Address'}
+                </Typography>
+                <Typography sx={{ fontSize: '0.75rem', color: '#666', mt: 0.5, fontFamily: 'monospace' }}>
+                  Lat: {formData.lastKnownLocation.lat}, Lng: {formData.lastKnownLocation.lng}
+                </Typography>
+              </Box>
+            )}
+
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>

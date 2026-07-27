@@ -11,6 +11,7 @@ import '../providers/product_provider.dart';
 import '../providers/banner_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/location_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -27,16 +28,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkNotificationPermission();
+      _checkPermissions();
     });
   }
 
-  Future<void> _checkNotificationPermission() async {
+  Future<void> _checkPermissions() async {
     final prefs = await SharedPreferences.getInstance();
-    final hasAsked = prefs.getBool('has_asked_notifications') ?? false;
-
-    if (!hasAsked && mounted) {
+    
+    // Check location first
+    final hasAskedLoc = prefs.getBool('has_asked_location') ?? false;
+    if (!hasAskedLoc && mounted) {
       await Future.delayed(const Duration(milliseconds: 1500));
+      if (!mounted) return;
+      
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _buildLocationPrompt(),
+      );
+      await prefs.setBool('has_asked_location', true);
+    }
+
+    // Then check notifications
+    final hasAskedNotif = prefs.getBool('has_asked_notifications') ?? false;
+    if (!hasAskedNotif && mounted) {
+      await Future.delayed(const Duration(milliseconds: 1000));
       if (!mounted) return;
       
       showModalBottomSheet(
@@ -45,9 +62,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: Colors.transparent,
         builder: (context) => _buildNotificationPrompt(),
       );
-      
       await prefs.setBool('has_asked_notifications', true);
     }
+  }
+
+  Widget _buildLocationPrompt() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryAction.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.location_on, size: 64, color: AppTheme.primaryAction),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Find Nearby Stock Instantly',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Enable location services to see accurate stock availability and ensure faster wholesale deliveries.',
+            style: TextStyle(fontSize: 15, color: AppTheme.textLight, height: 1.4),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryAction,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              onPressed: () async {
+                Navigator.pop(context);
+                await requestAndSaveLocation();
+              },
+              child: const Text('ALLOW LOCATION', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Not Now', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildNotificationPrompt() {
@@ -122,6 +195,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
 
+    final locationAsync = ref.watch(userLocationProvider);
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -183,15 +258,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Icon(Icons.keyboard_arrow_down, color: AppTheme.textDark, size: 20),
                       ],
                     ),
-                    const Text(
-                      'Select your location for accurate stock',
-                      style: TextStyle(
-                        color: AppTheme.textLight,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                    locationAsync.when(
+                      data: (loc) => Text(
+                        loc != null && loc.address.isNotEmpty ? loc.address : 'Select your location for accurate stock',
+                        style: const TextStyle(
+                          color: AppTheme.textLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      loading: () => const Text('Locating...', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
+                      error: (_, __) => const Text('Select your location for accurate stock', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
                     ),
                   ],
                 ),
@@ -251,7 +330,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             slivers: [
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-              // 1. Banner Carousel
+              // 1. Functional Search Bar (Moved above banner)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onSubmitted: (value) {
+                        if (value.trim().isNotEmpty) {
+                          context.push('/all-products');
+                        }
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search for commodities...',
+                        hintStyle: const TextStyle(color: AppTheme.textLight),
+                        prefixIcon: const Icon(Icons.search, color: AppTheme.textLight),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: AppTheme.primaryAction, width: 2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2. Banner Carousel (Full width viewportFraction)
               SliverToBoxAdapter(
                 child: bannersAsync.when(
                   data: (banners) {
@@ -261,7 +387,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         height: 200.0,
                         autoPlay: true,
                         enlargeCenterPage: true,
-                        viewportFraction: 0.95,
+                        viewportFraction: 1.0, // Fixed: Full width banner
                         autoPlayInterval: const Duration(seconds: 4),
                         autoPlayAnimationDuration: const Duration(milliseconds: 800),
                         enlargeStrategy: CenterPageEnlargeStrategy.zoom,
@@ -276,7 +402,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
@@ -322,53 +448,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: ShimmerLoader(width: double.infinity, height: 184, borderRadius: 20),
                   ),
                   error: (err, stack) => const SizedBox.shrink(),
-                ),
-              ),
-
-              // 2. Functional Search Bar
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          context.push('/all-products');
-                        }
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search for commodities...',
-                        hintStyle: const TextStyle(color: AppTheme.textLight),
-                        prefixIcon: const Icon(Icons.search, color: AppTheme.textLight),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppTheme.primaryAction, width: 2),
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
 

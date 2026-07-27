@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Chip, IconButton, InputAdornment } from '@mui/material';
-import { collection, getDocs, getFirestore, updateDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, updateDoc, doc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
@@ -59,38 +59,42 @@ export default function Farmers() {
   };
 
   const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to deactivate this farmer's profile?", async () => {
+    showConfirm("Are you sure you want to permanently delete this farmer's profile from the database?", async () => {
       try {
-        await updateDoc(doc(db, 'farmers', id), { isActive: false });
+        await deleteDoc(doc(db, 'farmers', id));
         fetchFarmers();
-        showMessage("Farmer deactivated", "success");
+        showMessage("Farmer deleted successfully", "success");
       } catch (e) {
-        console.error("Error deactivating", e);
-        showMessage("Failed to deactivate farmer.", "error");
+        console.error("Error deleting farmer", e);
+        showMessage("Failed to delete farmer.", "error");
       }
     });
   };
 
-  const handleRestore = async (id: string) => {
-    try {
-      await updateDoc(doc(db, 'farmers', id), { isActive: true });
-      fetchFarmers();
-      showMessage("Farmer profile restored", "success");
-    } catch (e) {
-      console.error("Error restoring", e);
-      showMessage("Failed to restore farmer.", "error");
-    }
-  };
-
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      showMessage('Name is required.', 'error');
+      return;
+    }
+
+    if (!formData.phoneNumber.trim()) {
+      showMessage('Primary Mobile Number is required.', 'error');
+      return;
+    }
+
+    if (!formData.aadharNumber.trim()) {
+      showMessage('Aadhar Number is required.', 'error');
+      return;
+    }
+
     // Aadhar Validation (Exactly 12 digits)
-    if (formData.aadharNumber.trim() && !/^\d{12}$/.test(formData.aadharNumber.trim())) {
+    if (!/^\d{12}$/.test(formData.aadharNumber.trim())) {
       showMessage('Aadhar Number must be exactly 12 digits.', 'error');
       return;
     }
 
     // Phone Number Validation (Exactly 10 digits)
-    if (formData.phoneNumber.trim() && !/^\d{10}$/.test(formData.phoneNumber.trim())) {
+    if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
       showMessage('Primary Mobile Number must be exactly 10 digits.', 'error');
       return;
     }
@@ -208,7 +212,6 @@ export default function Farmers() {
               <TableCell sx={{ fontWeight: 900 }}>MOBILE</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>AADHAR</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>BANK DETAILS</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
               <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
@@ -227,33 +230,19 @@ export default function Farmers() {
                   <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>A/C: {row.accountNumber}</Typography>
                   <Typography sx={{ fontSize: '0.75rem', color: '#666' }}>IFSC: {row.ifscCode}</Typography>
                 </TableCell>
-                <TableCell>
-                  <Chip
-                    label={row.isActive !== false ? 'ACTIVE' : 'INACTIVE'}
-                    size="small"
-                    sx={{
-                      backgroundColor: row.isActive !== false ? '#000' : '#E0E0E0',
-                      color: row.isActive !== false ? '#FFF' : '#000',
-                    }}
-                  />
-                </TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
-                  {row.isActive !== false ? (
-                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  ) : (
-                    <Button size="small" onClick={() => handleRestore(row.id)} sx={{ fontWeight: 700, fontSize: '0.7rem' }}>RESTORE</Button>
-                  )}
+                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
             {filteredFarmers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                <TableCell colSpan={5} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
                   {searchQuery ? 'NO FARMERS FOUND MATCHING SEARCH' : 'NO FARMERS YET — ADD ONE ABOVE'}
                 </TableCell>
               </TableRow>

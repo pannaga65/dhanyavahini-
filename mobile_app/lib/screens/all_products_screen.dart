@@ -123,6 +123,7 @@ class AllProductsScreen extends ConsumerWidget {
                                             name: product.name,
                                             price: product.basePriceKg,
                                             quantity: product.moqKg > 0 ? product.moqKg : 1,
+                                            moqKg: product.moqKg > 0 ? product.moqKg : 1,
                                             gstPercentage: product.gstPercentage,
                                           ),
                                         );

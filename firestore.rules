@@ -96,5 +96,12 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+
+    // ─── 12. Notifications ───
+    match /notifications/{notifId} {
+      allow read, update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin() || false; // Usually created by Cloud Functions
+      allow delete: if false;
+    }
   }
 }

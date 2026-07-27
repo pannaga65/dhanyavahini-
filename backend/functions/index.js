@@ -10,3 +10,4 @@ Object.assign(exports, require('./admin'));
 Object.assign(exports, require('./placeSecureOrder'));
 Object.assign(exports, require('./notifications'));
 Object.assign(exports, require('./invoice'));
+Object.assign(exports, require('./auth'));

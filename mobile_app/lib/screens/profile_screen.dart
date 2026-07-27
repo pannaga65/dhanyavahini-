@@ -295,7 +295,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: AppTheme.softShadow,
+                  boxShadow: AppTheme.modernShadow,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,7 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: AppTheme.softShadow,
+                  boxShadow: AppTheme.modernShadow,
                 ),
                 child: Column(
                   children: [

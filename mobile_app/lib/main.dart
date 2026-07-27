@@ -10,6 +10,7 @@ import 'screens/cart_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/privacy_policy_screen.dart';
+import 'screens/notifications_screen.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/category_screen.dart';
@@ -72,6 +73,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/all-products',
       builder: (context, state) => const AllProductsScreen(),
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
   ],
 );

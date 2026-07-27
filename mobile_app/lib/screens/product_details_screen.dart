@@ -50,7 +50,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: AppTheme.softShadow,
+                    boxShadow: AppTheme.modernShadow,
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: product.imageUrl.isNotEmpty
@@ -107,7 +107,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: AppTheme.softShadow,
+                boxShadow: AppTheme.modernShadow,
               ),
               child: SafeArea(
                 child: Row(
@@ -123,7 +123,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                             icon: const Icon(Icons.remove),
                             onPressed: product.availableStockKg <= 0 ? null : () {
                               if (quantity > product.moqKg) {
-                                setState(() => quantity -= 50); // Decrement by 50kg at a time
+                                setState(() => quantity -= (product.moqKg > 0 ? product.moqKg : 1)); 
                                 if (quantity < product.moqKg) quantity = product.moqKg;
                               }
                             },
@@ -132,8 +132,9 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                           IconButton(
                             icon: const Icon(Icons.add),
                             onPressed: product.availableStockKg <= 0 ? null : () {
-                              if (quantity + 50 <= product.availableStockKg) {
-                                setState(() => quantity += 50); // Increment by 50kg at a time
+                              final increment = product.moqKg > 0 ? product.moqKg : 1;
+                              if (quantity + increment <= product.availableStockKg) {
+                                setState(() => quantity += increment); 
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cannot exceed available stock of ${product.availableStockKg} Kg')));
                               }
@@ -157,6 +158,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                               name: product.name,
                               price: product.basePriceKg,
                               quantity: quantity,
+                              moqKg: product.moqKg > 0 ? product.moqKg : 1,
                               gstPercentage: product.gstPercentage,
                             ),
                           );

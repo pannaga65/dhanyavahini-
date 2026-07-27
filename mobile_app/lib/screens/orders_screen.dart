@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bouncy_card.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -14,9 +16,25 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   final user = FirebaseAuth.instance.currentUser;
-  final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+  final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
-  // Status order map for the stepper
+  // Normalize status for display and stepper
+  String _normalizeStatus(String rawStatus) {
+    if (rawStatus.isEmpty) return 'Inquiry';
+    final s = rawStatus.toLowerCase();
+    if (s == 'inquiry' || s == 'pending') return 'Inquiry';
+    if (s == 'under review') return 'Review';
+    if (s == 'confirmed') return 'Confirmed';
+    if (s == 'processing') return 'Processing';
+    if (s == 'shipped') return 'Shipped';
+    if (s == 'delivered') return 'Delivered';
+    if (s == 'rejected' || s == 'cancelled') return 'Cancelled';
+    
+    // Capitalize first letter as fallback
+    return rawStatus[0].toUpperCase() + rawStatus.substring(1);
+  }
+
+  // Define steps for the stepper UI
   final List<String> statusSteps = ['Inquiry', 'Confirmed', 'Processing', 'Shipped', 'Delivered'];
 
   @override
@@ -27,8 +45,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('My Orders'),
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              backgroundColor: AppTheme.background.withValues(alpha: 0.8),
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: true,
+              title: const Text('My Orders', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -51,202 +82,238 @@ class _OrdersScreenState extends State<OrdersScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
+                  Icon(Icons.receipt_long, size: 80, color: AppTheme.textLight.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
-                  const Text('No orders yet', style: TextStyle(fontSize: 18, color: AppTheme.textLight)),
+                  const Text('No orders yet', style: TextStyle(fontSize: 18, color: AppTheme.textLight, fontWeight: FontWeight.w600)),
                 ],
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 40),
             itemCount: orders.length,
             itemBuilder: (context, index) {
               final doc = orders[index];
               final data = doc.data() as Map<String, dynamic>;
               
-              final status = data['status'] ?? 'Inquiry';
+              final rawStatus = data['status'] ?? 'Inquiry';
+              final status = _normalizeStatus(rawStatus);
               final paymentStatus = data['paymentStatus'] ?? 'Pending';
               final invoiceNo = data['invoiceNo'];
-              final total = data['totalAmount'] ?? data['total'] ?? 0;
+              
+              // Safely handle total amount parsing
+              final total = data['totalAmount'] ?? data['total'] ?? 0.0;
               final items = (data['items'] as List<dynamic>?) ?? [];
+              
               final dateStr = data['createdAt'] != null 
                   ? DateFormat('dd MMM yyyy, hh:mm a').format((data['createdAt'] as Timestamp).toDate()) 
                   : 'Unknown Date';
 
               int currentStepIndex = statusSteps.indexOf(status);
-              if (currentStepIndex == -1) currentStepIndex = 0; // fallback
-              if (status == 'Cancelled') currentStepIndex = -1;
+              
+              // If status is 'Review', it's between Inquiry and Confirmed.
+              if (status == 'Review') currentStepIndex = 0; 
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: AppTheme.softShadow,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0))),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Order #ORD-${doc.id.substring(0, 6).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              const SizedBox(height: 4),
-                              Text(dateStr, style: const TextStyle(color: AppTheme.textLight, fontSize: 12)),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: status == 'Cancelled' ? Colors.red.withValues(alpha: 0.1) : AppTheme.secondaryAccent.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              status.toUpperCase(),
-                              style: TextStyle(
-                                color: status == 'Cancelled' ? Colors.red : AppTheme.secondaryAccent, 
-                                fontWeight: FontWeight.bold, 
-                                fontSize: 10
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
+              final isCancelled = status == 'Cancelled';
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: BouncyCard(
+                  onTap: () {
+                    // Could navigate to Order Details screen here if one exists
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: AppTheme.modernShadow,
                     ),
-                    
-                    // Tracking Stepper
-                    if (status != 'Cancelled')
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: List.generate(statusSteps.length * 2 - 1, (i) {
-                            if (i % 2 == 0) {
-                              // Node
-                              int stepIdx = i ~/ 2;
-                              bool isCompleted = stepIdx <= currentStepIndex;
-                              bool isCurrent = stepIdx == currentStepIndex;
-                              
-                              return Column(
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: isCancelled ? Colors.red.withValues(alpha: 0.05) : AppTheme.primaryAction.withValues(alpha: 0.05),
+                            border: const Border(bottom: BorderSide(color: Color(0xFFF3F4F6))),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: isCompleted ? AppTheme.primaryAction : AppTheme.background,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: isCompleted ? AppTheme.primaryAction : Colors.grey.shade300,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: isCompleted 
-                                      ? const Icon(Icons.check, size: 14, color: Colors.white) 
-                                      : null,
+                                  Text(
+                                    'ORD-${doc.id.substring(0, 6).toUpperCase()}', 
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.textDark)
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    statusSteps[stepIdx],
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                                      color: isCompleted ? AppTheme.primaryAction : AppTheme.textLight
-                                    ),
-                                  )
+                                  Text(dateStr, style: const TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.w500)),
                                 ],
-                              );
-                            } else {
-                              // Line
-                              int stepIdx = i ~/ 2;
-                              bool isCompletedLine = stepIdx < currentStepIndex;
-                              return Expanded(
-                                child: Container(
-                                  height: 2,
-                                  margin: const EdgeInsets.only(bottom: 16), // offset text height
-                                  color: isCompletedLine ? AppTheme.primaryAction : Colors.grey.shade200,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isCancelled ? Colors.red.shade100 : AppTheme.secondaryAccent.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  status.toUpperCase(),
+                                  style: TextStyle(
+                                    color: isCancelled ? Colors.red.shade700 : AppTheme.secondaryAccent, 
+                                    fontWeight: FontWeight.w800, 
+                                    fontSize: 10,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                        
+                        // Tracking Stepper
+                        if (!isCancelled)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                            child: Row(
+                              children: List.generate(statusSteps.length * 2 - 1, (i) {
+                                if (i % 2 == 0) {
+                                  // Node
+                                  int stepIdx = i ~/ 2;
+                                  bool isCompleted = currentStepIndex != -1 && stepIdx <= currentStepIndex;
+                                  bool isCurrent = stepIdx == currentStepIndex;
+                                  
+                                  return Column(
+                                    children: [
+                                      Container(
+                                        width: 24,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          color: isCompleted ? AppTheme.primaryAction : AppTheme.background,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: isCompleted ? AppTheme.primaryAction : Colors.grey.shade300,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: isCompleted 
+                                          ? const Icon(Icons.check, size: 14, color: Colors.white) 
+                                          : null,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        statusSteps[stepIdx],
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                                          color: isCompleted ? AppTheme.primaryAction : AppTheme.textLight
+                                        ),
+                                      )
+                                    ],
+                                  );
+                                } else {
+                                  // Line
+                                  int stepIdx = i ~/ 2;
+                                  bool isCompletedLine = currentStepIndex != -1 && stepIdx < currentStepIndex;
+                                  return Expanded(
+                                    child: Container(
+                                      height: 2,
+                                      margin: const EdgeInsets.only(bottom: 20), // offset for text
+                                      color: isCompletedLine ? AppTheme.primaryAction : Colors.grey.shade200,
+                                    ),
+                                  );
+                                }
+                              }),
+                            ),
+                          ),
+    
+                        // Items List
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: items.map((item) {
+                              final qty = item['quantityKg'] ?? item['quantity'] ?? 0;
+                              final name = item['name'] ?? 'Unknown Item';
+                              final price = item['basePriceKg'] ?? item['price'] ?? 0;
+                              final lineTotal = item['lineTotal'] ?? (qty * price);
+                              
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${qty}Kg × $name', 
+                                        style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark)
+                                      )
+                                    ),
+                                    Text(
+                                      currencyFormat.format(lineTotal),
+                                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textDark)
+                                    ),
+                                  ],
                                 ),
                               );
-                            }
-                          }),
-                        ),
-                      ),
-
-                    // Items
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: items.map((item) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('${item['quantityKg'] ?? item['quantity']} Kg x ${item['name']}'),
-                                Text(currencyFormat.format(item['lineTotal'] ?? ((item['basePriceKg'] ?? item['price'] ?? 0) * (item['quantityKg'] ?? item['quantity'] ?? 0)))),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-
-                    // Footer
-                    Container(
-                      margin: const EdgeInsets.only(top: 12),
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFAFAFA),
-                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.w600)),
-                          Text(currencyFormat.format(total), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryAction)),
-                        ],
-                      ),
-                    ),
-
-                    if (paymentStatus == 'Done' && invoiceNo != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.download, size: 18),
-                          label: const Text('Download Invoice'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.primaryAction,
-                            side: const BorderSide(color: AppTheme.primaryAction),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            }).toList(),
                           ),
-                          onPressed: () async {
-                            final projectId = FirebaseFirestore.instance.app.options.projectId;
-                            final url = Uri.parse('https://us-central1-$projectId.cloudfunctions.net/downloadInvoice?orderId=${doc.id}');
-                            try {
-                              await launchUrl(url, mode: LaunchMode.inAppBrowserView);
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Could not open invoice')),
-                                );
-                              }
-                            }
-                          },
                         ),
-                      )
-                  ],
+    
+                        // Footer
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF9FAFB),
+                            border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 12)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    currencyFormat.format(total), 
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: AppTheme.primaryAction)
+                                  ),
+                                ],
+                              ),
+                              if (paymentStatus == 'Done' && invoiceNo != null)
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.download, size: 16),
+                                  label: const Text('Invoice'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.primaryAction,
+                                    side: const BorderSide(color: AppTheme.primaryAction),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+                                  ),
+                                  onPressed: () async {
+                                    final projectId = FirebaseFirestore.instance.app.options.projectId;
+                                    final url = Uri.parse('https://us-central1-$projectId.cloudfunctions.net/downloadInvoice?orderId=${doc.id}');
+                                    try {
+                                      await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Could not open invoice')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },

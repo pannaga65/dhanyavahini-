@@ -5,9 +5,10 @@ class CartItem {
   final String name;
   final double price;
   final int quantity;
+  final int moqKg;
   final double gstPercentage;
   
-  CartItem({required this.productId, required this.name, required this.price, required this.quantity, required this.gstPercentage});
+  CartItem({required this.productId, required this.name, required this.price, required this.quantity, required this.moqKg, required this.gstPercentage});
 }
 
 class CartNotifier extends Notifier<List<CartItem>> {
@@ -25,6 +26,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
         name: item.name,
         price: item.price,
         quantity: state[existingIndex].quantity + item.quantity,
+        moqKg: item.moqKg,
         gstPercentage: item.gstPercentage,
       );
       state = updatedList;
@@ -35,6 +37,26 @@ class CartNotifier extends Notifier<List<CartItem>> {
 
   void removeItem(String productId) {
     state = state.where((item) => item.productId != productId).toList();
+  }
+
+  void updateQuantity(String productId, int newQuantity) {
+    final index = state.indexWhere((i) => i.productId == productId);
+    if (index >= 0) {
+      if (newQuantity < state[index].moqKg) {
+        removeItem(productId);
+      } else {
+        final updatedList = [...state];
+        updatedList[index] = CartItem(
+          productId: state[index].productId,
+          name: state[index].name,
+          price: state[index].price,
+          quantity: newQuantity,
+          moqKg: state[index].moqKg,
+          gstPercentage: state[index].gstPercentage,
+        );
+        state = updatedList;
+      }
+    }
   }
 
   void clear() {

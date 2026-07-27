@@ -39,7 +39,7 @@ class CartScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppTheme.softShadow,
+                    boxShadow: AppTheme.modernShadow,
                   ),
                   child: Row(
                     children: [
@@ -64,28 +64,43 @@ class CartScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Remove Item?'),
-                              content: const Text('Are you sure you want to remove this item from your cart?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                  onPressed: () {
-                                    cartNotifier.removeItem(item.productId);
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('REMOVE', style: TextStyle(color: Colors.white)),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                            onPressed: () {
+                              cartNotifier.removeItem(item.productId);
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity - item.moqKg),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(4)),
+                                  child: const Icon(Icons.remove, size: 16),
                                 ),
-                              ],
-                            ),
-                          );
-                        },
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: Text('${item.quantity}Kg', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              GestureDetector(
+                                onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity + item.moqKg),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(color: AppTheme.primaryAction.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                                  child: const Icon(Icons.add, size: 16, color: AppTheme.primaryAction),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       )
                     ],
                   ),
@@ -96,7 +111,7 @@ class CartScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: AppTheme.softShadow,
+          boxShadow: AppTheme.modernShadow,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: SafeArea(

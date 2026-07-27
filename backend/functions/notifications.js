@@ -42,12 +42,28 @@ async function notifyAdmins(title, body) {
   try {
     const adminsSnap = await db.collection("admins").get();
     const tokens = [];
+    
+    // Save to Firestore for in-app notifications
+    const batch = db.batch();
+    const now = new Date().toISOString();
+    
     adminsSnap.forEach(doc => {
       const data = doc.data();
       if (data.fcmToken) {
         tokens.push(data.fcmToken);
       }
+      
+      const notifRef = db.collection("notifications").doc();
+      batch.set(notifRef, {
+        userId: doc.id,
+        title,
+        body,
+        isRead: false,
+        createdAt: now
+      });
     });
+    
+    await batch.commit();
     
     if (tokens.length === 0) return console.log("No admin FCM tokens found.");
     
@@ -67,6 +83,15 @@ async function notifyCustomer(customerId, title, body) {
   if (!customerId) return;
   
   try {
+    // Save to Firestore for in-app notifications
+    await db.collection("notifications").add({
+      userId: customerId,
+      title,
+      body,
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
     const userDoc = await db.collection("users").doc(customerId).get();
     if (!userDoc.exists) return;
     

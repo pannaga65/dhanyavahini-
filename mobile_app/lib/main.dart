@@ -72,7 +72,7 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/all-products',
-      builder: (context, state) => const AllProductsScreen(),
+      builder: (context, state) => AllProductsScreen(searchQuery: state.uri.queryParameters['query']),
     ),
     GoRoute(
       path: '/notifications',

@@ -41,13 +41,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await Future.delayed(const Duration(milliseconds: 1500));
       if (!mounted) return;
       
-      await showModalBottomSheet(
+      final reqLoc = await showModalBottomSheet<bool>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (context) => _buildLocationPrompt(),
       );
       await prefs.setBool('has_asked_location', true);
+
+      if (reqLoc == true) {
+        await requestAndSaveLocation();
+      }
     }
 
     // Then check notifications
@@ -56,13 +60,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await Future.delayed(const Duration(milliseconds: 1000));
       if (!mounted) return;
       
-      showModalBottomSheet(
+      final reqNotif = await showModalBottomSheet<bool>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (context) => _buildNotificationPrompt(),
       );
       await prefs.setBool('has_asked_notifications', true);
+
+      if (reqNotif == true) {
+        await requestAndSaveFCMToken();
+      }
     }
   }
 
@@ -106,16 +114,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              onPressed: () async {
-                Navigator.pop(context);
-                await requestAndSaveLocation();
+              onPressed: () {
+                Navigator.pop(context, true);
               },
               child: const Text('ALLOW LOCATION', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
             ),
           ),
           const SizedBox(height: 16),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Not Now', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold)),
           ),
         ],
@@ -163,16 +170,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              onPressed: () async {
-                Navigator.pop(context);
-                await requestAndSaveFCMToken();
+              onPressed: () {
+                Navigator.pop(context, true);
               },
               child: const Text('ALLOW NOTIFICATIONS', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
             ),
           ),
           const SizedBox(height: 16),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Not Now', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold)),
           ),
         ],
@@ -349,7 +355,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       controller: _searchController,
                       onSubmitted: (value) {
                         if (value.trim().isNotEmpty) {
-                          context.push('/all-products');
+                          context.push('/all-products?query=${Uri.encodeComponent(value.trim())}');
                         }
                       },
                       decoration: InputDecoration(

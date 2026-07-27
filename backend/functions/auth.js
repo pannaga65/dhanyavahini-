@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getAuth } = require("firebase-admin/auth");
+const { getFirestore } = require("firebase-admin/firestore");
 const nodemailer = require("nodemailer");
 const { sanitize, isValidEmail } = require("./validation");
 
@@ -22,6 +23,22 @@ exports.sendCustomPasswordReset = onCall(async (request) => {
   }
 
   try {
+    const db = getFirestore();
+    const usersSnapshot = await db.collection("users")
+      .where("email", "==", email)
+      .where("role", "in", ["customer", "admin"])
+      .where("isActive", "==", true)
+      .limit(1)
+      .get();
+
+    const successMessage = "If your email is registered and approved, a password reset link has been sent.";
+
+    if (usersSnapshot.empty) {
+      // User is not an active customer or admin.
+      // Silently return success to prevent email enumeration.
+      return { success: true, message: successMessage };
+    }
+
     // Check if user exists (will throw if not found)
     const userRecord = await auth.getUserByEmail(email);
 
@@ -58,13 +75,11 @@ exports.sendCustomPasswordReset = onCall(async (request) => {
       html: htmlBody,
     });
 
-    return { success: true, message: "Password reset email sent successfully." };
+    return { success: true, message: successMessage };
   } catch (error) {
     console.error("sendCustomPasswordReset error:", error);
-    // Don't leak exact user existence errors to prevent email enumeration, just return a generic success message
-    if (error.code === 'auth/user-not-found') {
-      return { success: true, message: "If the email exists, a reset link was sent." };
-    }
-    throw new HttpsError("internal", "Failed to process password reset request.");
+    // Always return a generic success message to prevent email enumeration.
+    // We do NOT throw HttpsError here so that the client cannot differentiate between success and failure.
+    return { success: true, message: "If your email is registered and approved, a password reset link has been sent." };
   }
 });

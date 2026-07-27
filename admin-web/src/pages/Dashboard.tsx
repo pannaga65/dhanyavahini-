@@ -76,7 +76,7 @@ interface DashboardProps {
 
 export default function Dashboard({ userEmail }: DashboardProps) {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0, advances: 0 });
+  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0, settlements: 0 });
 
   useEffect(() => {
     (async () => {
@@ -86,14 +86,14 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           getCountFromServer(collection(db, 'products')),
           getCountFromServer(collection(db, 'users')),
           getCountFromServer(query(collection(db, 'orders'), where('status', '==', 'Inquiry'))),
-          getCountFromServer(collection(db, 'farmer_advances')),
+          getCountFromServer(collection(db, 'farmer_settlements')),
         ]);
         setStats({
           orders: o.data().count,
           products: p.data().count,
           customers: c.data().count,
           inquiries: i.data().count,
-          advances: a.data().count,
+          settlements: a.data().count,
         });
       } catch (e) {
         console.error('Error fetching live dashboard stats:', e);
@@ -152,11 +152,11 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           onClick={() => navigate('/orders')}
         />
         <BrutalistCard
-          title="ADVANCES"
-          count={stats.advances}
-          subtitle="FARMER PAYMENTS"
+          title="SETTLEMENTS"
+          count={stats.settlements}
+          subtitle="FARMER BILLS"
           icon={<PaymentsOutlinedIcon sx={iconSx} />}
-          onClick={() => navigate('/advances')}
+          onClick={() => navigate('/settlements')}
         />
       </Box>
     </Box>

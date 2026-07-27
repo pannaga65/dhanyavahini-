@@ -73,7 +73,7 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    match /farmer_advances/{advanceId} {
+    match /farmer_settlements/{settlementId} {
       allow read, write: if isAdmin();
     }
 

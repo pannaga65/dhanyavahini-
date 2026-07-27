@@ -18,7 +18,7 @@ export default function Farmers() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
-    name: '', aadharNumber: '', phoneNumber: '', altPhoneNumber: '',
+    farmerId: '', name: '', aadharNumber: '', phoneNumber: '', altPhoneNumber: '',
     accountNumber: '', ifscCode: '', bankName: '', address: ''
   });
 
@@ -36,7 +36,7 @@ export default function Farmers() {
   const handleOpenNew = () => {
     setEditingId(null);
     setFormData({
-      name: '', aadharNumber: '', phoneNumber: '', altPhoneNumber: '',
+      farmerId: '', name: '', aadharNumber: '', phoneNumber: '', altPhoneNumber: '',
       accountNumber: '', ifscCode: '', bankName: '', address: ''
     });
     setOpen(true);
@@ -45,6 +45,7 @@ export default function Farmers() {
   const handleOpenEdit = (farmer: any) => {
     setEditingId(farmer.id);
     setFormData({
+      farmerId: farmer.farmerId || '',
       name: farmer.name || '',
       aadharNumber: farmer.aadharNumber || '',
       phoneNumber: farmer.phoneNumber || '',
@@ -115,6 +116,7 @@ export default function Farmers() {
     setLoading(true);
     try {
       const payload = {
+        farmerId: formData.farmerId.trim(),
         name: formData.name.trim(),
         aadharNumber: formData.aadharNumber.trim(),
         phoneNumber: formData.phoneNumber.trim() ? `+91${formData.phoneNumber.trim()}` : '',
@@ -154,6 +156,7 @@ export default function Farmers() {
     const lowerQuery = searchQuery.toLowerCase();
     return farmers.filter(farmer =>
       (farmer.name || '').toLowerCase().includes(lowerQuery) ||
+      (farmer.farmerId || '').toLowerCase().includes(lowerQuery) ||
       (farmer.phoneNumber || '').includes(lowerQuery) ||
       (farmer.aadharNumber || '').includes(lowerQuery)
     );
@@ -212,7 +215,12 @@ export default function Farmers() {
           <TableBody>
             {filteredFarmers.map((row) => (
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
+                <TableCell>
+                  <Typography sx={{ fontWeight: 700 }}>{row.name}</Typography>
+                  {row.farmerId && (
+                    <Typography sx={{ fontSize: '0.75rem', color: '#666', fontWeight: 600 }}>ID: {row.farmerId}</Typography>
+                  )}
+                </TableCell>
                 <TableCell>{row.phoneNumber}</TableCell>
                 <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{row.aadharNumber}</TableCell>
                 <TableCell>
@@ -261,12 +269,20 @@ export default function Farmers() {
             {editingId ? 'EDIT FARMER' : 'ADD NEW FARMER'}
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField
-              label="Name (As per Bank/Aadhar)"
-              fullWidth
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Farmer ID / Ledger ID (Optional)"
+                fullWidth
+                value={formData.farmerId}
+                onChange={(e) => setFormData({ ...formData, farmerId: e.target.value })}
+              />
+              <TextField
+                label="Name (As per Bank/Aadhar)"
+                fullWidth
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </Box>
             <TextField
               label="Aadhar Number"
               fullWidth

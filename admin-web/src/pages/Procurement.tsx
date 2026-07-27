@@ -54,9 +54,10 @@ export default function Procurement() {
     initialAdvance: '',
     paymentMode: 'Cash',
     referenceNumber: '',
+    notes: '',
     // For legacy edits
     details: '',
-    totalAmount: '',
+    totalAmount: ''
   });
 
   const [paymentData, setPaymentData] = useState({
@@ -172,6 +173,7 @@ export default function Procurement() {
       initialAdvance: '',
       paymentMode: 'Bank Transfer',
       referenceNumber: '',
+      notes: '',
       details: '',
       totalAmount: '',
     });
@@ -192,6 +194,7 @@ export default function Procurement() {
       initialAdvance: '',
       paymentMode: 'Bank Transfer',
       referenceNumber: '',
+      notes: row.notes || '',
       details: row.details || '',
       totalAmount: row.totalAmount.toString(),
     });
@@ -284,9 +287,10 @@ export default function Procurement() {
           totalAmount: total,
           balance: balance,
           status: balance <= 0 ? 'Fully Paid' : 'Pending',
+          notes: billData.notes.trim(),
         };
         
-        if (billData.productId) {
+        if (billData.categoryId) {
           updatePayload.categoryId = billData.categoryId;
           updatePayload.categoryName = categoryName;
           updatePayload.productId = billData.productId;
@@ -315,6 +319,7 @@ export default function Procurement() {
           wastagePercent: Number(billData.wastagePercent),
           netWeight: netWeightCalculated,
           ratePerKg: Number(billData.ratePerKg),
+          notes: billData.notes.trim(),
           totalAmount: total,
           amountPaid: advance,
           balance: balance,
@@ -817,6 +822,16 @@ export default function Procurement() {
                 )}
               </Box>
             )}
+
+            <TextField
+              label="Notes (Optional)"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder="Any additional notes about this order..."
+              value={billData.notes}
+              onChange={(e) => setBillData({ ...billData, notes: e.target.value })}
+            />
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>

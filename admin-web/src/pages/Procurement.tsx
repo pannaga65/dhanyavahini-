@@ -58,6 +58,7 @@ export default function Procurement() {
     wastagePercent: '',
     ratePerKg: '',
     initialAdvance: '',
+    initialAdvanceNotes: '',
     paymentMode: 'Cash',
     referenceNumber: '',
     notes: '',
@@ -70,7 +71,8 @@ export default function Procurement() {
     amount: '',
     date: new Date().toISOString().split('T')[0],
     mode: 'Bank Transfer',
-    reference: ''
+    reference: '',
+    notes: ''
   });
 
   const paymentModes = ['Bank Transfer', 'UPI', 'Cash', 'Cheque'];
@@ -208,6 +210,7 @@ export default function Procurement() {
       notes: '',
       details: '',
       totalAmount: '',
+      initialAdvanceNotes: ''
     });
     setDeductForLoan(false);
     setLoanDeductionAmount('');
@@ -231,6 +234,7 @@ export default function Procurement() {
       notes: row.notes || '',
       details: row.details || '',
       totalAmount: row.totalAmount.toString(),
+      initialAdvanceNotes: ''
     });
     setDeductForLoan(false);
     setLoanDeductionAmount('');
@@ -243,7 +247,8 @@ export default function Procurement() {
       amount: '',
       date: new Date().toISOString().split('T')[0],
       mode: 'Bank Transfer',
-      reference: ''
+      reference: '',
+      notes: ''
     });
     setDeductForLoan(false);
     setLoanDeductionAmount('');
@@ -380,7 +385,8 @@ export default function Procurement() {
             date: billData.date,
             amount: advance,
             mode: billData.paymentMode,
-            reference: billData.referenceNumber.trim()
+            reference: billData.referenceNumber.trim(),
+            notes: billData.initialAdvanceNotes.trim()
           };
 
           // Process Loan Deduction if enabled
@@ -422,7 +428,8 @@ export default function Procurement() {
               remainingToDeduct -= toDeduct;
             }
 
-            newPaymentObj.notes = `₹${deductedAmount} deducted for loan recovery. Farmer received ₹${advance - deductedAmount}.`;
+            const loanNote = `₹${deductedAmount} deducted for loan recovery. Farmer received ₹${advance - deductedAmount}.`;
+            newPaymentObj.notes = newPaymentObj.notes ? `${newPaymentObj.notes} | ${loanNote}` : loanNote;
           }
 
           payload.payments.push(newPaymentObj);
@@ -465,7 +472,8 @@ export default function Procurement() {
         date: paymentData.date,
         amount: paymentAmount,
         mode: paymentData.mode,
-        reference: paymentData.reference.trim()
+        reference: paymentData.reference.trim(),
+        notes: paymentData.notes.trim()
       };
 
       // Process Loan Deduction if enabled
@@ -507,7 +515,8 @@ export default function Procurement() {
           remainingToDeduct -= toDeduct;
         }
 
-        newPaymentObj.notes = `₹${deductedAmount} deducted for loan recovery. Farmer received ₹${paymentAmount - deductedAmount}.`;
+        const loanNote = `₹${deductedAmount} deducted for loan recovery. Farmer received ₹${paymentAmount - deductedAmount}.`;
+        newPaymentObj.notes = newPaymentObj.notes ? `${newPaymentObj.notes} | ${loanNote}` : loanNote;
       }
 
       await updateDoc(doc(db, 'farmer_settlements', selectedSettlementId), {
@@ -967,6 +976,14 @@ export default function Procurement() {
                       onChange={(e) => setBillData({ ...billData, referenceNumber: e.target.value })}
                     />
                   </Box>
+                  <TextField
+                    label="Payment Notes (Optional)"
+                    fullWidth
+                    size="small"
+                    placeholder="E.g., handed to brother"
+                    value={billData.initialAdvanceNotes}
+                    onChange={(e) => setBillData({ ...billData, initialAdvanceNotes: e.target.value })}
+                  />
                 </Box>
                 
                 {/* Add Loan Deduction in New Bill */}
@@ -1075,6 +1092,13 @@ export default function Procurement() {
                 onChange={(e) => setPaymentData({ ...paymentData, reference: e.target.value })}
               />
             </Box>
+            <TextField
+              label="Payment Notes (Optional)"
+              fullWidth
+              placeholder="Any additional notes about this specific payment..."
+              value={paymentData.notes}
+              onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+            />
 
             {/* Add Loan Deduction in Record Payment */}
             {selectedSettlementId && settlements.find(s => s.id === selectedSettlementId)?.farmerId !== 'OTHER' && getFarmerLoanBalance(settlements.find(s => s.id === selectedSettlementId)?.farmerId) > 0 && Number(paymentData.amount) > 0 && (

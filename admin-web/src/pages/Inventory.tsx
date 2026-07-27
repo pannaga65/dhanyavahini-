@@ -322,7 +322,7 @@ export default function Inventory() {
               options={[{ id: 'OTHER', name: 'OTHER (Not in list)' }, ...farmers]}
               getOptionLabel={(option) => option.id === 'OTHER' ? option.name : `${option.name} ${option.farmerId ? `[ID: ${option.farmerId}]` : ''} ${option.phoneNumber ? `(${option.phoneNumber})` : ''}`}
               value={formData.farmerId === 'OTHER' ? { id: 'OTHER', name: 'OTHER (Not in list)' } : farmers.find(f => f.id === formData.farmerId) || null}
-              onChange={(e, newValue) => setFormData({ ...formData, farmerId: newValue ? newValue.id : '' })}
+              onChange={(_, newValue) => setFormData({ ...formData, farmerId: newValue ? newValue.id : '' })}
               renderInput={(params) => <TextField {...params} label="Select Farmer or OTHER" required />}
             />
             

@@ -31,7 +31,7 @@ export default function Godowns() {
     try {
       const querySnapshot = await getDocs(collection(db, 'godowns'));
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      data.sort((a, b) => a.name.localeCompare(b.name));
+      data.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
       setGodowns(data);
     } catch (e) {
       console.error('Error fetching godowns', e);

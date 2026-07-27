@@ -60,7 +60,7 @@ Future<bool> requestAndSaveLocation() async {
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
     
-    List<Placemark> placemarks = await placemarkFromCoordinates(
+    List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
         position.latitude, position.longitude);
         
     String address = "Unknown Location";

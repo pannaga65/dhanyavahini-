@@ -426,7 +426,7 @@ export default function Settlements() {
         onClose={() => setSelectedFarmerIdForPopup(null)}
         maxWidth="lg"
         fullWidth
-        PaperProps={{ sx: { minHeight: '80vh', backgroundColor: '#FAFAFA' } }}
+        sx={{ '& .MuiDialog-paper': { minHeight: '80vh', backgroundColor: '#FAFAFA' } }}
       >
         {selectedFarmerGroup && (
           <>
@@ -576,7 +576,7 @@ export default function Settlements() {
                 options={[{ id: 'OTHER', name: 'OTHER (Not in list)' }, ...farmers]}
                 getOptionLabel={(option) => option.id === 'OTHER' ? option.name : `${option.name} ${option.farmerId ? `[ID: ${option.farmerId}]` : ''} ${option.phoneNumber ? `(${option.phoneNumber})` : ''}`}
                 value={billData.farmerId === 'OTHER' ? { id: 'OTHER', name: 'OTHER (Not in list)' } : farmers.find(f => f.id === billData.farmerId) || null}
-                onChange={(e, newValue) => setBillData({ ...billData, farmerId: newValue ? newValue.id : '' })}
+                onChange={(_, newValue) => setBillData({ ...billData, farmerId: newValue ? newValue.id : '' })}
                 renderInput={(params) => <TextField {...params} label="Select Farmer or OTHER" required />}
               />
               <TextField

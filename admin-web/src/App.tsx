@@ -10,6 +10,7 @@ import Customers from './pages/Customers'
 import Orders from './pages/Orders'
 import Inquiries from './pages/Inquiries'
 import Farmers from './pages/Farmers'
+import Advances from './pages/Advances'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
 import app, { messaging } from './firebase'
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { text: 'ORDERS', path: '/orders' },
   { text: 'CUSTOMERS', path: '/customers' },
   { text: 'FARMERS', path: '/farmers' },
+  { text: 'ADVANCES', path: '/advances' },
   { text: 'SETTINGS', path: '/settings' },
 ];
 
@@ -289,6 +291,7 @@ function App() {
           <Route path="/inquiries" element={<Inquiries />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/farmers" element={<Farmers />} />
+          <Route path="/advances" element={<Advances />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

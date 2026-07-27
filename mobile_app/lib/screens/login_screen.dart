@@ -34,25 +34,60 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _forgotPassword() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email to reset password')),
-      );
-      return;
-    }
+    final emailController = TextEditingController(text: _emailController.text.trim());
     
+    final resetEmail = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter your email address to receive a password reset link.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, emailController.text.trim()),
+            child: const Text('Send Reset Link'),
+          ),
+        ],
+      ),
+    );
+
+    if (resetEmail == null || resetEmail.isEmpty) return;
+
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: resetEmail);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password reset email sent! Check your inbox.'), backgroundColor: Colors.green),
         );
       }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Failed to send reset email'), backgroundColor: Colors.red),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(content: Text('An error occurred: $e'), backgroundColor: Colors.red),
         );
       }
     }

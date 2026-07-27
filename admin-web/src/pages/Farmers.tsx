@@ -82,20 +82,14 @@ export default function Farmers() {
   };
 
   const handleSave = async () => {
-    // Basic presence validation
-    if (!formData.name.trim()) {
-      showMessage('Name is required.', 'error');
-      return;
-    }
-
     // Aadhar Validation (Exactly 12 digits)
-    if (!/^\d{12}$/.test(formData.aadharNumber.trim())) {
+    if (formData.aadharNumber.trim() && !/^\d{12}$/.test(formData.aadharNumber.trim())) {
       showMessage('Aadhar Number must be exactly 12 digits.', 'error');
       return;
     }
 
-    // Phone Number Validation (Exactly 10 digits, we prepend +91 manually later or assume the input is just 10 digits)
-    if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
+    // Phone Number Validation (Exactly 10 digits)
+    if (formData.phoneNumber.trim() && !/^\d{10}$/.test(formData.phoneNumber.trim())) {
       showMessage('Primary Mobile Number must be exactly 10 digits.', 'error');
       return;
     }
@@ -107,13 +101,13 @@ export default function Farmers() {
     }
 
     // Bank Account Validation (9 to 18 digits is standard in India)
-    if (!/^\d{9,18}$/.test(formData.accountNumber.trim())) {
+    if (formData.accountNumber.trim() && !/^\d{9,18}$/.test(formData.accountNumber.trim())) {
       showMessage('Account Number must be between 9 and 18 digits.', 'error');
       return;
     }
 
     // IFSC Code Validation (4 letters, 1 zero, 6 alphanumeric)
-    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode.trim().toUpperCase())) {
+    if (formData.ifscCode.trim() && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode.trim().toUpperCase())) {
       showMessage('Invalid IFSC Code format. Must be 11 characters (e.g., SBIN0001234).', 'error');
       return;
     }
@@ -123,7 +117,7 @@ export default function Farmers() {
       const payload = {
         name: formData.name.trim(),
         aadharNumber: formData.aadharNumber.trim(),
-        phoneNumber: `+91${formData.phoneNumber.trim()}`,
+        phoneNumber: formData.phoneNumber.trim() ? `+91${formData.phoneNumber.trim()}` : '',
         altPhoneNumber: formData.altPhoneNumber.trim() ? `+91${formData.altPhoneNumber.trim()}` : '',
         accountNumber: formData.accountNumber.trim(),
         ifscCode: formData.ifscCode.trim().toUpperCase(),
@@ -270,14 +264,12 @@ export default function Farmers() {
             <TextField
               label="Name (As per Bank/Aadhar)"
               fullWidth
-              required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
             <TextField
               label="Aadhar Number"
               fullWidth
-              required
               slotProps={{ htmlInput: { maxLength: 12 } } as any}
               value={formData.aadharNumber}
               onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value.replace(/\D/g, '') })}
@@ -287,7 +279,6 @@ export default function Farmers() {
               <TextField
                 label="Primary Mobile"
                 fullWidth
-                required
                 slotProps={{
                   input: {
                     startAdornment: <InputAdornment position="start">+91</InputAdornment>,
@@ -316,7 +307,6 @@ export default function Farmers() {
             <TextField
               label="Bank Account Number"
               fullWidth
-              required
               slotProps={{ htmlInput: { maxLength: 18 } } as any}
               value={formData.accountNumber}
               onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/\D/g, '') })}
@@ -325,7 +315,6 @@ export default function Farmers() {
               <TextField
                 label="IFSC Code"
                 fullWidth
-                required
                 slotProps={{ htmlInput: { maxLength: 11, style: { textTransform: 'uppercase' } } } as any}
                 value={formData.ifscCode}
                 onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value.toUpperCase() })}

@@ -7,6 +7,7 @@ import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 
 const db = getFirestore(app);
 
@@ -25,7 +26,7 @@ function BrutalistCard({ title, count, subtitle, icon, onClick }: CardProps) {
       onClick={onClick}
       sx={{
         p: { xs: 3, lg: 4 },
-        aspectRatio: { xs: 'auto', md: '4 / 5' },
+        aspectRatio: { xs: 'auto', md: '5 / 4' },
         minHeight: { xs: 200, md: 'auto' },
         display: 'flex',
         flexDirection: 'column',
@@ -75,22 +76,24 @@ interface DashboardProps {
 
 export default function Dashboard({ userEmail }: DashboardProps) {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0 });
+  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0, advances: 0 });
 
   useEffect(() => {
     (async () => {
       try {
-        const [o, p, c, i] = await Promise.all([
+        const [o, p, c, i, a] = await Promise.all([
           getCountFromServer(collection(db, 'orders')),
           getCountFromServer(collection(db, 'products')),
           getCountFromServer(collection(db, 'users')),
           getCountFromServer(query(collection(db, 'orders'), where('status', '==', 'Inquiry'))),
+          getCountFromServer(collection(db, 'farmer_advances')),
         ]);
         setStats({
           orders: o.data().count,
           products: p.data().count,
           customers: c.data().count,
           inquiries: i.data().count,
+          advances: a.data().count,
         });
       } catch (e) {
         console.error('Error fetching live dashboard stats:', e);
@@ -125,7 +128,7 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           count={stats.products}
           subtitle="MANAGE CATALOG"
           icon={<Inventory2OutlinedIcon sx={iconSx} />}
-          onClick={() => navigate('/products')}
+          onClick={() => navigate('/settings/products')}
         />
         <BrutalistCard
           title="CUSTOMERS"
@@ -147,6 +150,13 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           subtitle="MANAGE DISPATCHES"
           icon={<ShoppingCartOutlinedIcon sx={iconSx} />}
           onClick={() => navigate('/orders')}
+        />
+        <BrutalistCard
+          title="ADVANCES"
+          count={stats.advances}
+          subtitle="FARMER PAYMENTS"
+          icon={<PaymentsOutlinedIcon sx={iconSx} />}
+          onClick={() => navigate('/advances')}
         />
       </Box>
     </Box>

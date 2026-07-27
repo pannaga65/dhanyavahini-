@@ -11,6 +11,7 @@ import Orders from './pages/Orders'
 import Inquiries from './pages/Inquiries'
 import Farmers from './pages/Farmers'
 import Procurement from './pages/Procurement'
+import Loans from './pages/Loans'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Inventory from './pages/Inventory'
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { text: 'CUSTOMERS', path: '/customers' },
   { text: 'FARMERS', path: '/farmers' },
   { text: 'PROCUREMENT', path: '/procurement' },
+  { text: 'LOANS', path: '/loans' },
   { text: 'INVENTORY', path: '/inventory' },
   { text: 'SETTINGS', path: '/settings' },
 ];
@@ -294,6 +296,7 @@ function App() {
           <Route path="/customers" element={<Customers />} />
           <Route path="/farmers" element={<Farmers />} />
           <Route path="/procurement" element={<Procurement />} />
+          <Route path="/loans" element={<Loans />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

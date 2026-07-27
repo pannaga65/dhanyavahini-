@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, GlobalStyles, Paper } from '@mui/material';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import app from '../firebase';
 
@@ -71,16 +71,41 @@ export default function PrintBill() {
 
   return (
     <Box sx={{ 
-      p: 4, 
-      maxWidth: '800px', 
-      margin: '0 auto', 
-      backgroundColor: '#FFF',
+      p: { xs: 2, sm: 4 }, 
+      minHeight: '100vh',
+      backgroundColor: '#F5F5F5',
       '@media print': {
         p: 0,
-        m: 0,
-        maxWidth: '100%',
+        backgroundColor: '#FFF',
       }
     }}>
+      <GlobalStyles styles={{
+        '@media print': {
+          '@page': {
+            size: 'A4',
+            margin: '10mm',
+          },
+          'body': {
+            WebkitPrintColorAdjust: 'exact',
+            printColorAdjust: 'exact',
+          }
+        }
+      }} />
+
+      <Paper elevation={3} sx={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        backgroundColor: '#FFF',
+        p: { xs: 3, sm: 5 },
+        borderRadius: { xs: 0, sm: 2 },
+        '@media print': {
+          boxShadow: 'none',
+          maxWidth: '100%',
+          p: 2,
+          m: 0,
+          borderRadius: 0,
+        }
+      }}>
       
       {/* ── HEADER ── */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, borderBottom: '2px solid #000', pb: 2 }}>
@@ -232,6 +257,7 @@ export default function PrintBill() {
         </Box>
       </Box>
 
+      </Paper>
     </Box>
   );
 }

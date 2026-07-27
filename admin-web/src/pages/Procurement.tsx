@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent, Checkbox, FormControlLabel } from '@mui/material';
 import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
@@ -40,6 +40,11 @@ export default function Procurement() {
   const [selectedSettlementId, setSelectedSettlementId] = useState<string | null>(null);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
+  // Loan Integration States
+  const [activeLoans, setActiveLoans] = useState<any[]>([]);
+  const [deductForLoan, setDeductForLoan] = useState(false);
+  const [loanDeductionAmount, setLoanDeductionAmount] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -74,6 +79,7 @@ export default function Procurement() {
     fetchSettlements();
     fetchFarmers();
     fetchCategoriesAndProducts();
+    fetchActiveLoans();
   }, []);
 
   const fetchSettlements = async () => {
@@ -96,6 +102,24 @@ export default function Procurement() {
       setFarmers(activeFarmers);
     } catch (e) {
       console.error('Error fetching farmers', e);
+    }
+  };
+
+  const fetchActiveLoans = async () => {
+    try {
+      const q = query(collection(db, 'farmer_loans'), orderBy('date', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const loans = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      setActiveLoans(loans.filter((l: any) => (l.balance || 0) > 0));
+    } catch (e: any) {
+      console.warn('Falling back to unordered fetch for farmer_loans', e.message);
+      try {
+        const querySnapshot = await getDocs(collection(db, 'farmer_loans'));
+        const docs = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        setActiveLoans(docs.filter((l: any) => (l.balance || 0) > 0));
+      } catch (e2) {
+        console.error('Error fetching loans', e2);
+      }
     }
   };
 
@@ -144,6 +168,13 @@ export default function Procurement() {
     return groups;
   }, [settlements]);
 
+  const getFarmerLoanBalance = (farmerId: string) => {
+    if (!farmerId || farmerId === 'OTHER') return 0;
+    return activeLoans
+      .filter(l => l.farmerId === farmerId)
+      .reduce((sum, l) => sum + (l.balance || 0), 0);
+  };
+
   // Filter groups by search
   const filteredGroups = useMemo(() => {
     if (!searchQuery.trim()) return farmerGroups;
@@ -178,6 +209,8 @@ export default function Procurement() {
       details: '',
       totalAmount: '',
     });
+    setDeductForLoan(false);
+    setLoanDeductionAmount('');
     setOpenNewBill(true);
   };
 
@@ -199,6 +232,8 @@ export default function Procurement() {
       details: row.details || '',
       totalAmount: row.totalAmount.toString(),
     });
+    setDeductForLoan(false);
+    setLoanDeductionAmount('');
     setOpenNewBill(true);
   };
 
@@ -210,6 +245,8 @@ export default function Procurement() {
       mode: 'Bank Transfer',
       reference: ''
     });
+    setDeductForLoan(false);
+    setLoanDeductionAmount('');
     setOpenPayment(true);
   };
 
@@ -338,13 +375,57 @@ export default function Procurement() {
           createdAt: serverTimestamp(),
         };
         if (advance > 0) {
-          payload.payments.push({
+          const newPaymentObj: any = {
             id: crypto.randomUUID(),
             date: billData.date,
             amount: advance,
             mode: billData.paymentMode,
             reference: billData.referenceNumber.trim()
-          });
+          };
+
+          // Process Loan Deduction if enabled
+          let deductedAmount = 0;
+          if (deductForLoan && loanDeductionAmount && Number(loanDeductionAmount) > 0) {
+            deductedAmount = Number(loanDeductionAmount);
+            if (deductedAmount > advance) {
+              setLoading(false);
+              return showMessage('Deduction cannot be greater than the initial advance.', 'error');
+            }
+            
+            const farmerActiveLoans = activeLoans.filter(l => l.farmerId === billData.farmerId).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            let remainingToDeduct = deductedAmount;
+
+            for (const loan of farmerActiveLoans) {
+              if (remainingToDeduct <= 0) break;
+              const toDeduct = Math.min(remainingToDeduct, loan.balance);
+              
+              const newRecovered = loan.amountRecovered + toDeduct;
+              const newLoanBalance = loan.amount - newRecovered;
+              const newLoanStatus = newLoanBalance <= 0 ? 'Recovered' : 'Partially Recovered';
+              
+              const newRecoveryObj = {
+                  id: crypto.randomUUID(),
+                  date: billData.date,
+                  amount: toDeduct,
+                  mode: 'Deducted from Procurement',
+                  reference: `Order #${nextOrderId}`,
+                  notes: `Auto-deducted during procurement advance.`
+              };
+
+              await updateDoc(doc(db, 'farmer_loans', loan.id), {
+                  amountRecovered: newRecovered,
+                  balance: newLoanBalance,
+                  status: newLoanStatus,
+                  recoveries: arrayUnion(newRecoveryObj)
+              });
+
+              remainingToDeduct -= toDeduct;
+            }
+
+            newPaymentObj.notes = `₹${deductedAmount} deducted for loan recovery. Farmer received ₹${advance - deductedAmount}.`;
+          }
+
+          payload.payments.push(newPaymentObj);
         }
         await addDoc(collection(db, 'farmer_settlements'), payload);
         showMessage("New order recorded successfully", "success");
@@ -356,6 +437,7 @@ export default function Procurement() {
 
       setOpenNewBill(false);
       fetchSettlements();
+      fetchActiveLoans(); // Refresh loans after possible deduction
     } catch (error: any) {
       console.error('Error saving bill:', error);
       showMessage('Error saving bill: ' + error.message, "error");
@@ -378,13 +460,55 @@ export default function Procurement() {
       const newBalance = settlement.totalAmount - newPaid;
       const newStatus = newBalance <= 0 ? 'Fully Paid' : 'Pending';
 
-      const newPaymentObj = {
+      const newPaymentObj: any = {
         id: crypto.randomUUID(),
         date: paymentData.date,
         amount: paymentAmount,
         mode: paymentData.mode,
         reference: paymentData.reference.trim()
       };
+
+      // Process Loan Deduction if enabled
+      let deductedAmount = 0;
+      if (deductForLoan && loanDeductionAmount && Number(loanDeductionAmount) > 0) {
+        deductedAmount = Number(loanDeductionAmount);
+        if (deductedAmount > paymentAmount) {
+          setLoading(false);
+          return showMessage('Deduction cannot be greater than the payment amount.', 'error');
+        }
+        
+        const farmerActiveLoans = activeLoans.filter(l => l.farmerId === settlement.farmerId).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        let remainingToDeduct = deductedAmount;
+
+        for (const loan of farmerActiveLoans) {
+          if (remainingToDeduct <= 0) break;
+          const toDeduct = Math.min(remainingToDeduct, loan.balance);
+          
+          const newRecovered = loan.amountRecovered + toDeduct;
+          const newLoanBalance = loan.amount - newRecovered;
+          const newLoanStatus = newLoanBalance <= 0 ? 'Recovered' : 'Partially Recovered';
+          
+          const newRecoveryObj = {
+              id: crypto.randomUUID(),
+              date: paymentData.date,
+              amount: toDeduct,
+              mode: 'Deducted from Procurement',
+              reference: settlement.orderId ? `Order #${settlement.orderId}` : 'Procurement Payment',
+              notes: `Auto-deducted during procurement payment.`
+          };
+
+          await updateDoc(doc(db, 'farmer_loans', loan.id), {
+              amountRecovered: newRecovered,
+              balance: newLoanBalance,
+              status: newLoanStatus,
+              recoveries: arrayUnion(newRecoveryObj)
+          });
+
+          remainingToDeduct -= toDeduct;
+        }
+
+        newPaymentObj.notes = `₹${deductedAmount} deducted for loan recovery. Farmer received ₹${paymentAmount - deductedAmount}.`;
+      }
 
       await updateDoc(doc(db, 'farmer_settlements', selectedSettlementId), {
         amountPaid: newPaid,
@@ -395,7 +519,8 @@ export default function Procurement() {
 
       setOpenPayment(false);
       fetchSettlements();
-      showMessage("Payment added successfully", "success");
+      fetchActiveLoans(); // Refresh loans after deduction
+      showMessage(deductForLoan && Number(loanDeductionAmount) > 0 ? "Payment & loan deduction recorded successfully" : "Payment added successfully", "success");
     } catch (error: any) {
       console.error('Error saving payment:', error);
       showMessage('Error saving payment: ' + error.message, "error");
@@ -532,7 +657,7 @@ export default function Procurement() {
                 <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', letterSpacing: 1, textTransform: 'uppercase' }}>
                   {selectedFarmerGroup.farmerName}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
+                <Box sx={{ display: 'flex', gap: 3, mt: 1, alignItems: 'center' }}>
                   <Typography sx={{ fontWeight: 700, color: '#555' }}>
                     Total Bill: <Box component="span" sx={{ color: '#000' }}>{formatCurrency(selectedFarmerGroup.totalBill)}</Box>
                   </Typography>
@@ -542,6 +667,14 @@ export default function Procurement() {
                   <Typography sx={{ fontWeight: 900, color: '#000' }}>
                     Balance: <Box component="span" sx={{ color: selectedFarmerGroup.totalBalance > 0 ? 'red' : 'green' }}>{formatCurrency(selectedFarmerGroup.totalBalance)}</Box>
                   </Typography>
+                  
+                  {getFarmerLoanBalance(selectedFarmerGroup.farmerId) > 0 && (
+                    <Chip 
+                      label={`⚠ OUTSTANDING LOAN: ${formatCurrency(getFarmerLoanBalance(selectedFarmerGroup.farmerId))}`} 
+                      size="small"
+                      sx={{ fontWeight: 800, backgroundColor: '#FFEBEE', color: '#C62828', borderRadius: 1 }}
+                    />
+                  )}
                 </Box>
               </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
@@ -813,10 +946,8 @@ export default function Procurement() {
                     value={billData.initialAdvance}
                     onChange={(e) => setBillData({ ...billData, initialAdvance: e.target.value })}
                   />
-                </Box>
-                {Number(billData.initialAdvance) > 0 && (
                   <Box sx={{ display: 'flex', gap: 2 }}>
-                    <FormControl fullWidth required>
+                    <FormControl fullWidth>
                       <InputLabel>Payment Mode</InputLabel>
                       <Select
                         value={billData.paymentMode}
@@ -835,6 +966,44 @@ export default function Procurement() {
                       value={billData.referenceNumber}
                       onChange={(e) => setBillData({ ...billData, referenceNumber: e.target.value })}
                     />
+                  </Box>
+                </Box>
+                
+                {/* Add Loan Deduction in New Bill */}
+                {billData.farmerId && billData.farmerId !== 'OTHER' && getFarmerLoanBalance(billData.farmerId) > 0 && Number(billData.initialAdvance) > 0 && (
+                  <Box sx={{ p: 2, mt: 2, border: '1px solid #FFCDD2', backgroundColor: '#FFF3F4', borderRadius: 2 }}>
+                    <Typography sx={{ fontWeight: 800, color: '#C62828', mb: 1, fontSize: '0.85rem' }}>
+                      ⚠ OUTSTANDING LOAN: {formatCurrency(getFarmerLoanBalance(billData.farmerId))}
+                    </Typography>
+                    <FormControlLabel
+                      control={<Checkbox checked={deductForLoan} onChange={(e) => {
+                        setDeductForLoan(e.target.checked);
+                        if (!e.target.checked) setLoanDeductionAmount('');
+                      }} />}
+                      label={<Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Deduct from initial advance for loan recovery</Typography>}
+                    />
+                    {deductForLoan && (
+                      <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <TextField
+                          label="Deduction Amount (₹)"
+                          size="small"
+                          type="number"
+                          value={loanDeductionAmount}
+                          onChange={(e) => setLoanDeductionAmount(e.target.value)}
+                          sx={{ width: 200, backgroundColor: '#FFF' }}
+                        />
+                        {Number(loanDeductionAmount) > 0 && (
+                          <Box>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#333' }}>
+                              → Farmer receives: {formatCurrency(Number(billData.initialAdvance) - Number(loanDeductionAmount))}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'green' }}>
+                              → Loan recovery: {formatCurrency(Number(loanDeductionAmount))}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 )}
               </Box>
@@ -906,6 +1075,44 @@ export default function Procurement() {
                 onChange={(e) => setPaymentData({ ...paymentData, reference: e.target.value })}
               />
             </Box>
+
+            {/* Add Loan Deduction in Record Payment */}
+            {selectedSettlementId && settlements.find(s => s.id === selectedSettlementId)?.farmerId !== 'OTHER' && getFarmerLoanBalance(settlements.find(s => s.id === selectedSettlementId)?.farmerId) > 0 && Number(paymentData.amount) > 0 && (
+              <Box sx={{ p: 2, border: '1px solid #FFCDD2', backgroundColor: '#FFF3F4', borderRadius: 2 }}>
+                <Typography sx={{ fontWeight: 800, color: '#C62828', mb: 1, fontSize: '0.85rem' }}>
+                  ⚠ OUTSTANDING LOAN: {formatCurrency(getFarmerLoanBalance(settlements.find(s => s.id === selectedSettlementId)?.farmerId))}
+                </Typography>
+                <FormControlLabel
+                  control={<Checkbox checked={deductForLoan} onChange={(e) => {
+                    setDeductForLoan(e.target.checked);
+                    if (!e.target.checked) setLoanDeductionAmount('');
+                  }} />}
+                  label={<Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Deduct from this payment for loan recovery</Typography>}
+                />
+                {deductForLoan && (
+                  <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <TextField
+                      label="Deduction Amount (₹)"
+                      size="small"
+                      type="number"
+                      value={loanDeductionAmount}
+                      onChange={(e) => setLoanDeductionAmount(e.target.value)}
+                      sx={{ width: 200, backgroundColor: '#FFF' }}
+                    />
+                    {Number(loanDeductionAmount) > 0 && (
+                      <Box>
+                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#333' }}>
+                          → Farmer receives: {formatCurrency(Number(paymentData.amount) - Number(loanDeductionAmount))}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'green' }}>
+                          → Loan recovery: {formatCurrency(Number(loanDeductionAmount))}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            )}
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>

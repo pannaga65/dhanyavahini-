@@ -133,6 +133,16 @@ function App() {
       </Routes>
     );
   }
+  
+  // Render Print Bill without the sidebar layout
+  if (location.pathname.startsWith('/print-bill')) {
+    return (
+      <Routes>
+        <Route path="/print-bill/:id" element={<PrintBill />} />
+      </Routes>
+    );
+  }
+
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Logo */}
@@ -298,7 +308,6 @@ function App() {
           <Route path="/farmers" element={<Farmers />} />
           <Route path="/procurement" element={<Procurement />} />
           <Route path="/loans" element={<Loans />} />
-          <Route path="/print-bill/:id" element={<PrintBill />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

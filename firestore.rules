@@ -77,6 +77,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // ─── 10. Farmer Loans & Advances ───
+    match /farmer_loans/{loanId} {
+      allow read, write: if isAdmin();
+    }
+
     match /godowns/{godownId} {
       allow read, write: if isAdmin();
     }

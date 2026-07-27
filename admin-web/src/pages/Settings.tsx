@@ -4,6 +4,7 @@ import Products from './Products';
 import Categories from './Categories';
 import Banners from './Banners';
 import BusinessProfile from './BusinessProfile';
+import Godowns from './Godowns';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function Settings() {
     if (location.pathname.includes('/settings/products')) return 1;
     if (location.pathname.includes('/settings/categories')) return 2;
     if (location.pathname.includes('/settings/banners')) return 3;
+    if (location.pathname.includes('/settings/godowns')) return 4;
     return 1; // Default to products
   };
 
@@ -31,6 +33,9 @@ export default function Settings() {
         break;
       case 3:
         navigate('/settings/banners');
+        break;
+      case 4:
+        navigate('/settings/godowns');
         break;
     }
   };
@@ -64,6 +69,7 @@ export default function Settings() {
           <Tab label="PRODUCTS" />
           <Tab label="CATEGORIES" />
           <Tab label="BANNERS" />
+          <Tab label="GODOWNS" />
         </Tabs>
       </Box>
       
@@ -73,6 +79,7 @@ export default function Settings() {
           <Route path="products" element={<Products />} />
           <Route path="categories" element={<Categories />} />
           <Route path="banners" element={<Banners />} />
+          <Route path="godowns" element={<Godowns />} />
           <Route path="/" element={<Navigate to="profile" replace />} />
           <Route path="*" element={<Navigate to="profile" replace />} />
         </Routes>

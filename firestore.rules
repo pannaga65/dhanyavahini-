@@ -77,6 +77,14 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /godowns/{godownId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /inventory_ledger/{ledgerId} {
+      allow read, write: if isAdmin();
+    }
+
     // ─── 10. Audit Logs (Read-only for admins, written by Cloud Functions) ───
     match /audit_logs/{logId} {
       allow read: if isAdmin();

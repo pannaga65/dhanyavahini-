@@ -1,25 +1,44 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse } from '@mui/material';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent } from '@mui/material';
 import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import EditIcon from '@mui/icons-material/Edit';
+import CloseIcon from '@mui/icons-material/Close';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
 const db = getFirestore(app);
 
+interface FarmerGroup {
+  farmerId: string;
+  farmerName: string;
+  orders: any[];
+  totalBill: number;
+  totalPaid: number;
+  totalBalance: number;
+  status: string;
+}
+
 export default function Settlements() {
   const { showConfirm, showMessage } = useUI();
   const [settlements, setSettlements] = useState<any[]>([]);
   const [farmers, setFarmers] = useState<any[]>([]);
+  
+  // Dialog States
   const [openNewBill, setOpenNewBill] = useState(false);
   const [openPayment, setOpenPayment] = useState(false);
+  const [selectedFarmerIdForPopup, setSelectedFarmerIdForPopup] = useState<string | null>(null);
+
+  // Edit / Action States
+  const [editingBillId, setEditingBillId] = useState<string | null>(null);
   const [selectedSettlementId, setSelectedSettlementId] = useState<string | null>(null);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const [billData, setBillData] = useState({
     farmerId: '',
@@ -41,8 +60,8 @@ export default function Settlements() {
 
   const paymentModes = ['Bank Transfer', 'UPI', 'Cash', 'Cheque'];
 
-  useEffect(() => { 
-    fetchSettlements(); 
+  useEffect(() => {
+    fetchSettlements();
     fetchFarmers();
   }, []);
 
@@ -50,7 +69,7 @@ export default function Settlements() {
     try {
       const q = query(collection(db, 'farmer_settlements'), orderBy('date', 'desc'));
       const querySnapshot = await getDocs(q);
-      setSettlements(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setSettlements(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) {
       console.error('Error fetching settlements', e);
     }
@@ -60,7 +79,7 @@ export default function Settlements() {
     try {
       const querySnapshot = await getDocs(collection(db, 'farmers'));
       const activeFarmers = querySnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .map(d => ({ id: d.id, ...d.data() }))
         .filter((f: any) => f.isActive !== false);
       activeFarmers.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
       setFarmers(activeFarmers);
@@ -69,13 +88,79 @@ export default function Settlements() {
     }
   };
 
-  const handleOpenNewBill = () => {
+  // Group all settlements by farmer
+  const farmerGroups: FarmerGroup[] = useMemo(() => {
+    const groupMap = new Map<string, FarmerGroup>();
+
+    for (const s of settlements) {
+      const key = s.farmerId || s.farmerName;
+      if (!groupMap.has(key)) {
+        groupMap.set(key, {
+          farmerId: s.farmerId,
+          farmerName: s.farmerName,
+          orders: [],
+          totalBill: 0,
+          totalPaid: 0,
+          totalBalance: 0,
+          status: 'Fully Paid'
+        });
+      }
+      const group = groupMap.get(key)!;
+      group.orders.push(s);
+      group.totalBill += s.totalAmount || 0;
+      group.totalPaid += s.amountPaid || 0;
+      group.totalBalance += s.balance || 0;
+      if (s.balance > 0) group.status = 'Pending';
+    }
+
+    const groups = Array.from(groupMap.values());
+    groups.sort((a, b) => {
+      // Pending farmers first, then alphabetical
+      if (a.status !== b.status) return a.status === 'Pending' ? -1 : 1;
+      return a.farmerName.localeCompare(b.farmerName);
+    });
+    return groups;
+  }, [settlements]);
+
+  // Filter groups by search
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return farmerGroups;
+    const lowerQuery = searchQuery.toLowerCase();
+    return farmerGroups.filter(g =>
+      g.farmerName.toLowerCase().includes(lowerQuery) ||
+      g.orders.some(o => (o.details || '').toLowerCase().includes(lowerQuery))
+    );
+  }, [farmerGroups, searchQuery]);
+
+  const selectedFarmerGroup = useMemo(() => {
+    if (!selectedFarmerIdForPopup) return null;
+    return farmerGroups.find(g => g.farmerId === selectedFarmerIdForPopup) || null;
+  }, [selectedFarmerIdForPopup, farmerGroups]);
+
+
+  const handleOpenNewBill = (prefillFarmerId = '') => {
+    setEditingBillId(null);
     setBillData({
-      farmerId: '',
+      farmerId: prefillFarmerId,
       otherPayeeName: '',
       date: new Date().toISOString().split('T')[0],
       details: '',
       totalAmount: '',
+      initialAdvance: '',
+      paymentMode: 'Bank Transfer',
+      referenceNumber: ''
+    });
+    setOpenNewBill(true);
+  };
+
+  const handleOpenEditBill = (row: any) => {
+    setEditingBillId(row.id);
+    setBillData({
+      farmerId: row.farmerId,
+      otherPayeeName: row.farmerId === 'OTHER' ? row.farmerName : '',
+      date: row.date,
+      details: row.details || '',
+      totalAmount: row.totalAmount.toString(),
       initialAdvance: '',
       paymentMode: 'Bank Transfer',
       referenceNumber: ''
@@ -95,14 +180,15 @@ export default function Settlements() {
   };
 
   const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to delete this entire bill and its payments? This action cannot be undone.", async () => {
+    showConfirm("Are you sure you want to delete this order and its payments? This action cannot be undone.", async () => {
       try {
         await deleteDoc(doc(db, 'farmer_settlements', id));
         fetchSettlements();
-        showMessage("Settlement record deleted", "success");
+        showMessage("Order deleted", "success");
+        // If it was the last order, maybe close the dialog if it becomes empty on next render
       } catch (e) {
         console.error("Error deleting", e);
-        showMessage("Failed to delete record.", "error");
+        showMessage("Failed to delete.", "error");
       }
     });
   };
@@ -123,36 +209,56 @@ export default function Settlements() {
       }
 
       const total = Number(billData.totalAmount);
-      const advance = Number(billData.initialAdvance) || 0;
-      const balance = total - advance;
 
-      const payload: any = {
-        farmerId: billData.farmerId,
-        farmerName: finalFarmerName,
-        date: billData.date,
-        details: billData.details.trim(),
-        totalAmount: total,
-        amountPaid: advance,
-        balance: balance,
-        status: balance <= 0 ? 'Fully Paid' : 'Pending',
-        payments: [],
-        createdAt: serverTimestamp(),
-      };
-
-      if (advance > 0) {
-        payload.payments.push({
-          id: crypto.randomUUID(),
+      if (editingBillId) {
+        const existingBill = settlements.find(s => s.id === editingBillId);
+        if (!existingBill) throw new Error("Bill not found.");
+        const balance = total - existingBill.amountPaid;
+        await updateDoc(doc(db, 'farmer_settlements', editingBillId), {
+          farmerId: billData.farmerId,
+          farmerName: finalFarmerName,
           date: billData.date,
-          amount: advance,
-          mode: billData.paymentMode,
-          reference: billData.referenceNumber.trim()
+          details: billData.details.trim(),
+          totalAmount: total,
+          balance: balance,
+          status: balance <= 0 ? 'Fully Paid' : 'Pending',
         });
+        showMessage("Bill updated successfully", "success");
+      } else {
+        const advance = Number(billData.initialAdvance) || 0;
+        const balance = total - advance;
+        const payload: any = {
+          farmerId: billData.farmerId,
+          farmerName: finalFarmerName,
+          date: billData.date,
+          details: billData.details.trim(),
+          totalAmount: total,
+          amountPaid: advance,
+          balance: balance,
+          status: balance <= 0 ? 'Fully Paid' : 'Pending',
+          payments: [],
+          createdAt: serverTimestamp(),
+        };
+        if (advance > 0) {
+          payload.payments.push({
+            id: crypto.randomUUID(),
+            date: billData.date,
+            amount: advance,
+            mode: billData.paymentMode,
+            reference: billData.referenceNumber.trim()
+          });
+        }
+        await addDoc(collection(db, 'farmer_settlements'), payload);
+        showMessage("New order recorded successfully", "success");
+        
+        // Optionally automatically open the pop-up if we just created a new bill for someone
+        if (!selectedFarmerIdForPopup && billData.farmerId !== 'OTHER') {
+          setSelectedFarmerIdForPopup(billData.farmerId);
+        }
       }
 
-      await addDoc(collection(db, 'farmer_settlements'), payload);
       setOpenNewBill(false);
       fetchSettlements();
-      showMessage("New bill recorded successfully", "success");
     } catch (error: any) {
       console.error('Error saving bill:', error);
       showMessage('Error saving bill: ' + error.message, "error");
@@ -201,17 +307,16 @@ export default function Settlements() {
     }
   };
 
-  const filteredSettlements = useMemo(() => {
-    if (!searchQuery.trim()) return settlements;
-    const lowerQuery = searchQuery.toLowerCase();
-    return settlements.filter(s =>
-      (s.farmerName || '').toLowerCase().includes(lowerQuery) ||
-      (s.details || '').toLowerCase().includes(lowerQuery)
-    );
-  }, [settlements, searchQuery]);
-
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount || 0);
+
+  // Close the popup if there are no more orders for this farmer
+  useEffect(() => {
+    if (selectedFarmerIdForPopup && selectedFarmerGroup?.orders.length === 0) {
+      setSelectedFarmerIdForPopup(null);
+    }
+  }, [selectedFarmerGroup, selectedFarmerIdForPopup]);
+
 
   return (
     <Box>
@@ -229,7 +334,7 @@ export default function Settlements() {
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <TextField
-          placeholder="Search by Farmer, Details..."
+          placeholder="Search Farmers..."
           variant="outlined"
           size="small"
           value={searchQuery}
@@ -245,107 +350,67 @@ export default function Settlements() {
             }
           } as any}
         />
-        <Button variant="contained" onClick={handleOpenNewBill} sx={{ fontWeight: 700 }}>
-          + NEW BILL
+        <Button variant="contained" onClick={() => handleOpenNewBill()} sx={{ fontWeight: 700 }}>
+          + NEW ORDER
         </Button>
       </Box>
 
+      {/* ── MAIN VIEW: FARMERS LIST ── */}
       <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell />
-              <TableCell sx={{ fontWeight: 900 }}>DATE</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>FARMER</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>DETAILS</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>ORDERS</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>TOTAL BILL</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>PAID</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>TOTAL PAID</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>BALANCE</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
               <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredSettlements.map((row) => (
-              <React.Fragment key={row.id}>
-                <TableRow sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                  <TableCell>
-                    <IconButton size="small" onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}>
-                      {expandedRow === row.id ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                    </IconButton>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>
-                    {new Date(row.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>{row.farmerName}</TableCell>
-                  <TableCell sx={{ fontSize: '0.85rem' }}>{row.details || '-'}</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: '#000' }}>{formatCurrency(row.totalAmount)}</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: 'green' }}>{formatCurrency(row.amountPaid)}</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: row.balance > 0 ? 'red' : 'green' }}>
-                    {formatCurrency(row.balance)}
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={row.status.toUpperCase()} 
-                      size="small" 
-                      sx={{ 
-                        fontWeight: 800, 
-                        letterSpacing: 1, 
-                        borderRadius: 1,
-                        backgroundColor: row.status === 'Fully Paid' ? '#E8F5E9' : '#FFF3E0',
-                        color: row.status === 'Fully Paid' ? '#2E7D32' : '#E65100'
-                      }} 
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    {row.balance > 0 && (
-                      <Button size="small" variant="outlined" onClick={() => handleOpenPayment(row.id)} sx={{ mr: 1, fontWeight: 700 }}>
-                        PAY
-                      </Button>
-                    )}
-                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
-                    <Collapse in={expandedRow === row.id} timeout="auto" unmountOnExit>
-                      <Box sx={{ margin: 2, p: 2, backgroundColor: '#F9F9F9', borderRadius: 1, border: '1px solid #EEE' }}>
-                        <Typography sx={{ fontWeight: 800, mb: 2, fontSize: '0.85rem', letterSpacing: 1 }}>PAYMENT HISTORY</Typography>
-                        {(!row.payments || row.payments.length === 0) ? (
-                          <Typography sx={{ fontSize: '0.8rem', color: '#666' }}>No payments recorded yet.</Typography>
-                        ) : (
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>DATE</TableCell>
-                                <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>AMOUNT</TableCell>
-                                <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>MODE</TableCell>
-                                <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>REFERENCE</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {row.payments.map((p: any) => (
-                                <TableRow key={p.id}>
-                                  <TableCell sx={{ fontSize: '0.8rem' }}>{new Date(p.date).toLocaleDateString('en-IN')}</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, color: 'green', fontSize: '0.8rem' }}>{formatCurrency(p.amount)}</TableCell>
-                                  <TableCell sx={{ fontSize: '0.8rem' }}>{p.mode}</TableCell>
-                                  <TableCell sx={{ fontSize: '0.8rem', color: '#666' }}>{p.reference || '-'}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        )}
-                      </Box>
-                    </Collapse>
-                  </TableCell>
-                </TableRow>
-              </React.Fragment>
+            {filteredGroups.map((group) => (
+              <TableRow
+                key={group.farmerId}
+                sx={{
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: '#F5F5F5' },
+                }}
+                onClick={() => setSelectedFarmerIdForPopup(group.farmerId)}
+              >
+                <TableCell sx={{ fontWeight: 900, fontSize: '0.95rem' }}>{group.farmerName}</TableCell>
+                <TableCell>
+                  <Chip label={`${group.orders.length} ORDER${group.orders.length > 1 ? 'S' : ''}`} size="small" sx={{ fontWeight: 700, letterSpacing: 0.5, borderRadius: 1 }} />
+                </TableCell>
+                <TableCell sx={{ fontWeight: 900 }}>{formatCurrency(group.totalBill)}</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'green' }}>{formatCurrency(group.totalPaid)}</TableCell>
+                <TableCell sx={{ fontWeight: 900, color: group.totalBalance > 0 ? 'red' : 'green' }}>
+                  {formatCurrency(group.totalBalance)}
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={group.status.toUpperCase()}
+                    size="small"
+                    sx={{
+                      fontWeight: 800,
+                      letterSpacing: 1,
+                      borderRadius: 1,
+                      backgroundColor: group.status === 'Fully Paid' ? '#E8F5E9' : '#FFF3E0',
+                      color: group.status === 'Fully Paid' ? '#2E7D32' : '#E65100'
+                    }}
+                  />
+                </TableCell>
+                <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                  <Button size="small" variant="contained" onClick={() => setSelectedFarmerIdForPopup(group.farmerId)} sx={{ fontWeight: 700, backgroundColor: '#000', color: '#FFF' }}>
+                    VIEW DETAILS
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-            {filteredSettlements.length === 0 && (
+            {filteredGroups.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
                   NO SETTLEMENTS FOUND
                 </TableCell>
               </TableRow>
@@ -354,16 +419,160 @@ export default function Settlements() {
         </Table>
       </TableContainer>
 
-      {/* Add Bill Dialog */}
+
+      {/* ── POP-UP: FARMER DETAILS & ORDERS ── */}
+      <Dialog
+        open={!!selectedFarmerIdForPopup && !!selectedFarmerGroup}
+        onClose={() => setSelectedFarmerIdForPopup(null)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ sx: { minHeight: '80vh', backgroundColor: '#FAFAFA' } }}
+      >
+        {selectedFarmerGroup && (
+          <>
+            <DialogTitle sx={{ p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #000' }}>
+              <Box>
+                <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', letterSpacing: 1, textTransform: 'uppercase' }}>
+                  {selectedFarmerGroup.farmerName}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
+                  <Typography sx={{ fontWeight: 700, color: '#555' }}>
+                    Total Bill: <Box component="span" sx={{ color: '#000' }}>{formatCurrency(selectedFarmerGroup.totalBill)}</Box>
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700, color: '#555' }}>
+                    Paid: <Box component="span" sx={{ color: 'green' }}>{formatCurrency(selectedFarmerGroup.totalPaid)}</Box>
+                  </Typography>
+                  <Typography sx={{ fontWeight: 900, color: '#000' }}>
+                    Balance: <Box component="span" sx={{ color: selectedFarmerGroup.totalBalance > 0 ? 'red' : 'green' }}>{formatCurrency(selectedFarmerGroup.totalBalance)}</Box>
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button variant="contained" onClick={() => handleOpenNewBill(selectedFarmerGroup.farmerId)} sx={{ fontWeight: 700, backgroundColor: '#000' }}>
+                  + ADD ORDER
+                </Button>
+                <IconButton onClick={() => setSelectedFarmerIdForPopup(null)}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            
+            <DialogContent sx={{ p: 0 }}>
+              <TableContainer sx={{ backgroundColor: '#FFF' }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#F0F0F0' }}>
+                      <TableCell sx={{ width: 40 }} />
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>DATE</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>DETAILS</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>BILL</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>PAID</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>BALANCE</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>STATUS</TableCell>
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }} align="right">ACTIONS</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {selectedFarmerGroup.orders.map((order) => (
+                      <React.Fragment key={order.id}>
+                        <TableRow sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
+                          <TableCell>
+                            <IconButton size="small" onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}>
+                              {expandedOrder === order.id ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                            </IconButton>
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </TableCell>
+                          <TableCell>{order.details || '-'}</TableCell>
+                          <TableCell sx={{ fontWeight: 900 }}>{formatCurrency(order.totalAmount)}</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: 'green' }}>{formatCurrency(order.amountPaid)}</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: order.balance > 0 ? 'red' : 'green' }}>
+                            {formatCurrency(order.balance)}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={order.status.toUpperCase()}
+                              size="small"
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: '0.7rem',
+                                letterSpacing: 0.5,
+                                borderRadius: 1,
+                                backgroundColor: order.status === 'Fully Paid' ? '#E8F5E9' : '#FFF3E0',
+                                color: order.status === 'Fully Paid' ? '#2E7D32' : '#E65100'
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Button size="small" variant="outlined" onClick={() => handleOpenPayment(order.id)} sx={{ mr: 1, fontWeight: 700 }}>
+                              PAY
+                            </Button>
+                            <IconButton onClick={() => handleOpenEditBill(order)} size="small" sx={{ mr: 1 }}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton onClick={() => handleDelete(order.id)} size="small" sx={{ color: 'red' }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* ── PAYMENT HISTORY INSIDE POPUP ── */}
+                        <TableRow>
+                          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                            <Collapse in={expandedOrder === order.id} timeout="auto" unmountOnExit>
+                              <Box sx={{ m: 2, p: 2, backgroundColor: '#F9F9F9', borderRadius: 1, border: '1px solid #E0E0E0' }}>
+                                <Typography sx={{ fontWeight: 800, mb: 1.5, fontSize: '0.8rem', letterSpacing: 1, color: '#333' }}>PAYMENT HISTORY</Typography>
+                                {(!order.payments || order.payments.length === 0) ? (
+                                  <Typography sx={{ fontSize: '0.8rem', color: '#999' }}>No payments recorded yet.</Typography>
+                                ) : (
+                                  <Table size="small">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>DATE</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>AMOUNT</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>MODE</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>REFERENCE</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {order.payments.map((p: any) => (
+                                        <TableRow key={p.id}>
+                                          <TableCell sx={{ fontSize: '0.8rem' }}>{new Date(p.date).toLocaleDateString('en-IN')}</TableCell>
+                                          <TableCell sx={{ fontWeight: 800, color: 'green', fontSize: '0.8rem' }}>{formatCurrency(p.amount)}</TableCell>
+                                          <TableCell sx={{ fontSize: '0.8rem' }}>{p.mode}</TableCell>
+                                          <TableCell sx={{ fontSize: '0.8rem', color: '#666' }}>{p.reference || '-'}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                )}
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
+
+
+      {/* Add / Edit Bill Dialog */}
       <Dialog open={openNewBill} onClose={() => !loading && setOpenNewBill(false)} maxWidth="sm" fullWidth>
         <Box sx={{ p: 3 }}>
           <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
-            RECORD NEW PURCHASE BILL
+            {editingBillId ? 'EDIT ORDER' : 'RECORD NEW ORDER'}
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Autocomplete
                 sx={{ flex: 2 }}
+                disabled={!!editingBillId}
                 options={[{ id: 'OTHER', name: 'OTHER (Not in list)' }, ...farmers]}
                 getOptionLabel={(option) => option.id === 'OTHER' ? option.name : `${option.name} ${option.farmerId ? `[ID: ${option.farmerId}]` : ''} ${option.phoneNumber ? `(${option.phoneNumber})` : ''}`}
                 value={billData.farmerId === 'OTHER' ? { id: 'OTHER', name: 'OTHER (Not in list)' } : farmers.find(f => f.id === billData.farmerId) || null}
@@ -372,7 +581,7 @@ export default function Settlements() {
               />
               <TextField
                 sx={{ flex: 1 }}
-                label="Bill Date"
+                label="Order Date"
                 type="date"
                 required
                 slotProps={{ inputLabel: { shrink: true } }}
@@ -386,6 +595,7 @@ export default function Settlements() {
                 label="Payee Name"
                 fullWidth
                 required
+                disabled={!!editingBillId}
                 value={billData.otherPayeeName}
                 onChange={(e) => setBillData({ ...billData, otherPayeeName: e.target.value })}
               />
@@ -408,17 +618,19 @@ export default function Settlements() {
                 value={billData.totalAmount}
                 onChange={(e) => setBillData({ ...billData, totalAmount: e.target.value })}
               />
-              <TextField
-                label="Initial Advance Paid (₹)"
-                fullWidth
-                type="number"
-                placeholder="Optional"
-                value={billData.initialAdvance}
-                onChange={(e) => setBillData({ ...billData, initialAdvance: e.target.value })}
-              />
+              {!editingBillId && (
+                <TextField
+                  label="Initial Advance Paid (₹)"
+                  fullWidth
+                  type="number"
+                  placeholder="Optional"
+                  value={billData.initialAdvance}
+                  onChange={(e) => setBillData({ ...billData, initialAdvance: e.target.value })}
+                />
+              )}
             </Box>
 
-            {Number(billData.initialAdvance) > 0 && (
+            {(!editingBillId && Number(billData.initialAdvance) > 0) && (
               <Box sx={{ display: 'flex', gap: 2, p: 2, backgroundColor: '#F5F5F5', borderRadius: 1 }}>
                 <FormControl fullWidth required>
                   <InputLabel>Payment Mode</InputLabel>
@@ -441,13 +653,12 @@ export default function Settlements() {
                 />
               </Box>
             )}
-
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
           <Button onClick={() => setOpenNewBill(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
           <Button variant="contained" onClick={handleSaveBill} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE BILL'}
+            {loading ? <CircularProgress size={20} color="inherit" /> : (editingBillId ? 'UPDATE ORDER' : 'SAVE ORDER')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -478,7 +689,6 @@ export default function Settlements() {
                 onChange={(e) => setPaymentData({ ...paymentData, date: e.target.value })}
               />
             </Box>
-
             <Box sx={{ display: 'flex', gap: 2 }}>
               <FormControl fullWidth required>
                 <InputLabel>Payment Mode</InputLabel>
@@ -509,7 +719,6 @@ export default function Settlements() {
           </Button>
         </DialogActions>
       </Dialog>
-
     </Box>
   );
 }

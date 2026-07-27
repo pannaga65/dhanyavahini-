@@ -13,6 +13,7 @@ import Farmers from './pages/Farmers'
 import Settlements from './pages/Settlements'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+import Inventory from './pages/Inventory'
 import app, { messaging } from './firebase'
 import { getToken } from 'firebase/messaging'
 import './index.css'
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { text: 'CUSTOMERS', path: '/customers' },
   { text: 'FARMERS', path: '/farmers' },
   { text: 'SETTLEMENTS', path: '/settlements' },
+  { text: 'INVENTORY', path: '/inventory' },
   { text: 'SETTINGS', path: '/settings' },
 ];
 
@@ -292,6 +294,7 @@ function App() {
           <Route path="/customers" element={<Customers />} />
           <Route path="/farmers" element={<Farmers />} />
           <Route path="/settlements" element={<Settlements />} />
+          <Route path="/inventory" element={<Inventory />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -306,8 +306,17 @@ export default function Procurement() {
       } else {
         const advance = Number(billData.initialAdvance) || 0;
         const balance = total - advance;
+
+        let nextOrderId = 1;
+        if (billData.farmerId !== 'OTHER') {
+          const farmerOrders = settlements.filter(s => s.farmerId === billData.farmerId);
+          const maxId = farmerOrders.reduce((max, s) => Math.max(max, s.orderId || 0), 0);
+          nextOrderId = maxId + 1;
+        }
+
         const payload: any = {
           farmerId: billData.farmerId,
+          orderId: nextOrderId,
           farmerName: finalFarmerName,
           date: billData.date,
           details: details.trim(),
@@ -550,6 +559,7 @@ export default function Procurement() {
                   <TableHead>
                     <TableRow sx={{ backgroundColor: '#F0F0F0' }}>
                       <TableCell sx={{ width: 40 }} />
+                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>ID</TableCell>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>DATE</TableCell>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>DETAILS</TableCell>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>BILL</TableCell>
@@ -567,6 +577,9 @@ export default function Procurement() {
                             <IconButton size="small" onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}>
                               {expandedOrder === order.id ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                             </IconButton>
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 900, color: '#555', fontSize: '0.85rem' }}>
+                            {order.orderId ? `#${order.orderId}` : '-'}
                           </TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>
                             {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -606,7 +619,7 @@ export default function Procurement() {
 
                         {/* ── PAYMENT HISTORY INSIDE POPUP ── */}
                         <TableRow>
-                          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
                             <Collapse in={expandedOrder === order.id} timeout="auto" unmountOnExit>
                               <Box sx={{ m: 2, p: 2, backgroundColor: '#F9F9F9', borderRadius: 1, border: '1px solid #E0E0E0' }}>
                                 <Typography sx={{ fontWeight: 800, mb: 1.5, fontSize: '0.8rem', letterSpacing: 1, color: '#333' }}>PAYMENT HISTORY</Typography>

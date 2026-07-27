@@ -26,6 +26,8 @@ export default function Procurement() {
   const { showConfirm, showMessage } = useUI();
   const [settlements, setSettlements] = useState<any[]>([]);
   const [farmers, setFarmers] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   
   // Dialog States
   const [openNewBill, setOpenNewBill] = useState(false);
@@ -44,11 +46,17 @@ export default function Procurement() {
     farmerId: '',
     otherPayeeName: '',
     date: new Date().toISOString().split('T')[0],
-    details: '',
-    totalAmount: '',
+    categoryId: '',
+    productId: '',
+    grossWeight: '',
+    wastagePercent: '',
+    ratePerKg: '',
     initialAdvance: '',
     paymentMode: 'Cash',
-    referenceNumber: ''
+    referenceNumber: '',
+    // For legacy edits
+    details: '',
+    totalAmount: '',
   });
 
   const [paymentData, setPaymentData] = useState({
@@ -63,6 +71,7 @@ export default function Procurement() {
   useEffect(() => {
     fetchSettlements();
     fetchFarmers();
+    fetchCategoriesAndProducts();
   }, []);
 
   const fetchSettlements = async () => {
@@ -85,6 +94,17 @@ export default function Procurement() {
       setFarmers(activeFarmers);
     } catch (e) {
       console.error('Error fetching farmers', e);
+    }
+  };
+
+  const fetchCategoriesAndProducts = async () => {
+    try {
+      const catSnap = await getDocs(collection(db, 'categories'));
+      setCategories(catSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const prodSnap = await getDocs(collection(db, 'products'));
+      setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.error('Error fetching catalogs', e);
     }
   };
 
@@ -144,11 +164,16 @@ export default function Procurement() {
       farmerId: prefillFarmerId,
       otherPayeeName: '',
       date: new Date().toISOString().split('T')[0],
-      details: '',
-      totalAmount: '',
+      categoryId: '',
+      productId: '',
+      grossWeight: '',
+      wastagePercent: '',
+      ratePerKg: '',
       initialAdvance: '',
       paymentMode: 'Bank Transfer',
-      referenceNumber: ''
+      referenceNumber: '',
+      details: '',
+      totalAmount: '',
     });
     setOpenNewBill(true);
   };
@@ -159,11 +184,16 @@ export default function Procurement() {
       farmerId: row.farmerId,
       otherPayeeName: row.farmerId === 'OTHER' ? row.farmerName : '',
       date: row.date,
-      details: row.details || '',
-      totalAmount: row.totalAmount.toString(),
+      categoryId: row.categoryId || '',
+      productId: row.productId || '',
+      grossWeight: row.grossWeight ? row.grossWeight.toString() : '',
+      wastagePercent: row.wastagePercent ? row.wastagePercent.toString() : '',
+      ratePerKg: row.ratePerKg ? row.ratePerKg.toString() : '',
       initialAdvance: '',
       paymentMode: 'Bank Transfer',
-      referenceNumber: ''
+      referenceNumber: '',
+      details: row.details || '',
+      totalAmount: row.totalAmount.toString(),
     });
     setOpenNewBill(true);
   };
@@ -185,7 +215,6 @@ export default function Procurement() {
         await deleteDoc(doc(db, 'farmer_settlements', id));
         fetchSettlements();
         showMessage("Order deleted", "success");
-        // If it was the last order, maybe close the dialog if it becomes empty on next render
       } catch (e) {
         console.error("Error deleting", e);
         showMessage("Failed to delete.", "error");
@@ -193,10 +222,33 @@ export default function Procurement() {
     });
   };
 
+  const netWeightCalculated = useMemo(() => {
+    const gross = Number(billData.grossWeight) || 0;
+    const wastage = Number(billData.wastagePercent) || 0;
+    return gross - (gross * wastage / 100);
+  }, [billData.grossWeight, billData.wastagePercent]);
+
+  const totalAmountCalculated = useMemo(() => {
+    // If it's a legacy edit with no new fields, use the old totalAmount
+    if (editingBillId && !billData.productId && billData.totalAmount) {
+      return Number(billData.totalAmount) || 0;
+    }
+    const rate = Number(billData.ratePerKg) || 0;
+    return netWeightCalculated * rate;
+  }, [netWeightCalculated, billData.ratePerKg, editingBillId, billData.productId, billData.totalAmount]);
+
   const handleSaveBill = async () => {
     if (!billData.farmerId) return showMessage('Please select a farmer.', 'error');
     if (billData.farmerId === 'OTHER' && !billData.otherPayeeName.trim()) return showMessage('Please enter payee name.', 'error');
-    if (!billData.totalAmount || isNaN(Number(billData.totalAmount)) || Number(billData.totalAmount) <= 0) return showMessage('Enter a valid total amount.', 'error');
+    
+    // Require new fields unless it's a legacy edit
+    if (!editingBillId || billData.categoryId) {
+      if (!billData.categoryId) return showMessage('Please select a category.', 'error');
+      if (netWeightCalculated <= 0) return showMessage('Net weight must be greater than 0.', 'error');
+      if (!billData.ratePerKg || Number(billData.ratePerKg) <= 0) return showMessage('Enter a valid rate per kg.', 'error');
+    } else {
+      if (!billData.totalAmount || isNaN(Number(billData.totalAmount)) || Number(billData.totalAmount) <= 0) return showMessage('Enter a valid total amount.', 'error');
+    }
 
     setLoading(true);
     try {
@@ -208,21 +260,44 @@ export default function Procurement() {
         finalFarmerName = selectedFarmer?.name || 'Unknown Farmer';
       }
 
-      const total = Number(billData.totalAmount);
+      const total = totalAmountCalculated;
+      const selectedCategory = categories.find(c => c.id === billData.categoryId);
+      const categoryName = selectedCategory?.name || '';
+      const productName = billData.productId ? (products.find(p => p.id === billData.productId)?.name || '') : '';
+      
+      let details = billData.details;
+      if (billData.categoryId) {
+        const label = productName || categoryName;
+        details = `${netWeightCalculated.toFixed(2)} kg of ${label}`;
+      }
 
       if (editingBillId) {
         const existingBill = settlements.find(s => s.id === editingBillId);
         if (!existingBill) throw new Error("Bill not found.");
         const balance = total - existingBill.amountPaid;
-        await updateDoc(doc(db, 'farmer_settlements', editingBillId), {
+        
+        const updatePayload: any = {
           farmerId: billData.farmerId,
           farmerName: finalFarmerName,
           date: billData.date,
-          details: billData.details.trim(),
+          details: details.trim(),
           totalAmount: total,
           balance: balance,
           status: balance <= 0 ? 'Fully Paid' : 'Pending',
-        });
+        };
+        
+        if (billData.productId) {
+          updatePayload.categoryId = billData.categoryId;
+          updatePayload.categoryName = categoryName;
+          updatePayload.productId = billData.productId;
+          updatePayload.productName = productName;
+          updatePayload.grossWeight = Number(billData.grossWeight);
+          updatePayload.wastagePercent = Number(billData.wastagePercent);
+          updatePayload.netWeight = netWeightCalculated;
+          updatePayload.ratePerKg = Number(billData.ratePerKg);
+        }
+
+        await updateDoc(doc(db, 'farmer_settlements', editingBillId), updatePayload);
         showMessage("Bill updated successfully", "success");
       } else {
         const advance = Number(billData.initialAdvance) || 0;
@@ -231,7 +306,15 @@ export default function Procurement() {
           farmerId: billData.farmerId,
           farmerName: finalFarmerName,
           date: billData.date,
-          details: billData.details.trim(),
+          details: details.trim(),
+          categoryId: billData.categoryId,
+          categoryName: categoryName,
+          productId: billData.productId,
+          productName: productName,
+          grossWeight: Number(billData.grossWeight),
+          wastagePercent: Number(billData.wastagePercent),
+          netWeight: netWeightCalculated,
+          ratePerKg: Number(billData.ratePerKg),
           totalAmount: total,
           amountPaid: advance,
           balance: balance,
@@ -251,7 +334,6 @@ export default function Procurement() {
         await addDoc(collection(db, 'farmer_settlements'), payload);
         showMessage("New order recorded successfully", "success");
         
-        // Optionally automatically open the pop-up if we just created a new bill for someone
         if (!selectedFarmerIdForPopup && billData.farmerId !== 'OTHER') {
           setSelectedFarmerIdForPopup(billData.farmerId);
         }
@@ -563,7 +645,7 @@ export default function Procurement() {
 
 
       {/* Add / Edit Bill Dialog */}
-      <Dialog open={openNewBill} onClose={() => !loading && setOpenNewBill(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openNewBill} onClose={() => !loading && setOpenNewBill(false)} maxWidth="md" fullWidth>
         <Box sx={{ p: 3 }}>
           <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
             {editingBillId ? 'EDIT ORDER' : 'RECORD NEW ORDER'}
@@ -601,56 +683,138 @@ export default function Procurement() {
               />
             )}
 
-            <TextField
-              label="Purchase Details / Description"
-              fullWidth
-              placeholder="e.g. 100 Bags of Tomato"
-              value={billData.details}
-              onChange={(e) => setBillData({ ...billData, details: e.target.value })}
-            />
+            {(!editingBillId || billData.categoryId) ? (
+              <>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <FormControl fullWidth required>
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      value={billData.categoryId}
+                      label="Category"
+                      onChange={(e) => setBillData({ ...billData, categoryId: e.target.value as string, productId: '' })}
+                    >
+                      {categories.map(c => (
+                        <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth disabled={!billData.categoryId}>
+                    <InputLabel>Product (Optional)</InputLabel>
+                    <Select
+                      value={billData.productId}
+                      label="Product (Optional)"
+                      onChange={(e) => setBillData({ ...billData, productId: e.target.value as string })}
+                    >
+                      <MenuItem value=""><em>None</em></MenuItem>
+                      {products.filter(p => {
+                        const selectedCatName = categories.find(c => c.id === billData.categoryId)?.name || '';
+                        return p.category === selectedCatName;
+                      }).map(p => (
+                        <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Total Bill Amount (₹)"
-                fullWidth
-                required
-                type="number"
-                value={billData.totalAmount}
-                onChange={(e) => setBillData({ ...billData, totalAmount: e.target.value })}
-              />
-              {!editingBillId && (
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    label="Gross Weight (kg)"
+                    fullWidth
+                    required
+                    type="number"
+                    value={billData.grossWeight}
+                    onChange={(e) => setBillData({ ...billData, grossWeight: e.target.value })}
+                  />
+                  <TextField
+                    label="Allowance / Wastage (%)"
+                    fullWidth
+                    required
+                    type="number"
+                    value={billData.wastagePercent}
+                    onChange={(e) => setBillData({ ...billData, wastagePercent: e.target.value })}
+                  />
+                  <TextField
+                    label="Net Weight (kg)"
+                    fullWidth
+                    disabled
+                    value={netWeightCalculated.toFixed(2)}
+                    sx={{ backgroundColor: '#F9F9F9' }}
+                  />
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    label="Rate per Kg (₹)"
+                    fullWidth
+                    required
+                    type="number"
+                    value={billData.ratePerKg}
+                    onChange={(e) => setBillData({ ...billData, ratePerKg: e.target.value })}
+                  />
+                  <TextField
+                    label="Total Bill Amount (₹)"
+                    fullWidth
+                    disabled
+                    value={totalAmountCalculated.toFixed(2)}
+                    sx={{ backgroundColor: '#E8F5E9', '& .MuiInputBase-input': { fontWeight: 900, color: 'green' } }}
+                  />
+                </Box>
+              </>
+            ) : (
+              // Legacy Edit View
+              <>
                 <TextField
-                  label="Initial Advance Paid (₹)"
+                  label="Purchase Details / Description"
                   fullWidth
+                  value={billData.details}
+                  onChange={(e) => setBillData({ ...billData, details: e.target.value })}
+                />
+                <TextField
+                  label="Total Bill Amount (₹)"
+                  fullWidth
+                  required
                   type="number"
-                  placeholder="Optional"
-                  value={billData.initialAdvance}
-                  onChange={(e) => setBillData({ ...billData, initialAdvance: e.target.value })}
+                  value={billData.totalAmount}
+                  onChange={(e) => setBillData({ ...billData, totalAmount: e.target.value })}
                 />
-              )}
-            </Box>
+              </>
+            )}
 
-            {(!editingBillId && Number(billData.initialAdvance) > 0) && (
-              <Box sx={{ display: 'flex', gap: 2, p: 2, backgroundColor: '#F5F5F5', borderRadius: 1 }}>
-                <FormControl fullWidth required>
-                  <InputLabel>Payment Mode</InputLabel>
-                  <Select
-                    value={billData.paymentMode}
-                    label="Payment Mode"
-                    onChange={(e) => setBillData({ ...billData, paymentMode: e.target.value as string })}
-                  >
-                    {paymentModes.map(mode => (
-                      <MenuItem key={mode} value={mode}>{mode}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Reference No. (Optional)"
-                  fullWidth
-                  placeholder="UPI Ref / Cheque No"
-                  value={billData.referenceNumber}
-                  onChange={(e) => setBillData({ ...billData, referenceNumber: e.target.value })}
-                />
+            {!editingBillId && (
+              <Box sx={{ p: 2, backgroundColor: '#F5F5F5', borderRadius: 1, border: '1px solid #E0E0E0' }}>
+                <Typography sx={{ fontWeight: 800, mb: 2, fontSize: '0.85rem' }}>INITIAL PAYMENT (OPTIONAL)</Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: Number(billData.initialAdvance) > 0 ? 2 : 0 }}>
+                  <TextField
+                    label="Initial Advance Paid (₹)"
+                    fullWidth
+                    type="number"
+                    value={billData.initialAdvance}
+                    onChange={(e) => setBillData({ ...billData, initialAdvance: e.target.value })}
+                  />
+                </Box>
+                {Number(billData.initialAdvance) > 0 && (
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <FormControl fullWidth required>
+                      <InputLabel>Payment Mode</InputLabel>
+                      <Select
+                        value={billData.paymentMode}
+                        label="Payment Mode"
+                        onChange={(e) => setBillData({ ...billData, paymentMode: e.target.value as string })}
+                      >
+                        {paymentModes.map(mode => (
+                          <MenuItem key={mode} value={mode}>{mode}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <TextField
+                      label="Reference No. (Optional)"
+                      fullWidth
+                      placeholder="UPI Ref / Cheque No"
+                      value={billData.referenceNumber}
+                      onChange={(e) => setBillData({ ...billData, referenceNumber: e.target.value })}
+                    />
+                  </Box>
+                )}
               </Box>
             )}
           </Box>

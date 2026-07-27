@@ -68,8 +68,18 @@ export default function Loans() {
       const q = query(collection(db, 'farmer_loans'), orderBy('date', 'desc'));
       const querySnapshot = await getDocs(q);
       setLoansList(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-    } catch (e) {
-      console.error('Error fetching loans', e);
+    } catch (e: any) {
+      // If collection doesn't exist yet or index is missing, try without orderBy
+      console.warn('Falling back to unordered fetch for farmer_loans', e.message);
+      try {
+        const querySnapshot = await getDocs(collection(db, 'farmer_loans'));
+        const docs = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        docs.sort((a: any, b: any) => (b.date || '').localeCompare(a.date || ''));
+        setLoansList(docs);
+      } catch (e2) {
+        console.error('Error fetching loans', e2);
+        setLoansList([]);
+      }
     }
   };
 

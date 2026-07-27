@@ -22,7 +22,7 @@ interface FarmerGroup {
   status: string;
 }
 
-export default function Settlements() {
+export default function Procurement() {
   const { showConfirm, showMessage } = useUI();
   const [settlements, setSettlements] = useState<any[]>([]);
   const [farmers, setFarmers] = useState<any[]>([]);
@@ -323,7 +323,7 @@ export default function Settlements() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
         <Box>
           <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
-            SETTLEMENTS
+            PROCUREMENT
           </Typography>
           <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
             MANAGE FARMER BILLS AND PAYMENTS
@@ -411,7 +411,7 @@ export default function Settlements() {
             {filteredGroups.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
-                  NO SETTLEMENTS FOUND
+                  NO PROCUREMENT RECORDS FOUND
                 </TableCell>
               </TableRow>
             )}

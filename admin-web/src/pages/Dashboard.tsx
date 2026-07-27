@@ -76,7 +76,7 @@ interface DashboardProps {
 
 export default function Dashboard({ userEmail }: DashboardProps) {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0, settlements: 0 });
+  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0, procurement: 0 });
 
   useEffect(() => {
     (async () => {
@@ -93,7 +93,7 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           products: p.data().count,
           customers: c.data().count,
           inquiries: i.data().count,
-          settlements: a.data().count,
+          procurement: a.data().count,
         });
       } catch (e) {
         console.error('Error fetching live dashboard stats:', e);
@@ -152,11 +152,11 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           onClick={() => navigate('/orders')}
         />
         <BrutalistCard
-          title="SETTLEMENTS"
-          count={stats.settlements}
+          title="PROCUREMENT"
+          count={stats.procurement}
           subtitle="FARMER BILLS"
           icon={<PaymentsOutlinedIcon sx={iconSx} />}
-          onClick={() => navigate('/settlements')}
+          onClick={() => navigate('/procurement')}
         />
       </Box>
     </Box>

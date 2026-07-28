@@ -69,7 +69,7 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
                   )}
                   {customer.mailingAddresses?.map((addr: string, idx: number) => addr.trim() !== '' && (
                     <MenuItem key={`mail-${idx}`} value={addr}>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Mailing Address {idx + 1}</Typography>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Shipping Address</Typography>
                       <Typography sx={{ fontSize: '0.75rem', color: '#666', ml: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {addr.replace(/\n/g, ', ')}
                       </Typography>
@@ -77,6 +77,18 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
                   ))}
                 </Select>
               </FormControl>
+              {customer.location && customer.location.lat && (
+                <Box sx={{ mt: 1, ml: 1 }}>
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${customer.location.lat},${customer.location.lng}`} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    style={{ color: '#0055CC', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    📍 View saved location on Google Maps
+                  </a>
+                </Box>
+              )}
             </Grid>
           )}
           <Grid size={{ xs: 12, sm: 6 }}>

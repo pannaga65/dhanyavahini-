@@ -602,7 +602,11 @@ export default function Orders() {
         onSave={handleSaveDispatch}
         isApprovalMode={false}
         initialData={editDispatchOrder?.dispatchDetails}
-        customer={null}
+        customer={{
+          billingAddress: editDispatchOrder?.billingAddress,
+          mailingAddresses: [editDispatchOrder?.shippingAddress].filter(Boolean),
+          location: editDispatchOrder?.location
+        }}
       />
     </Box>
   );

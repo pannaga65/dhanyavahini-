@@ -304,7 +304,8 @@ export default function Inquiries() {
         isApprovalMode={true}
         customer={{ 
           billingAddress: inquiries.find(i => i.id === approvingId)?.billingAddress,
-          mailingAddresses: [inquiries.find(i => i.id === approvingId)?.shippingAddress].filter(Boolean)
+          mailingAddresses: [inquiries.find(i => i.id === approvingId)?.shippingAddress].filter(Boolean),
+          location: inquiries.find(i => i.id === approvingId)?.location
         }}
       />
     </Box>

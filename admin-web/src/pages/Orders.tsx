@@ -35,7 +35,7 @@ interface Order {
 export default function Orders() {
   const { showConfirm, showMessage } = useUI();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [customersMap, setCustomersMap] = useState<Record<string, any>>({});
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Filters
@@ -295,7 +295,7 @@ export default function Orders() {
                 <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
                   <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>{row.orderNo || `ORD-${row.id.substring(0, 6).toUpperCase()}`}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>
-                    {row.customerName || customersMap[row.customerId]?.displayName || customersMap[row.customerId]?.tradeName || 'Unknown Customer'}
+                    {row.customerName || 'Unknown Customer'}
                   </TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString() || '—'}</TableCell>
                   <TableCell>
@@ -396,7 +396,7 @@ export default function Orders() {
                 <Box>
                   <Typography sx={{ fontWeight: 700, fontSize: '0.75rem', color: '#999' }}>CUSTOMER NAME</Typography>
                   <Typography sx={{ fontWeight: 800, fontSize: '1.1rem' }}>
-                    {selectedOrder?.customerName || (selectedOrder ? (customersMap[selectedOrder.customerId]?.displayName || customersMap[selectedOrder.customerId]?.tradeName) : '') || 'Unknown Customer'}
+                    {selectedOrder?.customerName || 'Unknown Customer'}
                   </Typography>
                 </Box>
                 
@@ -559,7 +559,7 @@ export default function Orders() {
         onSave={handleSaveDispatch}
         isApprovalMode={false}
         initialData={editDispatchOrder?.dispatchDetails}
-        customer={editDispatchOrder ? customersMap[editDispatchOrder.customerId] : null}
+        customer={null}
       />
     </Box>
   );

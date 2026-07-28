@@ -4,11 +4,13 @@ import { collection, getDocs, query, where, getFirestore, updateDoc, doc, delete
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 import DispatchDialog, { type DispatchData } from '../components/DispatchDialog';
 
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
 export default function Inquiries() {
   const { showConfirm, showMessage } = useUI();
@@ -45,7 +47,8 @@ export default function Inquiries() {
   const handleDelete = async (id: string) => {
     showConfirm("Are you sure you want to completely reject and delete this inquiry?", async () => {
       try {
-        await deleteDoc(doc(db, 'orders', id));
+        const deleteOrderFn = httpsCallable(functions, 'deleteOrder');
+        await deleteOrderFn({ orderId: id });
         fetchInquiries();
         showMessage("Inquiry deleted successfully", "success");
       } catch (e) {

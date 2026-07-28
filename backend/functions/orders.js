@@ -81,3 +81,58 @@ exports.updateOrderStatus = onCall(async (request) => {
     throw new HttpsError("internal", "Failed to update order status.");
   }
 });
+
+exports.deleteOrder = onCall(async (request) => {
+  if (!request.auth || !request.auth.token.admin) {
+    throw new HttpsError("permission-denied", "Only admins can delete orders.");
+  }
+
+  const orderId = sanitize(request.data.orderId);
+  if (!orderId) {
+    throw new HttpsError("invalid-argument", "Order ID is required.");
+  }
+
+  try {
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnap = await orderRef.get();
+
+    if (!orderSnap.exists) {
+      throw new HttpsError("not-found", "Order not found.");
+    }
+
+    const orderData = orderSnap.data();
+    const previousStatus = orderData.status;
+
+    // 1. If not already Cancelled, restore inventory stock before deleting
+    if (previousStatus !== "Cancelled") {
+      const items = orderData.items || [];
+      for (const item of items) {
+        if (item.productId && item.quantityKg) {
+          await db.collection("inventory").doc(item.productId).update({
+            availableStockKg: FieldValue.increment(item.quantityKg),
+            allocatedStockKg: FieldValue.increment(-item.quantityKg),
+            lastUpdated: FieldValue.serverTimestamp(),
+          });
+        }
+      }
+    }
+
+    // 2. Delete the order document
+    await orderRef.delete();
+
+    // 3. Write audit log
+    await db.collection("audit_logs").add({
+      action: "DELETE_ORDER",
+      targetId: orderId,
+      performedBy: request.auth.uid,
+      performedByEmail: request.auth.token.email || "",
+      timestamp: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("deleteOrder error:", error);
+    if (error instanceof HttpsError) throw error;
+    throw new HttpsError("internal", "Failed to delete order.");
+  }
+});

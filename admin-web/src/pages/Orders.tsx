@@ -123,15 +123,15 @@ export default function Orders() {
   };
 
   const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to delete this order?", async () => {
+    showConfirm("Are you sure you want to completely delete this order? This cannot be undone.", async () => {
       try {
-        const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
-        await updateOrderStatusFn({ orderId: id, newStatus: 'cancelled' });
+        const deleteOrderFn = httpsCallable(functions, 'deleteOrder');
+        await deleteOrderFn({ orderId: id });
         fetchOrders();
-        showMessage("Order cancelled", "success");
+        showMessage("Order deleted successfully", "success");
       } catch (e) {
-        console.error("Error cancelling", e);
-        showMessage("Failed to cancel order.", "error");
+        console.error("Error deleting", e);
+        showMessage("Failed to delete order.", "error");
       }
     });
   };

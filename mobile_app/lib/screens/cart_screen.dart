@@ -63,6 +63,8 @@ class CartScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                // Delivery Address Card
+                _DeliveryAddressCard(),
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -323,6 +325,89 @@ class CartScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DeliveryAddressCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+      builder: (context, snapshot) {
+        String? shippingAddress;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>?;
+          final mailingList = data?['mailingAddresses'] as List<dynamic>?;
+          if (mailingList != null && mailingList.isNotEmpty && mailingList.first.toString().trim().isNotEmpty) {
+            shippingAddress = mailingList.first.toString();
+          }
+          // Fallback to billing address
+          shippingAddress ??= (data?['billingAddress'] as String?)?.isNotEmpty == true ? data!['billingAddress'] : null;
+        }
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: shippingAddress != null ? Colors.white : const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: shippingAddress != null ? AppTheme.primaryAction.withValues(alpha: 0.3) : Colors.orange.shade300,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                shippingAddress != null ? Icons.local_shipping : Icons.warning_amber_rounded,
+                color: shippingAddress != null ? AppTheme.primaryAction : Colors.orange.shade700,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      shippingAddress != null ? 'Deliver to' : 'No shipping address',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: shippingAddress != null ? AppTheme.textLight : Colors.orange.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      shippingAddress ?? 'Please add a shipping address in your Profile before placing an order.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: shippingAddress != null ? AppTheme.textDark : Colors.orange.shade900,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () => context.push('/profile'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryAction,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Change', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -34,8 +34,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _checkPermissions() async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // Check location first
+
+    // First-time location popup (only shows once, then never again)
     final hasAskedLoc = prefs.getBool('has_asked_location') ?? false;
     if (!hasAskedLoc && mounted) {
       await Future.delayed(const Duration(milliseconds: 1500));

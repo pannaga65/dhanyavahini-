@@ -228,7 +228,7 @@ export default function Customers() {
             <TextField label="Billing Address" fullWidth multiline rows={2} value={formData.billingAddress} onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })} />
             
             <Box>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', mb: 1 }}>MAILING ADDRESSES</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', mb: 1 }}>SHIPPING ADDRESSES</Typography>
               {formData.mailingAddresses.map((addr, index) => (
                 <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}>
                   <TextField 
@@ -236,7 +236,7 @@ export default function Customers() {
                     fullWidth 
                     multiline
                     rows={2}
-                    placeholder="Mailing Address" 
+                    placeholder="Shipping Address" 
                     value={addr} 
                     onChange={(e) => {
                       const newAddrs = [...formData.mailingAddresses];
@@ -255,7 +255,7 @@ export default function Customers() {
                 </Box>
               ))}
               <Button size="small" onClick={() => setFormData({ ...formData, mailingAddresses: [...formData.mailingAddresses, ''] })}>
-                + ADD ANOTHER MAILING ADDRESS
+                + ADD ANOTHER SHIPPING ADDRESS
               </Button>
             </Box>
 

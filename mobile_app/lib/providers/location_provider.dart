@@ -60,21 +60,27 @@ Future<bool> requestAndSaveLocation() async {
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
     
-    List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
-        position.latitude, position.longitude);
-        
     String address = "Unknown Location";
-    if (placemarks.isNotEmpty) {
-      Placemark place = placemarks.first;
-      // Build a clean, Swiggy-like address string like "Koramangala, Bangalore"
-      List<String> parts = [];
-      if (place.subLocality != null && place.subLocality!.isNotEmpty) parts.add(place.subLocality!);
-      if (place.locality != null && place.locality!.isNotEmpty) parts.add(place.locality!);
-      if (parts.isEmpty && place.street != null && place.street!.isNotEmpty) parts.add(place.street!);
-      
-      if (parts.isNotEmpty) {
-        address = parts.join(", ");
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude, position.longitude);
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        // Build a clean, Swiggy-like address string like "Koramangala, Bangalore"
+        List<String> parts = [];
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) parts.add(place.subLocality!);
+        if (place.locality != null && place.locality!.isNotEmpty) parts.add(place.locality!);
+        if (parts.isEmpty && place.street != null && place.street!.isNotEmpty) parts.add(place.street!);
+        
+        if (parts.isNotEmpty) {
+          address = parts.join(", ");
+        }
       }
+    } catch (e) {
+      // Geocoding failed (network issue, unsupported region, etc.)
+      // Fall back to raw coordinates
+      address = "${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}";
+      print("Geocoding failed, using raw coordinates: $e");
     }
 
     final user = FirebaseAuth.instance.currentUser;

@@ -36,6 +36,28 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Build the list of available addresses for the dropdown
+  const availableAddresses: { label: string; value: string }[] = [];
+  if (customer) {
+    if (customer.billingAddress && customer.billingAddress.trim() !== '') {
+      availableAddresses.push({ label: 'Billing Address', value: customer.billingAddress });
+    }
+    if (customer.mailingAddresses) {
+      customer.mailingAddresses.forEach((addr: string, idx: number) => {
+        if (addr && addr.trim() !== '') {
+          availableAddresses.push({ label: `Shipping Address${customer.mailingAddresses.length > 1 ? ` ${idx + 1}` : ''}`, value: addr });
+        }
+      });
+    }
+  }
+
+  // Ensure the Select value matches an available MenuItem
+  const currentSelectValue = formData.shippingAddress && availableAddresses.some(a => a.value === formData.shippingAddress)
+    ? formData.shippingAddress
+    : availableAddresses.length > 0 ? availableAddresses[0].value : '';
+
+  const hasAddresses = availableAddresses.length > 0;
+
   return (
     <Dialog open={open} onClose={() => !loading && onClose()} maxWidth="sm" fullWidth>
       <Box sx={{ p: 3 }}>
@@ -51,32 +73,37 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
         <Grid container spacing={2}>
           {customer && (
             <Grid size={{ xs: 12 }}>
-              <FormControl fullWidth>
-                <InputLabel>Shipping Address (Consignee)</InputLabel>
-                <Select
-                  value={formData.shippingAddress || customer.billingAddress || ''}
+              {hasAddresses ? (
+                <FormControl fullWidth>
+                  <InputLabel>Shipping Address (Consignee)</InputLabel>
+                  <Select
+                    value={currentSelectValue}
+                    label="Shipping Address (Consignee)"
+                    onChange={(e) => handleChange('shippingAddress', e.target.value as string)}
+                    sx={{ whiteSpace: 'pre-wrap' }}
+                  >
+                    {availableAddresses.map((addr, idx) => (
+                      <MenuItem key={idx} value={addr.value}>
+                        <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>{addr.label}</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#666', ml: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {addr.value.replace(/\n/g, ', ')}
+                        </Typography>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              ) : (
+                <TextField
                   label="Shipping Address (Consignee)"
-                  onChange={(e) => handleChange('shippingAddress', e.target.value as string)}
-                  sx={{ whiteSpace: 'pre-wrap' }}
-                >
-                  {customer.billingAddress && (
-                    <MenuItem value={customer.billingAddress}>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Billing Address</Typography>
-                      <Typography sx={{ fontSize: '0.75rem', color: '#666', ml: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {customer.billingAddress.replace(/\n/g, ', ')}
-                      </Typography>
-                    </MenuItem>
-                  )}
-                  {customer.mailingAddresses?.map((addr: string, idx: number) => addr.trim() !== '' && (
-                    <MenuItem key={`mail-${idx}`} value={addr}>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Shipping Address</Typography>
-                      <Typography sx={{ fontSize: '0.75rem', color: '#666', ml: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {addr.replace(/\n/g, ', ')}
-                      </Typography>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  fullWidth
+                  multiline
+                  rows={2}
+                  placeholder="No saved addresses — type one here"
+                  value={formData.shippingAddress || ''}
+                  onChange={(e) => handleChange('shippingAddress', e.target.value)}
+                  helperText="Customer has no saved addresses on file."
+                />
+              )}
               {customer.location && customer.location.lat && (
                 <Box sx={{ mt: 1, ml: 1 }}>
                   <a 

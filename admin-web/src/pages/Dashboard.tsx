@@ -33,27 +33,24 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, gradient,
         flexDirection: 'column',
         justifyContent: 'space-between',
         cursor: 'pointer',
+        background: gradient || accent,
+        color: '#FFFFFF',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        border: '1px solid #E2E8F0',
+        border: 'none',
         overflow: 'hidden',
         '&:hover': { 
           transform: 'translateY(-4px)',
-          borderColor: accent,
-          boxShadow: '0 12px 24px -8px rgba(0,0,0,0.08), 0 4px 12px -4px rgba(0,0,0,0.04)',
+          boxShadow: '0 12px 24px -8px rgba(0,0,0,0.15), 0 4px 12px -4px rgba(0,0,0,0.1)',
           '& .action-arrow': {
             transform: 'translateX(4px)',
-            color: accent,
           },
-          '& .action-text': {
-            color: accent,
-          }
         },
       }}
     >
       <Box sx={{ p: { xs: 2.5, lg: 3 }, flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
-            <Typography sx={{ fontWeight: 600, letterSpacing: 0.5, fontSize: '0.85rem', color: '#64748B', textTransform: 'uppercase' }}>
+            <Typography sx={{ fontWeight: 600, letterSpacing: 0.5, fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>
               {title}
             </Typography>
             <Typography
@@ -61,7 +58,7 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, gradient,
                 fontWeight: 800,
                 fontSize: { xs: '2.5rem', md: '2.75rem' },
                 lineHeight: 1,
-                color: '#0F172A',
+                color: '#FFFFFF',
                 mt: 1.5,
               }}
             >
@@ -70,10 +67,9 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, gradient,
           </Box>
           <Box sx={{ 
             width: 48, height: 48, borderRadius: 3, 
-            background: gradient || accentLight, 
+            background: 'rgba(255,255,255,0.2)', 
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: gradient ? '#FFF' : accent,
-            boxShadow: gradient ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'
+            color: '#FFFFFF',
           }}>
             {icon}
           </Box>
@@ -84,8 +80,7 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, gradient,
         sx={{ 
           px: { xs: 2.5, lg: 3 }, 
           py: 1.5, 
-          backgroundColor: '#F8FAFC',
-          borderTop: '1px solid #F1F5F9',
+          backgroundColor: 'rgba(0,0,0,0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
@@ -95,19 +90,18 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, gradient,
           className="action-text"
           sx={{
             fontWeight: 600,
-            color: '#64748B',
+            color: 'rgba(255,255,255,0.9)',
             fontSize: '0.75rem',
             letterSpacing: 0.5,
-            transition: 'color 0.2s',
           }}
         >
-          {subtitle}
+          {subtitle.replace(' →', '')}
         </Typography>
         <ArrowForwardIcon 
           className="action-arrow" 
           sx={{ 
             fontSize: 16, 
-            color: '#94A3B8', 
+            color: 'rgba(255,255,255,0.9)', 
             transition: 'all 0.2s',
           }} 
         />
@@ -163,7 +157,7 @@ export default function Dashboard({ userEmail }: DashboardProps) {
       <Box 
         sx={{ 
           display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }, 
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' }, 
           gap: 3 
         }}
       >

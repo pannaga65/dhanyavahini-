@@ -7,6 +7,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
+import imageCompression from 'browser-image-compression';
 
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -136,9 +137,9 @@ export default function Products() {
       showMessage('Please enter a product name and category.', "error");
       return;
     }
-    // File size validation (2 MB max)
-    if (imageFile && imageFile.size > 2 * 1024 * 1024) {
-      showMessage('Image must be smaller than 2 MB.', "error");
+    // File size validation (5 MB max)
+    if (imageFile && imageFile.size > 5 * 1024 * 1024) {
+      showMessage('Image must be smaller than 5 MB.', "error");
       return;
     }
     setLoading(true);
@@ -151,8 +152,15 @@ export default function Products() {
 
       let downloadUrl = existingImageUrl;
       if (imageFile) {
+        const options = {
+          maxSizeMB: 0.1, // Compress to max 100KB
+          maxWidthOrHeight: 800,
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(imageFile, options);
+
         const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
-        const snapshot = await uploadBytes(storageRef, imageFile);
+        const snapshot = await uploadBytes(storageRef, compressedFile);
         downloadUrl = await getDownloadURL(snapshot.ref);
       }
 
@@ -243,6 +251,7 @@ export default function Products() {
                     <img
                       src={row.imageUrl}
                       alt={row.name}
+                      loading="lazy"
                       style={{ width: 48, height: 48, objectFit: 'cover', border: '1px solid #E2E8F0' }}
                     />
                   ) : (

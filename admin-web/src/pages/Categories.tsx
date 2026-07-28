@@ -7,6 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
+import imageCompression from 'browser-image-compression';
 
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -92,15 +93,22 @@ export default function Categories() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      showMessage("Icon size must be less than 2MB.", "error");
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage("Icon size must be less than 5MB.", "error");
       return;
     }
 
     setUploading(true);
     try {
+      const options = {
+        maxSizeMB: 0.1,
+        maxWidthOrHeight: 400,
+        useWebWorker: true,
+      };
+      const compressedFile = await imageCompression(file, options);
+
       const storageRef = ref(storage, `categories/${Date.now()}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const uploadTask = uploadBytesResumable(storageRef, compressedFile);
 
       uploadTask.on('state_changed', 
         (snapshot) => {
@@ -147,7 +155,7 @@ export default function Categories() {
               <TableRow key={c.id} sx={{ '& td': { borderBottom: '1px solid #EEE' } }}>
                 <TableCell>
                   {c.iconUrl ? (
-                    <Box component="img" src={c.iconUrl} sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '50%', border: '1px solid #CCC' }} />
+                    <Box component="img" loading="lazy" src={c.iconUrl} sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '50%', border: '1px solid #CCC' }} />
                   ) : (
                     <Box sx={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#F5F5F5', border: '1px solid #CCC' }} />
                   )}
@@ -199,7 +207,7 @@ export default function Categories() {
             </Button>
             {formData.iconUrl && (
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-                <Box component="img" src={formData.iconUrl} sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '50%', border: '2px solid #E2E8F0' }} />
+                <Box component="img" loading="lazy" src={formData.iconUrl} sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '50%', border: '2px solid #E2E8F0' }} />
               </Box>
             )}
           </Box>

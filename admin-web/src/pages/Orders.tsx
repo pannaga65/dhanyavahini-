@@ -29,6 +29,7 @@ interface Order {
   items?: any[];
   subtotal?: number;
   gstAmount?: number;
+  totalQuantity?: number;
   createdAt?: any;
 }
 

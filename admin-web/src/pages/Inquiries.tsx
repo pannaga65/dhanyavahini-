@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton } from '@mui/material';
-import { collection, getDocs, query, where, getFirestore, updateDoc, doc, deleteDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where, getFirestore, updateDoc, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';

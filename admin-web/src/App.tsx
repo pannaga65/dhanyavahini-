@@ -192,9 +192,10 @@ function App() {
                   py: 0.9,
                   px: 1.5,
                   borderRadius: 1.5,
-                  backgroundColor: isActive ? 'rgba(46, 125, 50, 0.15)' : 'transparent',
+                  backgroundColor: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  borderLeft: isActive ? '3px solid #4ADE80' : '3px solid transparent',
                   '&:hover': {
-                    backgroundColor: isActive ? 'rgba(46, 125, 50, 0.15)' : 'rgba(255,255,255,0.05)',
+                    backgroundColor: isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
                   },
                 }}
               >

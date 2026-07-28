@@ -27,8 +27,8 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, onClick }
       elevation={0}
       onClick={onClick}
       sx={{
-        p: { xs: 3, lg: 4 },
-        minHeight: { xs: 180, md: 200 },
+        p: { xs: 3, lg: 3 },
+        minHeight: 140,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -45,7 +45,7 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, onClick }
           {title}
         </Typography>
         <Box sx={{ 
-          width: 40, height: 40, borderRadius: 2, 
+          width: 48, height: 48, borderRadius: 2, 
           backgroundColor: accentLight, 
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: accent,
@@ -57,7 +57,7 @@ function StatCard({ title, count, subtitle, icon, accent, accentLight, onClick }
       <Typography
         sx={{
           fontWeight: 800,
-          fontSize: { xs: '3.5rem', md: '4.5rem' },
+          fontSize: { xs: '2.5rem', md: '3rem' },
           lineHeight: 1,
           color: '#1A1A2E',
           my: 2,
@@ -127,7 +127,7 @@ export default function Dashboard({ userEmail }: DashboardProps) {
       <Box 
         sx={{ 
           display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, 
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }, 
           gap: 3 
         }}
       >

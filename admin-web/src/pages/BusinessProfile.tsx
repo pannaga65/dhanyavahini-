@@ -10,6 +10,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import imageCompression from 'browser-image-compression';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
@@ -110,15 +111,22 @@ export default function BusinessProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (file.size > 2 * 1024 * 1024) {
-      showMessage('Logo must be less than 2MB', 'error');
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage('Logo must be less than 5MB', 'error');
       return;
     }
 
     setUploadingLogo(true);
     try {
+      const options = {
+        maxSizeMB: 0.1, // Compress to max 100KB
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      };
+      const compressedFile = await imageCompression(file, options);
+
       const storageRef = ref(storage, `settings/business_logo_${Date.now()}`);
-      const uploadTask = await uploadBytesResumable(storageRef, file);
+      const uploadTask = await uploadBytesResumable(storageRef, compressedFile);
       const url = await getDownloadURL(uploadTask.ref);
       setDraftData((prev: any) => ({ ...prev, logoUrl: url }));
       showMessage('Logo uploaded successfully!', 'success');
@@ -300,7 +308,7 @@ export default function BusinessProfile() {
                overflow: 'hidden'
              }}>
                 {draftData.logoUrl ? (
-                  <img src={draftData.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#FFF' }} />
+                  <img src={draftData.logoUrl} alt="Logo" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#FFF' }} />
                 ) : (
                   <StorefrontIcon sx={{ color: '#FFF', fontSize: 32 }} />
                 )}
@@ -328,7 +336,7 @@ export default function BusinessProfile() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2, px: 1.5 }}>
              <Box sx={{ width: 48, height: 48, borderRadius: '8px', backgroundColor: '#FFF', border: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {draftData.logoUrl ? (
-                  <img src={draftData.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <img src={draftData.logoUrl} alt="Logo" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 ) : (
                   <StorefrontIcon sx={{ color: '#94A3B8', fontSize: 24 }} />
                 )}

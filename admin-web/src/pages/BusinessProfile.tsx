@@ -1,39 +1,61 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, CircularProgress, Grid, Card, CardContent, Slide } from '@mui/material';
+import { Box, Typography, TextField, Button, CircularProgress, Grid, Card, CardContent, Slide, IconButton, Tooltip } from '@mui/material';
 import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
+import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+const emptyProfile = {
+  companyName: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  pincode: '',
+  email: '',
+  phone: '',
+  gstin: '',
+  udyam: '',
+  bankName: '',
+  accountNumber: '',
+  ifscCode: '',
+  branch: '',
+  logoUrl: ''
+};
+
+// --- Theme Colors ---
+const COLORS = {
+  bg: '#F3F5F1',
+  cardBg: '#FAFAF7',
+  primaryText: '#1B4332',
+  mutedText: '#64748B',
+  accentTeal: '#2C6E7F',
+  accentGold: '#D4A017',
+  badgeBg: '#E8F5E9',
+  badgeText: '#2E7D32',
+  navy: '#1E3A5F',
+  border: '#E2E8F0',
+};
+
 export default function BusinessProfile() {
   const { showMessage, showConfirm } = useUI();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [initialData, setInitialData] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    companyName: '',
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    state: '',
-    pincode: '',
-    email: '',
-    phone: '',
-    gstin: '',
-    udyam: '',
-    bankName: '',
-    accountNumber: '',
-    ifscCode: '',
-    branch: '',
-    logoUrl: ''
-  });
+  const [initialData, setInitialData] = useState<any>(emptyProfile);
+  const [draftData, setDraftData] = useState<any>(emptyProfile);
+  const [editingField, setEditingField] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
@@ -45,10 +67,11 @@ export default function BusinessProfile() {
       const docSnap = await getDoc(doc(db, 'settings', 'businessProfile'));
       if (docSnap.exists()) {
         const data = docSnap.data() as any;
-        setFormData(data);
         setInitialData(data);
+        setDraftData(data);
       } else {
-        setInitialData(formData);
+        setInitialData(emptyProfile);
+        setDraftData(emptyProfile);
       }
     } catch (e) {
       console.error("Error fetching profile", e);
@@ -56,14 +79,15 @@ export default function BusinessProfile() {
     setFetching(false);
   };
 
-  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialData);
+  const isDirty = JSON.stringify(draftData) !== JSON.stringify(initialData);
 
   const handleSave = () => {
+    setEditingField(null); // Close any open edits
     showConfirm("Are you sure you want to save these profile changes? This will immediately affect future invoices.", async () => {
       setLoading(true);
       try {
-        await setDoc(doc(db, 'settings', 'businessProfile'), formData);
-        setInitialData(formData); // Reset dirty state
+        await setDoc(doc(db, 'settings', 'businessProfile'), draftData);
+        setInitialData(draftData);
         showMessage('Business Profile saved successfully!', 'success');
       } catch (e: any) {
         showMessage(e.message, 'error');
@@ -74,12 +98,13 @@ export default function BusinessProfile() {
 
   const handleDiscard = () => {
     showConfirm("Discard all unsaved changes?", () => {
-      setFormData(initialData);
+      setDraftData(initialData);
+      setEditingField(null);
     });
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+    setDraftData({ ...draftData, [field]: value });
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,8 +121,8 @@ export default function BusinessProfile() {
       const storageRef = ref(storage, `settings/business_logo_${Date.now()}`);
       const uploadTask = await uploadBytesResumable(storageRef, file);
       const url = await getDownloadURL(uploadTask.ref);
-      setFormData(prev => ({ ...prev, logoUrl: url }));
-      showMessage('Logo uploaded! Click Save Profile to apply.', 'success');
+      setDraftData((prev: any) => ({ ...prev, logoUrl: url }));
+      showMessage('Logo uploaded successfully!', 'success');
     } catch (err: any) {
       showMessage(err.message, 'error');
     }
@@ -105,152 +130,298 @@ export default function BusinessProfile() {
   };
 
   if (fetching) {
-    return <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
+    return <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress sx={{ color: COLORS.primaryText }} /></Box>;
   }
 
-  return (
-    <Box sx={{ pb: 10, maxWidth: 1200, mx: 'auto' }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: '1.8rem', letterSpacing: 2 }}>
-            BUSINESS PROFILE
-          </Typography>
-          <Typography sx={{ color: '#666', fontWeight: 600, fontSize: '0.9rem' }}>
-            Manage your company details, registered address, and billing information.
-          </Typography>
-        </Box>
-      </Box>
+  // --- Reusable Components ---
 
-      <Grid container spacing={3}>
-        {/* Company Details Card */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card elevation={0} sx={{ border: '1px solid #E0E0E0', borderRadius: 3, h: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <StorefrontIcon sx={{ mr: 1.5, color: '#000' }} />
-                <Typography sx={{ fontWeight: 800, fontSize: '1.1rem' }}>Company Details</Typography>
-              </Box>
+  const SettingsCard = ({ accentColor, icon: Icon, title, description, children, titleColor = COLORS.primaryText }: any) => {
+    return (
+      <Card 
+        elevation={0} 
+        sx={{ 
+          borderRadius: '12px', 
+          backgroundColor: COLORS.cardBg, 
+          mb: 4,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          border: `1px solid ${COLORS.border}`,
+          position: 'relative',
+          overflow: 'visible',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: -1,
+            top: 24,
+            bottom: 24,
+            width: '4px',
+            backgroundColor: accentColor,
+            borderRadius: '0 4px 4px 0',
+          }
+        }}
+      >
+        <Box sx={{ p: { xs: 3, sm: 4 }, pb: { xs: 1, sm: 2 }, borderBottom: `1px dashed ${COLORS.border}` }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: '8px', backgroundColor: `${accentColor}15`, color: accentColor, flexShrink: 0, mt: 0.5 }}>
+              <Icon sx={{ fontSize: 22 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 800, fontSize: '18px', color: titleColor, lineHeight: 1.2, mb: 0.5 }}>
+                {title}
+              </Typography>
+              <Typography sx={{ fontSize: '13px', color: COLORS.mutedText, lineHeight: 1.4 }}>
+                {description}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+        <CardContent sx={{ p: { xs: 3, sm: 4 }, '&:last-child': { pb: { xs: 3, sm: 4 } } }}>
+          {children}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const EditableField = ({ 
+    label, 
+    fieldKey, 
+    value, 
+    isMasked = false, 
+    type = 'text',
+    gridProps = { xs: 12, sm: 6 }
+  }: any) => {
+    const isEditing = editingField === fieldKey;
+    const [showMask, setShowMask] = useState(isMasked);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(value);
+      showMessage(`${label} copied`, 'success');
+    };
+
+    const getMaskedValue = (val: string) => {
+      if (!val) return '';
+      if (val.length <= 4) return '••••';
+      return `••••••••${val.slice(-4)}`;
+    };
+
+    return (
+      <Grid item {...gridProps}>
+        <Box 
+          sx={{ 
+            position: 'relative',
+            px: 1.5,
+            py: 1,
+            borderRadius: '6px',
+            border: '1px solid transparent',
+            transition: 'all 0.2s',
+            minHeight: '64px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            '&:hover': {
+              backgroundColor: isEditing ? 'transparent' : 'rgba(0,0,0,0.02)',
+              borderColor: isEditing ? 'transparent' : 'rgba(0,0,0,0.04)',
+              '& .field-actions': { opacity: 1 }
+            }
+          }}
+        >
+          <Typography sx={{ fontSize: '11px', fontWeight: 700, color: COLORS.accentTeal, mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {label}
+          </Typography>
+          
+          {isEditing ? (
+            <TextField
+              fullWidth
+              size="small"
+              autoFocus
+              variant="outlined"
+              type={type}
+              value={value}
+              onChange={(e) => handleChange(fieldKey, e.target.value)}
+              onBlur={() => setEditingField(null)}
+              onKeyDown={(e) => { if (e.key === 'Enter') setEditingField(null); }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#FFF',
+                  borderRadius: '4px',
+                  height: '32px',
+                  '& fieldset': { borderColor: COLORS.accentTeal },
+                  '&.Mui-focused fieldset': { borderColor: COLORS.primaryText, borderWidth: '2px' }
+                },
+                '& .MuiInputBase-input': { py: 0, px: 1, fontSize: '15px', color: COLORS.primaryText, fontWeight: 600 }
+              }}
+            />
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '32px' }}>
+              <Typography sx={{ fontSize: '15px', fontWeight: 600, color: value ? COLORS.primaryText : '#94A3B8', fontStyle: value ? 'normal' : 'italic' }}>
+                {value 
+                  ? (showMask ? getMaskedValue(value) : value) 
+                  : 'Not provided'}
+              </Typography>
               
-              {/* Logo Upload */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, p: 2, border: '1px dashed #CCC', borderRadius: 2, backgroundColor: '#FAFAFA' }}>
-                <Box sx={{ width: 60, height: 60, borderRadius: '50%', backgroundColor: '#EEE', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  {formData.logoUrl ? (
-                    <img src={formData.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  ) : (
-                    <StorefrontIcon sx={{ color: '#999' }} />
+              <Box className="field-actions" sx={{ opacity: 0, transition: 'opacity 0.2s', display: 'flex', gap: 0.5 }}>
+                {isMasked && value && (
+                  <Tooltip title={showMask ? "Reveal" : "Hide"}>
+                    <IconButton size="small" onClick={() => setShowMask(!showMask)} sx={{ color: COLORS.accentTeal, p: 0.5 }}>
+                      {showMask ? <VisibilityOutlinedIcon sx={{ fontSize: 16 }} /> : <VisibilityOffOutlinedIcon sx={{ fontSize: 16 }} />}
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {isMasked && value && (
+                  <Tooltip title="Copy">
+                    <IconButton size="small" onClick={handleCopy} sx={{ color: COLORS.accentTeal, p: 0.5 }}>
+                      <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                <Tooltip title="Edit">
+                  <IconButton size="small" onClick={() => setEditingField(fieldKey)} sx={{ color: COLORS.accentGold, p: 0.5, backgroundColor: `${COLORS.accentGold}15`, '&:hover': { backgroundColor: `${COLORS.accentGold}25` } }}>
+                    <EditOutlinedIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+          )}
+        </Box>
+      </Grid>
+    );
+  };
+
+  return (
+    <Box sx={{ minHeight: '100vh', backgroundColor: COLORS.bg, pb: 16 }}>
+      <Box sx={{ maxWidth: 1000, mx: 'auto', pt: { xs: 4, md: 6 }, px: { xs: 2, sm: 3 } }}>
+        
+        {/* Page Header */}
+        <Box sx={{ mb: { xs: 6, md: 8 }, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+             <Box sx={{ 
+               width: 72, height: 72, borderRadius: '12px', backgroundColor: COLORS.primaryText, 
+               display: 'flex', alignItems: 'center', justifyContent: 'center',
+               boxShadow: '0 4px 12px rgba(27, 67, 50, 0.15)',
+               border: `2px solid ${COLORS.accentGold}`,
+               overflow: 'hidden'
+             }}>
+                {draftData.logoUrl ? (
+                  <img src={draftData.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#FFF' }} />
+                ) : (
+                  <StorefrontIcon sx={{ color: '#FFF', fontSize: 32 }} />
+                )}
+             </Box>
+             <Box>
+               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                 <Typography sx={{ fontWeight: 800, fontSize: '32px', color: COLORS.primaryText, letterSpacing: '-0.5px', lineHeight: 1 }}>
+                   {draftData.companyName || 'Company Profile'}
+                 </Typography>
+               </Box>
+               <Typography sx={{ color: COLORS.mutedText, fontSize: '14px', fontWeight: 500 }}>
+                 Manage your enterprise identity and billing configuration.
+               </Typography>
+             </Box>
+          </Box>
+        </Box>
+
+        {/* Identity Section */}
+        <SettingsCard 
+          accentColor={COLORS.primaryText} // Deep forest green
+          icon={StorefrontIcon} 
+          title="Company Identity" 
+          description="Publicly displayed information on your invoices and trade documents."
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2, px: 1.5 }}>
+             <Box sx={{ width: 48, height: 48, borderRadius: '8px', backgroundColor: '#FFF', border: `1px solid ${COLORS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {draftData.logoUrl ? (
+                  <img src={draftData.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                ) : (
+                  <StorefrontIcon sx={{ color: '#94A3B8', fontSize: 24 }} />
+                )}
+             </Box>
+             <Box sx={{ flex: 1 }}>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                  <Button component="label" variant="outlined" size="small" disabled={uploadingLogo} startIcon={uploadingLogo ? <CircularProgress size={14} color="inherit" /> : <CloudUploadIcon />} sx={{ fontWeight: 600, borderColor: COLORS.border, color: COLORS.primaryText, borderRadius: '6px', '&:hover': { backgroundColor: COLORS.bg } }}>
+                    {uploadingLogo ? 'Uploading...' : 'Update Logo'}
+                    <input type="file" hidden accept="image/*" onChange={handleLogoUpload} />
+                  </Button>
+                  {draftData.logoUrl && (
+                    <Button size="small" onClick={() => setDraftData((prev: any) => ({ ...prev, logoUrl: '' }))} sx={{ fontWeight: 600, color: '#DC2626', '&:hover': { backgroundColor: '#FEF2F2' } }}>
+                      Remove
+                    </Button>
                   )}
                 </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Business Logo</Typography>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#666' }}>Recommended size: 256x256px. Appears on your invoices.</Typography>
-                </Box>
-                <Button 
-                  component="label" 
-                  size="small" 
-                  variant="outlined" 
-                  disabled={uploadingLogo}
-                  startIcon={uploadingLogo ? <CircularProgress size={16} /> : <CloudUploadIcon />} 
-                  sx={{ fontWeight: 600, borderRadius: 2, textTransform: 'none' }}
-                >
-                  {uploadingLogo ? 'Uploading...' : (formData.logoUrl ? 'Change Logo' : 'Upload')}
-                  <input type="file" hidden accept="image/*" onChange={handleLogoUpload} />
-                </Button>
-              </Box>
+             </Box>
+          </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                <TextField variant="outlined" label="Company / Trade Name" fullWidth required value={formData.companyName} onChange={(e) => handleChange('companyName', e.target.value)} />
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField variant="outlined" label="GSTIN / UIN" fullWidth value={formData.gstin} onChange={(e) => handleChange('gstin', e.target.value.toUpperCase())} />
-                  <TextField variant="outlined" label="UDYAM No." fullWidth value={formData.udyam} onChange={(e) => handleChange('udyam', e.target.value.toUpperCase())} />
-                </Box>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField variant="outlined" label="Email Address" type="email" fullWidth value={formData.email} onChange={(e) => handleChange('email', e.target.value)} />
-                  <TextField variant="outlined" label="Phone Number" fullWidth value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)} />
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+          <Grid container rowSpacing={0.5} columnSpacing={1}>
+            <EditableField label="Legal Company Name" fieldKey="companyName" value={draftData.companyName} gridProps={{ xs: 12 }} />
+            <EditableField label="GSTIN / Tax ID" fieldKey="gstin" value={draftData.gstin} />
+            <EditableField label="UDYAM / Registration No." fieldKey="udyam" value={draftData.udyam} />
+            <EditableField label="Support Email" type="email" fieldKey="email" value={draftData.email} />
+            <EditableField label="Support Phone" fieldKey="phone" value={draftData.phone} />
+          </Grid>
+        </SettingsCard>
 
-        {/* Address Details Card */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card elevation={0} sx={{ border: '1px solid #E0E0E0', borderRadius: 3, h: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <LocationOnIcon sx={{ mr: 1.5, color: '#000' }} />
-                <Typography sx={{ fontWeight: 800, fontSize: '1.1rem' }}>Registered Address</Typography>
-              </Box>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                <TextField variant="outlined" label="Address Line 1" fullWidth required value={formData.addressLine1} onChange={(e) => handleChange('addressLine1', e.target.value)} />
-                <TextField variant="outlined" label="Address Line 2 (Optional)" fullWidth value={formData.addressLine2} onChange={(e) => handleChange('addressLine2', e.target.value)} />
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField variant="outlined" label="City" fullWidth required value={formData.city} onChange={(e) => handleChange('city', e.target.value)} />
-                  <TextField variant="outlined" label="Pincode" fullWidth required value={formData.pincode} onChange={(e) => handleChange('pincode', e.target.value)} />
-                </Box>
-                <TextField variant="outlined" label="State Name & Code (e.g. Andhra Pradesh, Code: 37)" fullWidth required value={formData.state} onChange={(e) => handleChange('state', e.target.value)} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Location Section */}
+        <SettingsCard 
+          accentColor={COLORS.accentTeal} // Muted teal
+          icon={LocationOnOutlinedIcon} 
+          title="Registered Location" 
+          description="Your primary place of business used for communications and tax calculations."
+        >
+          <Grid container rowSpacing={0.5} columnSpacing={1}>
+            <EditableField label="Address Line 1" fieldKey="addressLine1" value={draftData.addressLine1} gridProps={{ xs: 12 }} />
+            <EditableField label="Address Line 2 (Optional)" fieldKey="addressLine2" value={draftData.addressLine2} gridProps={{ xs: 12 }} />
+            <EditableField label="City" fieldKey="city" value={draftData.city} gridProps={{ xs: 12, sm: 4 }} />
+            <EditableField label="State Name & Code" fieldKey="state" value={draftData.state} gridProps={{ xs: 12, sm: 4 }} />
+            <EditableField label="Postal Code" fieldKey="pincode" value={draftData.pincode} gridProps={{ xs: 12, sm: 4 }} />
+          </Grid>
+        </SettingsCard>
 
-        {/* Bank & Invoice Configuration Card */}
-        <Grid size={{ xs: 12 }}>
-          <Card elevation={0} sx={{ border: '1px solid #E0E0E0', borderRadius: 3 }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <AccountBalanceIcon sx={{ mr: 1.5, color: '#000' }} />
-                <Typography sx={{ fontWeight: 800, fontSize: '1.1rem' }}>Bank Details (For Invoicing)</Typography>
-              </Box>
-              
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <TextField variant="outlined" label="Bank Name" fullWidth value={formData.bankName} onChange={(e) => handleChange('bankName', e.target.value)} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <TextField variant="outlined" label="Account Number" fullWidth value={formData.accountNumber} onChange={(e) => handleChange('accountNumber', e.target.value)} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <TextField variant="outlined" label="IFSC Code" fullWidth value={formData.ifscCode} onChange={(e) => handleChange('ifscCode', e.target.value.toUpperCase())} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <TextField variant="outlined" label="Branch Name" fullWidth value={formData.branch} onChange={(e) => handleChange('branch', e.target.value)} />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        {/* Banking Section */}
+        <SettingsCard 
+          accentColor={COLORS.navy} // Navy blue
+          icon={AccountBalanceOutlinedIcon} 
+          title="Banking & Settlement" 
+          titleColor={COLORS.navy}
+          description="Secure bank details appended to invoices for direct NEFT/RTGS transfers."
+        >
+          <Grid container rowSpacing={0.5} columnSpacing={1}>
+            <EditableField label="Bank Name" fieldKey="bankName" value={draftData.bankName} />
+            <EditableField label="Branch Name" fieldKey="branch" value={draftData.branch} />
+            <EditableField label="Account Number" fieldKey="accountNumber" value={draftData.accountNumber} isMasked />
+            <EditableField label="IFSC Code" fieldKey="ifscCode" value={draftData.ifscCode} isMasked />
+          </Grid>
+        </SettingsCard>
 
-      {/* Floating Save Bar */}
+      </Box>
+
+      {/* Sticky Bottom Action Bar */}
       <Slide direction="up" in={isDirty} mountOnEnter unmountOnExit>
         <Box sx={{
           position: 'fixed',
-          bottom: 24,
+          bottom: 32,
           left: '50%',
-          transform: 'translateX(-50%)', // Centering horizontally
+          transform: 'translateX(-50%)',
           width: { xs: '90%', sm: 600 },
-          backgroundColor: '#1B2A4A',
+          backgroundColor: COLORS.primaryText, 
           color: '#FFF',
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          borderRadius: '12px', 
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          px: 3,
-          py: 2,
-          zIndex: 1000
+          px: 4,
+          py: 2.5,
+          zIndex: 1000,
+          border: '1px solid rgba(255,255,255,0.1)'
         }}>
           <Box>
-            <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Unsaved Changes</Typography>
-            <Typography sx={{ fontSize: '0.75rem', color: '#AAA' }}>You have modified your business profile.</Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: '15px' }}>Unsaved Changes</Typography>
+            <Typography sx={{ fontSize: '13px', color: '#94A3B8', fontWeight: 500, mt: 0.2 }}>Please save your modifications.</Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDiscard} disabled={loading} sx={{ color: '#FFF', fontWeight: 600, textTransform: 'none' }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button onClick={handleDiscard} disabled={loading} sx={{ color: '#F1F5F9', fontWeight: 600, px: 2, borderRadius: '8px', '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}>
               Discard
             </Button>
-            <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#FFF', color: '#000', fontWeight: 800, borderRadius: 2, '&:hover': { backgroundColor: '#F0F0F0' } }}>
-              {loading ? <CircularProgress size={20} sx={{ color: '#000' }} /> : 'Save Profile'}
+            <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: COLORS.accentGold, color: COLORS.primaryText, fontWeight: 700, px: 3, borderRadius: '8px', boxShadow: 'none', '&:hover': { backgroundColor: '#B8860B', boxShadow: 'none' } }}>
+              {loading ? <CircularProgress size={20} sx={{ color: COLORS.primaryText }} /> : 'Save Profile'}
             </Button>
           </Box>
         </Box>

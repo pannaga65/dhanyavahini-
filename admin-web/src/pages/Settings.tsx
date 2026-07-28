@@ -3,7 +3,6 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import Products from './Products';
 import Categories from './Categories';
 import Banners from './Banners';
-import BusinessProfile from './BusinessProfile';
 import Godowns from './Godowns';
 
 export default function Settings() {

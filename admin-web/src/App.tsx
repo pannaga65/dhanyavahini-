@@ -1,9 +1,7 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover, Avatar, Menu, MenuItem, InputBase } from '@mui/material'
+import { Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover, Avatar } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import NotificationsIcon from '@mui/icons-material/Notifications'
-import SearchIcon from '@mui/icons-material/Search'
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined'
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
@@ -58,15 +56,7 @@ function App() {
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [inquiryCount, setInquiryCount] = useState(0);
   const [dismissedCount, setDismissedCount] = useState(0);
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null);
-
-  const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
-    setProfileAnchorEl(event.currentTarget);
-  };
-  const handleProfileClose = () => {
-    setProfileAnchorEl(null);
-  };
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(anchorEl ? null : event.currentTarget);

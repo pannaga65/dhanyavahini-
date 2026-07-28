@@ -595,7 +595,7 @@ export default function Procurement() {
       </Box>
 
       {/* ── MAIN VIEW: FARMERS LIST ── */}
-      <TableContainer>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -605,7 +605,7 @@ export default function Procurement() {
               <TableCell sx={{ fontWeight: 900 }}>TOTAL PAID</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>BALANCE</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell align="right" sx={{  fontWeight: 900 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -705,7 +705,7 @@ export default function Procurement() {
             </DialogTitle>
             
             <DialogContent sx={{ p: 0 }}>
-              <TableContainer sx={{ backgroundColor: '#FFF' }}>
+              <TableContainer sx={{ width: '100%', overflowX: 'auto', backgroundColor: '#FFF' }}>
                 <Table>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: '#F0F0F0' }}>
@@ -717,7 +717,7 @@ export default function Procurement() {
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>PAID</TableCell>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>BALANCE</TableCell>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>STATUS</TableCell>
-                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }} align="right">ACTIONS</TableCell>
+                      <TableCell align="right" sx={{  fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -755,7 +755,7 @@ export default function Procurement() {
                               }}
                             />
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                             <Button size="small" variant="outlined" onClick={() => handleOpenPayment(order.id)} sx={{ mr: 1, fontWeight: 700 }}>
                               PAY
                             </Button>

@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, IconButton, Card } from '@mui/material';
+import { Typography, Table, Menu, InputAdornment, Grid, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, IconButton, Card } from '@mui/material';
 import { collection, getDocs, addDoc, serverTimestamp, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 import imageCompression from 'browser-image-compression';
@@ -31,6 +37,18 @@ export default function Products() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuRow, setMenuRow] = useState<Product | null>(null);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, row: Product) => {
+    setAnchorEl(event.currentTarget);
+    setMenuRow(row);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuRow(null);
+  };
   
   // Form State
   const [name, setName] = useState('');
@@ -224,15 +242,62 @@ export default function Products() {
 
   return (
     <Box>
-      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FAFAF7', overflow: 'hidden' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, sm: 3 }, borderBottom: '1px solid #E2E8F0' }}>
-        <Typography sx={{ fontWeight: 800, fontSize: '18px', color: '#1B4332' }}>Product Catalog</Typography>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 700, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
+      
+      {/* Metrics Row */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+            <Box sx={{ p: 1, borderRadius: 1.5, backgroundColor: '#F3F5F1', color: '#1B4332', display: 'flex' }}><InventoryIcon /></Box>
+            <Box>
+              <Typography sx={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>Total Products</Typography>
+              <Typography sx={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>{products.length}</Typography>
+            </Box>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+            <Box sx={{ p: 1, borderRadius: 1.5, backgroundColor: '#F0FDF4', color: '#16A34A', display: 'flex' }}><CheckCircleIcon /></Box>
+            <Box>
+              <Typography sx={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>Active Products</Typography>
+              <Typography sx={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>{products.filter((p: any) => p.isActive !== false).length}</Typography>
+            </Box>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+            <Box sx={{ p: 1, borderRadius: 1.5, backgroundColor: '#FEF2F2', color: '#DC2626', display: 'flex' }}><WarningIcon /></Box>
+            <Box>
+              <Typography sx={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>Out of Stock</Typography>
+              <Typography sx={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>{products.filter((p) => !p.availableStockKg || p.availableStockKg <= 0).length}</Typography>
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, p: { xs: 2, sm: 3 }, gap: 2, borderBottom: '1px solid #E2E8F0' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexGrow: 1, maxWidth: { sm: 400 } }}>
+          <TextField 
+            placeholder="Search products..." 
+            size="small" 
+            fullWidth
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            slotProps={{ input: {
+              startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: '#94A3B8' }} /></InputAdornment>,
+              sx: { borderRadius: '8px', backgroundColor: '#F8FAFC', '& fieldset': { borderColor: '#E2E8F0' } }
+            } }}
+          />
+          <Button variant="outlined" sx={{ minWidth: 0, px: 2, borderColor: '#E2E8F0', color: '#64748B', borderRadius: '8px' }}>
+            <FilterListIcon fontSize="small" />
+          </Button>
+        </Box>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 600, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
           + Add Product
         </Button>
       </Box>
 
-      <TableContainer>
+      <TableContainer sx={{ overflowX: 'auto' }}>
         <Table>
           <TableHead sx={{ backgroundColor: '#F3F5F1' }}>
             <TableRow>
@@ -246,7 +311,7 @@ export default function Products() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {products.map((row) => (
+            {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.category?.toLowerCase().includes(searchQuery.toLowerCase())).map((row) => (
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
                 <TableCell>
                   {row.imageUrl ? (
@@ -276,16 +341,9 @@ export default function Products() {
                   </Box>
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
-                    <EditIcon fontSize="small" />
+                  <IconButton size="small" onClick={(e) => handleMenuClick(e, row)} sx={{ color: '#64748B' }}>
+                    <MoreVertIcon fontSize="small" />
                   </IconButton>
-                  {(row as any).isActive !== false ? (
-                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  ) : (
-                    <Button size="small" onClick={() => handleRestore(row.id)} sx={{ fontWeight: 700, fontSize: '0.7rem' }}>RESTORE</Button>
-                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -303,6 +361,27 @@ export default function Products() {
         </Table>
       </TableContainer>
     </Card>
+
+      
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        slotProps={{ paper: { sx: { boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', border: '1px solid #E2E8F0', borderRadius: '8px', minWidth: 150 } } }}
+      >
+        <MenuItem onClick={() => { handleOpenEdit(menuRow!); handleMenuClose(); }} sx={{ fontSize: '14px', color: '#0F172A' }}>
+          <EditIcon fontSize="small" sx={{ mr: 1.5, color: '#64748B' }} /> Edit
+        </MenuItem>
+        {(menuRow as any)?.isActive !== false ? (
+          <MenuItem onClick={() => { handleDelete(menuRow!.id); handleMenuClose(); }} sx={{ fontSize: '14px', color: '#DC2626' }}>
+            <DeleteIcon fontSize="small" sx={{ mr: 1.5, color: '#DC2626' }} /> Delete
+          </MenuItem>
+        ) : (
+          <MenuItem onClick={() => { handleRestore(menuRow!.id); handleMenuClose(); }} sx={{ fontSize: '14px', color: '#16A34A' }}>
+            <CheckCircleIcon fontSize="small" sx={{ mr: 1.5, color: '#16A34A' }} /> Restore
+          </MenuItem>
+        )}
+      </Menu>
 
       {/* Add/Edit Product Dialog */}
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>
@@ -403,7 +482,7 @@ export default function Products() {
         
         <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE'}
           </Button>
         </DialogActions>

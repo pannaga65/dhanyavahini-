@@ -216,7 +216,7 @@ export default function Inventory() {
         </Button>
       </Box>
 
-      <TableContainer>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
@@ -230,7 +230,7 @@ export default function Inventory() {
               <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>TOTAL BAGS</TableCell>
               <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#1976d2' }}>LIFTED</TableCell>
               <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#d32f2f' }}>BALANCE</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }} align="right">ACTIONS</TableCell>
+              <TableCell align="right" sx={{  fontWeight: 900, fontSize: '0.75rem' , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -250,7 +250,7 @@ export default function Inventory() {
                 <TableCell sx={{ fontWeight: 900, color: row.balanceBags === 0 ? 'green' : '#d32f2f', fontSize: '0.9rem' }}>
                   {row.balanceBags}
                 </TableCell>
-                <TableCell align="right">
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   <IconButton onClick={() => handleOpen(row)} size="small" sx={{ mr: 0.5 }}>
                     <EditIcon fontSize="small" />
                   </IconButton>

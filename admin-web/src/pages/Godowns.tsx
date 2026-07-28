@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Switch, FormControlLabel, Card } from '@mui/material';
+import { Typography, Table, Menu, MenuItem, InputAdornment, Grid, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Switch, FormControlLabel, Card } from '@mui/material';
 import { collection, getDocs, getFirestore, addDoc, serverTimestamp, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import StoreIcon from '@mui/icons-material/Store';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
@@ -14,6 +20,18 @@ export default function Godowns() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuRow, setMenuRow] = useState<any | null>(null);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, row: any) => {
+    setAnchorEl(event.currentTarget);
+    setMenuRow(row);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuRow(null);
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -111,15 +129,62 @@ export default function Godowns() {
 
   return (
     <Box>
-      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FAFAF7', overflow: 'hidden' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, sm: 3 }, borderBottom: '1px solid #E2E8F0' }}>
-        <Typography sx={{ fontWeight: 800, fontSize: '18px', color: '#1B4332' }}>Godowns</Typography>
-        <Button variant="contained" onClick={() => handleOpen()} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 700, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
+      
+      {/* Metrics Row */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+            <Box sx={{ p: 1, borderRadius: 1.5, backgroundColor: '#F3F5F1', color: '#1B4332', display: 'flex' }}><StoreIcon /></Box>
+            <Box>
+              <Typography sx={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>Total Godowns</Typography>
+              <Typography sx={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>{godowns.length}</Typography>
+            </Box>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+            <Box sx={{ p: 1, borderRadius: 1.5, backgroundColor: '#F0FDF4', color: '#16A34A', display: 'flex' }}><CheckCircleIcon /></Box>
+            <Box>
+              <Typography sx={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>Active</Typography>
+              <Typography sx={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>{godowns.filter((g: any) => g.isActive !== false).length}</Typography>
+            </Box>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+            <Box sx={{ p: 1, borderRadius: 1.5, backgroundColor: '#FEF2F2', color: '#DC2626', display: 'flex' }}><CancelIcon /></Box>
+            <Box>
+              <Typography sx={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>Inactive</Typography>
+              <Typography sx={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>{godowns.filter((g: any) => g.isActive === false).length}</Typography>
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, p: { xs: 2, sm: 3 }, gap: 2, borderBottom: '1px solid #E2E8F0' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexGrow: 1, maxWidth: { sm: 400 } }}>
+          <TextField 
+            placeholder="Search godowns..." 
+            size="small" 
+            fullWidth
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            slotProps={{ input: {
+              startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: '#94A3B8' }} /></InputAdornment>,
+              sx: { borderRadius: '8px', backgroundColor: '#F8FAFC', '& fieldset': { borderColor: '#E2E8F0' } }
+            } }}
+          />
+          <Button variant="outlined" sx={{ minWidth: 0, px: 2, borderColor: '#E2E8F0', color: '#64748B', borderRadius: '8px' }}>
+            <FilterListIcon fontSize="small" />
+          </Button>
+        </Box>
+        <Button variant="contained" onClick={() => handleOpen()} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 600, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
           + Add Godown
         </Button>
       </Box>
 
-      <TableContainer>
+      <TableContainer sx={{ overflowX: 'auto' }}>
         <Table>
           <TableHead sx={{ backgroundColor: '#F3F5F1' }}>
             <TableRow>
@@ -132,7 +197,7 @@ export default function Godowns() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {godowns.map((row) => (
+            {godowns.filter((g: any) => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.location.toLowerCase().includes(searchQuery.toLowerCase())).map((row) => (
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' }, opacity: row.isActive === false ? 0.6 : 1 }}>
                 <TableCell sx={{ fontWeight: 900 }}>{row.name}</TableCell>
                 <TableCell>{row.location}</TableCell>
@@ -146,11 +211,8 @@ export default function Godowns() {
                   />
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton onClick={() => handleOpen(row)} size="small" sx={{ mr: 1 }}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
-                    <DeleteIcon fontSize="small" />
+                  <IconButton size="small" onClick={(e) => handleMenuClick(e, row)} sx={{ color: '#64748B' }}>
+                    <MoreVertIcon fontSize="small" />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -169,6 +231,20 @@ export default function Godowns() {
         </Table>
       </TableContainer>
     </Card>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        slotProps={{ paper: { sx: { boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', border: '1px solid #E2E8F0', borderRadius: '8px', minWidth: 150 } } }}
+      >
+        <MenuItem onClick={() => { handleOpen(menuRow); handleMenuClose(); }} sx={{ fontSize: '14px', color: '#0F172A' }}>
+          <EditIcon fontSize="small" sx={{ mr: 1.5, color: '#64748B' }} /> Edit
+        </MenuItem>
+        <MenuItem onClick={() => { handleDelete(menuRow.id); handleMenuClose(); }} sx={{ fontSize: '14px', color: '#DC2626' }}>
+          <DeleteIcon fontSize="small" sx={{ mr: 1.5, color: '#DC2626' }} /> Delete
+        </MenuItem>
+      </Menu>
 
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>
         <Box sx={{ p: 3 }}>

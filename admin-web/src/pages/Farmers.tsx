@@ -204,7 +204,7 @@ export default function Farmers() {
         </Button>
       </Box>
 
-      <TableContainer>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -212,7 +212,7 @@ export default function Farmers() {
               <TableCell sx={{ fontWeight: 900 }}>MOBILE</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>AADHAR</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>BANK DETAILS</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell align="right" sx={{  fontWeight: 900 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -230,7 +230,7 @@ export default function Farmers() {
                   <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>A/C: {row.accountNumber}</Typography>
                   <Typography sx={{ fontSize: '0.75rem', color: '#666' }}>IFSC: {row.ifscCode}</Typography>
                 </TableCell>
-                <TableCell align="right">
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
                     <EditIcon fontSize="small" />
                   </IconButton>

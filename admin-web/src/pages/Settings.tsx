@@ -5,13 +5,12 @@ import Categories from './Categories';
 import Banners from './Banners';
 import Godowns from './Godowns';
 
-// Premium Colors
+// Enterprise SaaS Colors
 const COLORS = {
-  bg: '#F3F5F1',
-  primaryText: '#1B4332',
+  bg: '#F8FAFC',
+  primaryText: '#0F172A',
   mutedText: '#64748B',
-  accentGold: '#D4A017',
-  accentTeal: '#2C6E7F',
+  primaryAccent: '#1B4332',
   border: '#E2E8F0',
 };
 
@@ -38,53 +37,49 @@ export default function Settings() {
           </Typography>
         </Box>
         
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, md: 5 } }}>
-          {/* Settings Sidebar */}
-          <Box sx={{ width: { xs: '100%', md: 220, lg: 240 }, flexShrink: 0 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              {SETTINGS_NAV.map((item) => {
-                const isActive = location.pathname.includes(item.path);
-                return (
-                  <Button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    disableElevation
-                    sx={{
-                      justifyContent: 'flex-start',
-                      px: 2,
-                      py: 1.25,
-                      borderRadius: '8px',
-                      color: isActive ? COLORS.primaryText : COLORS.mutedText,
-                      backgroundColor: isActive ? '#E8ECE4' : 'transparent',
-                      fontWeight: isActive ? 700 : 500,
-                      textTransform: 'none',
-                      fontSize: '14px',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        backgroundColor: isActive ? '#E8ECE4' : 'rgba(0,0,0,0.03)'
-                      }
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-            </Box>
+        <Box sx={{ mb: 4, display: 'inline-flex', backgroundColor: '#F1F5F9', borderRadius: '12px', p: 0.5, overflowX: 'auto', maxWidth: '100%' }}>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {SETTINGS_NAV.map((item) => {
+              const isActive = location.pathname.includes(item.path);
+              return (
+                <Button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  disableElevation
+                  sx={{
+                    justifyContent: 'center',
+                    px: 3,
+                    py: 1,
+                    borderRadius: '8px',
+                    color: isActive ? COLORS.primaryAccent : COLORS.mutedText,
+                    backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+                    fontWeight: isActive ? 600 : 500,
+                    textTransform: 'none',
+                    fontSize: '14px',
+                    boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap',
+                    '&:hover': {
+                      backgroundColor: isActive ? '#FFFFFF' : 'rgba(0,0,0,0.03)'
+                    }
+                  }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
           </Box>
-          
-          {/* Settings Content */}
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Box>
-              <Routes>
-                <Route path="products" element={<Products />} />
-                <Route path="categories" element={<Categories />} />
-                <Route path="banners" element={<Banners />} />
-                <Route path="godowns" element={<Godowns />} />
-                <Route path="/" element={<Navigate to="products" replace />} />
-                <Route path="*" element={<Navigate to="products" replace />} />
-              </Routes>
-            </Box>
-          </Box>
+        </Box>
+        
+        <Box>
+          <Routes>
+            <Route path="products" element={<Products />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="banners" element={<Banners />} />
+            <Route path="godowns" element={<Godowns />} />
+            <Route path="/" element={<Navigate to="products" replace />} />
+            <Route path="*" element={<Navigate to="products" replace />} />
+          </Routes>
         </Box>
       </Box>
     </Box>

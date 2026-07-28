@@ -300,7 +300,7 @@ export default function Orders() {
         </FormControl>
       </Box>
 
-      <TableContainer>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -309,7 +309,7 @@ export default function Orders() {
               <TableCell sx={{ fontWeight: 900 }}>AMOUNT</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>DELIVERY STATUS</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>PAYMENT STATUS</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell align="right" sx={{  fontWeight: 900 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -467,7 +467,7 @@ export default function Orders() {
                 Order Items
               </Typography>
               
-              <TableContainer sx={{ border: '1px solid #E0E0E0', borderRadius: 2 }}>
+              <TableContainer sx={{ width: '100%', overflowX: 'auto', border: '1px solid #E0E0E0', borderRadius: 2 }}>
                 <Table size="small">
                   <TableHead sx={{ backgroundColor: '#FAFAFA' }}>
                     <TableRow>
@@ -482,7 +482,7 @@ export default function Orders() {
                       <TableRow key={idx}>
                         <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
                         <TableCell align="center">{item.quantityKg}</TableCell>
-                        <TableCell align="right">₹{item.basePriceKg}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>₹{item.basePriceKg}</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700 }}>₹{item.lineTotal?.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}

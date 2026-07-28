@@ -376,8 +376,8 @@ export default function Loans() {
       </Box>
 
       {/* ── MAIN VIEW: FARMERS LIST ── */}
-      <TableContainer>
-        <Table>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 900 }}>FARMER</TableCell>
@@ -386,7 +386,7 @@ export default function Loans() {
               <TableCell sx={{ fontWeight: 900 }}>RECOVERED</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>OUTSTANDING</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell align="right" sx={{  fontWeight: 900 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -477,7 +477,7 @@ export default function Loans() {
             </DialogTitle>
             
             <DialogContent sx={{ p: 0 }}>
-              <TableContainer sx={{ backgroundColor: '#FFF' }}>
+              <TableContainer sx={{ width: '100%', overflowX: 'auto', backgroundColor: '#FFF' }}>
                 <Table>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: '#F0F0F0' }}>
@@ -489,7 +489,7 @@ export default function Loans() {
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>RECOVERED</TableCell>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>BALANCE</TableCell>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }}>STATUS</TableCell>
-                      <TableCell sx={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 }} align="right">ACTIONS</TableCell>
+                      <TableCell align="right" sx={{  fontWeight: 800, fontSize: '0.8rem', letterSpacing: 0.5 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -527,7 +527,7 @@ export default function Loans() {
                               }}
                             />
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                             <Button size="small" variant="outlined" onClick={() => handleOpenRecovery(loan.id)} sx={{ mr: 1, fontWeight: 700 }}>
                               RECOVER
                             </Button>

@@ -199,8 +199,8 @@ export default function Inquiries() {
       </Box>
       <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 4, mt: 2 }} />
 
-      <TableContainer>
-        <Table>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 900 }}>ORDER ID</TableCell>
@@ -209,7 +209,7 @@ export default function Inquiries() {
               <TableCell sx={{ fontWeight: 900 }}>TOTAL QTY</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>REQUESTED PRICE</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>DATE</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell align="right" sx={{  fontWeight: 900 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -241,7 +241,7 @@ export default function Inquiries() {
                 <TableCell sx={{ color: '#666', fontSize: '0.85rem' }}>
                   {row.createdAt?.toDate().toLocaleDateString() || 'N/A'}
                 </TableCell>
-                <TableCell align="right">
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   <Button 
                     variant="contained" 
                     color="success" 

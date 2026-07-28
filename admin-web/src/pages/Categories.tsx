@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Card } from '@mui/material';
+import { Typography, Table, Menu, MenuItem, InputAdornment, Grid, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Card } from '@mui/material';
 import { collection, getDocs, getFirestore, updateDoc, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, getStorage } from 'firebase/storage';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import CategoryIcon from '@mui/icons-material/Category';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
@@ -18,6 +22,18 @@ export default function Categories() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuRow, setMenuRow] = useState<any | null>(null);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, row: any) => {
+    setAnchorEl(event.currentTarget);
+    setMenuRow(row);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuRow(null);
+  };
   const [uploading, setUploading] = useState(false);
   
   const [formData, setFormData] = useState({ 
@@ -134,15 +150,44 @@ export default function Categories() {
 
   return (
     <Box>
-      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FAFAF7', overflow: 'hidden' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, sm: 3 }, borderBottom: '1px solid #E2E8F0' }}>
-        <Typography sx={{ fontWeight: 800, fontSize: '18px', color: '#1B4332' }}>Categories</Typography>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 700, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
+      
+      {/* Metrics Row */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+            <Box sx={{ p: 1, borderRadius: 1.5, backgroundColor: '#F3F5F1', color: '#1B4332', display: 'flex' }}><CategoryIcon /></Box>
+            <Box>
+              <Typography sx={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>Total Categories</Typography>
+              <Typography sx={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>{categories.length}</Typography>
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, p: { xs: 2, sm: 3 }, gap: 2, borderBottom: '1px solid #E2E8F0' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexGrow: 1, maxWidth: { sm: 400 } }}>
+          <TextField 
+            placeholder="Search categories..." 
+            size="small" 
+            fullWidth
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            slotProps={{ input: {
+              startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: '#94A3B8' }} /></InputAdornment>,
+              sx: { borderRadius: '8px', backgroundColor: '#F8FAFC', '& fieldset': { borderColor: '#E2E8F0' } }
+            } }}
+          />
+          <Button variant="outlined" sx={{ minWidth: 0, px: 2, borderColor: '#E2E8F0', color: '#64748B', borderRadius: '8px' }}>
+            <FilterListIcon fontSize="small" />
+          </Button>
+        </Box>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 600, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
           + Add Category
         </Button>
       </Box>
 
-      <TableContainer>
+      <TableContainer sx={{ overflowX: 'auto' }}>
         <Table>
           <TableHead sx={{ backgroundColor: '#F3F5F1' }}>
             <TableRow>
@@ -153,7 +198,7 @@ export default function Categories() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {categories.map((c) => (
+            {categories.filter((c: any) => c.name.toLowerCase().includes(searchQuery.toLowerCase())).map((c) => (
               <TableRow key={c.id} sx={{ '& td': { borderBottom: '1px solid #EEE' } }}>
                 <TableCell>
                   {c.iconUrl ? (
@@ -165,8 +210,9 @@ export default function Categories() {
                 <TableCell sx={{ fontWeight: 600 }}>{c.name}</TableCell>
                 <TableCell>{c.order}</TableCell>
                 <TableCell align="right">
-                  <IconButton onClick={() => handleEdit(c)}><EditIcon /></IconButton>
-                  <IconButton onClick={() => handleDelete(c.id)} color="error"><DeleteIcon /></IconButton>
+                  <IconButton size="small" onClick={(e) => handleMenuClick(e, c)} sx={{ color: '#64748B' }}>
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -184,6 +230,21 @@ export default function Categories() {
         </Table>
       </TableContainer>
     </Card>
+
+      
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        slotProps={{ paper: { sx: { boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', border: '1px solid #E2E8F0', borderRadius: '8px', minWidth: 150 } } }}
+      >
+        <MenuItem onClick={() => { handleEdit(menuRow); handleMenuClose(); }} sx={{ fontSize: '14px', color: '#0F172A' }}>
+          <EditIcon fontSize="small" sx={{ mr: 1.5, color: '#64748B' }} /> Edit
+        </MenuItem>
+        <MenuItem onClick={() => { handleDelete(menuRow.id); handleMenuClose(); }} sx={{ fontSize: '14px', color: '#DC2626' }}>
+          <DeleteIcon fontSize="small" sx={{ mr: 1.5, color: '#DC2626' }} /> Delete
+        </MenuItem>
+      </Menu>
 
       {/* Add / Edit Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>

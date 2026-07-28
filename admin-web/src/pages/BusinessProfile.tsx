@@ -82,6 +82,9 @@ export default function BusinessProfile() {
   const isDirty = JSON.stringify(draftData) !== JSON.stringify(initialData);
 
   const handleSave = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setEditingField(null); // Close any open edits
     showConfirm("Are you sure you want to save these profile changes? This will immediately affect future invoices.", async () => {
       setLoading(true);
@@ -97,6 +100,9 @@ export default function BusinessProfile() {
   };
 
   const handleDiscard = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     showConfirm("Discard all unsaved changes?", () => {
       setDraftData(initialData);
       setEditingField(null);
@@ -211,7 +217,7 @@ export default function BusinessProfile() {
     };
 
     return (
-      <Grid item {...gridProps}>
+      <Grid size={gridProps}>
         <Box 
           sx={{ 
             position: 'relative',
@@ -258,8 +264,8 @@ export default function BusinessProfile() {
               }}
             />
           ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '32px' }}>
-              <Typography sx={{ fontSize: '15px', fontWeight: 600, color: value ? COLORS.primaryText : '#94A3B8', fontStyle: value ? 'normal' : 'italic' }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', minHeight: '32px', gap: 1 }}>
+              <Typography sx={{ fontSize: '15px', fontWeight: 600, color: value ? COLORS.primaryText : '#94A3B8', fontStyle: value ? 'normal' : 'italic', wordBreak: 'break-word', mt: 0.5 }}>
                 {value 
                   ? (showMask ? getMaskedValue(value) : value) 
                   : 'Not provided'}
@@ -298,28 +304,29 @@ export default function BusinessProfile() {
       <Box sx={{ maxWidth: 1000, mx: 'auto', pt: { xs: 4, md: 6 }, px: { xs: 2, sm: 3 } }}>
         
         {/* Page Header */}
-        <Box sx={{ mb: { xs: 6, md: 8 }, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        <Box sx={{ mb: { xs: 4, md: 8 }, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 3 } }}>
              <Box sx={{ 
-               width: 72, height: 72, borderRadius: '12px', backgroundColor: COLORS.primaryText, 
+               width: { xs: 56, sm: 72 }, height: { xs: 56, sm: 72 }, borderRadius: '12px', backgroundColor: COLORS.primaryText, 
                display: 'flex', alignItems: 'center', justifyContent: 'center',
                boxShadow: '0 4px 12px rgba(27, 67, 50, 0.15)',
                border: `2px solid ${COLORS.accentGold}`,
-               overflow: 'hidden'
+               overflow: 'hidden',
+               flexShrink: 0
              }}>
                 {draftData.logoUrl ? (
                   <img src={draftData.logoUrl} alt="Logo" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#FFF' }} />
                 ) : (
-                  <StorefrontIcon sx={{ color: '#FFF', fontSize: 32 }} />
+                  <StorefrontIcon sx={{ color: '#FFF', fontSize: { xs: 24, sm: 32 } }} />
                 )}
              </Box>
              <Box>
                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                 <Typography sx={{ fontWeight: 800, fontSize: '32px', color: COLORS.primaryText, letterSpacing: '-0.5px', lineHeight: 1 }}>
+                 <Typography sx={{ fontWeight: 800, fontSize: { xs: '24px', sm: '32px' }, color: COLORS.primaryText, letterSpacing: '-0.5px', lineHeight: 1 }}>
                    {draftData.companyName || 'Company Profile'}
                  </Typography>
                </Box>
-               <Typography sx={{ color: COLORS.mutedText, fontSize: '14px', fontWeight: 500 }}>
+               <Typography sx={{ color: COLORS.mutedText, fontSize: { xs: '13px', sm: '14px' }, fontWeight: 500, mt: 0.5 }}>
                  Manage your enterprise identity and billing configuration.
                </Typography>
              </Box>
@@ -403,10 +410,11 @@ export default function BusinessProfile() {
       <Slide direction="up" in={isDirty} mountOnEnter unmountOnExit>
         <Box sx={{
           position: 'fixed',
-          bottom: 32,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: { xs: '90%', sm: 600 },
+          bottom: { xs: 16, sm: 32 },
+          left: 0,
+          right: 0,
+          mx: 'auto',
+          width: { xs: '92%', sm: 600 },
           backgroundColor: COLORS.primaryText, 
           color: '#FFF',
           borderRadius: '12px', 
@@ -414,20 +422,20 @@ export default function BusinessProfile() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          px: 4,
-          py: 2.5,
+          px: { xs: 2, sm: 4 },
+          py: { xs: 1.5, sm: 2.5 },
           zIndex: 1000,
           border: '1px solid rgba(255,255,255,0.1)'
         }}>
-          <Box>
+          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
             <Typography sx={{ fontWeight: 700, fontSize: '15px' }}>Unsaved Changes</Typography>
             <Typography sx={{ fontSize: '13px', color: '#94A3B8', fontWeight: 500, mt: 0.2 }}>Please save your modifications.</Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button onClick={handleDiscard} disabled={loading} sx={{ color: '#F1F5F9', fontWeight: 600, px: 2, borderRadius: '8px', '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, width: { xs: '100%', sm: 'auto' } }}>
+            <Button onClick={handleDiscard} disabled={loading} sx={{ flex: { xs: 1, sm: 'none' }, color: '#F1F5F9', fontWeight: 600, px: 2, borderRadius: '8px', border: { xs: '1px solid rgba(255,255,255,0.2)', sm: 'none' }, '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}>
               Discard
             </Button>
-            <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: COLORS.accentGold, color: COLORS.primaryText, fontWeight: 700, px: 3, borderRadius: '8px', boxShadow: 'none', '&:hover': { backgroundColor: '#B8860B', boxShadow: 'none' } }}>
+            <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ flex: { xs: 1, sm: 'none' }, backgroundColor: COLORS.accentGold, color: COLORS.primaryText, fontWeight: 700, px: 3, borderRadius: '8px', boxShadow: 'none', '&:hover': { backgroundColor: '#B8860B', boxShadow: 'none' } }}>
               {loading ? <CircularProgress size={20} sx={{ color: COLORS.primaryText }} /> : 'Save Profile'}
             </Button>
           </Box>

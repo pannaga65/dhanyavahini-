@@ -156,8 +156,8 @@ export default function Customers() {
         </Button>
       </Box>
 
-      <TableContainer>
-        <Table>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 900 }}>TRADE NAME</TableCell>
@@ -165,7 +165,7 @@ export default function Customers() {
               <TableCell sx={{ fontWeight: 900 }}>EMAIL</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>GST</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell align="right" sx={{  fontWeight: 900 , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -185,7 +185,7 @@ export default function Customers() {
                     }}
                   />
                 </TableCell>
-                <TableCell align="right">
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                   <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
                     <EditIcon fontSize="small" />
                   </IconButton>

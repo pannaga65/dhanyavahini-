@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover, Avatar } from '@mui/material'
+import { Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Popover, Avatar } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
@@ -276,8 +276,13 @@ function App() {
           <Box sx={{ flexGrow: 1 }} />
           <IconButton color="inherit" onClick={() => navigate('/inquiries')} sx={{ mr: 1 }}>
             <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { fontWeight: 900 } }}>
-              <NotificationsIcon />
+              <NotificationsIcon sx={{ color: '#1B2A4A' }} />
             </Badge>
+          </IconButton>
+          <IconButton onClick={() => navigate('/profile')} sx={{ p: 0 }}>
+            <Avatar sx={{ width: 32, height: 32, backgroundColor: '#0F172A', fontSize: '0.9rem', fontWeight: 700 }}>
+              {user?.email?.charAt(0).toUpperCase() || 'A'}
+            </Avatar>
           </IconButton>
         </Toolbar>
       </AppBar>
@@ -401,25 +406,7 @@ function App() {
         </Box>
       </Box>
 
-      {/* ── Floating Notification Button (Mobile Only) ── */}
-      <Fab
-        color={inquiryCount - dismissedCount > 0 ? "error" : "primary"}
-        aria-label="notifications"
-        onClick={handleNotificationClick}
-        sx={{
-          display: { xs: 'flex', md: 'none' },
-          position: 'fixed',
-          top: 28,
-          right: 28,
-          zIndex: 9999,
-          backgroundColor: inquiryCount - dismissedCount > 0 ? '#DC2626' : '#1B2A4A',
-          '&:hover': { backgroundColor: inquiryCount - dismissedCount > 0 ? '#B91C1C' : '#2D4A7A' }
-        }}
-      >
-        <Badge badgeContent={Math.max(0, inquiryCount - dismissedCount)} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#1B2A4A', fontWeight: 700 } }}>
-          <NotificationsIcon sx={{ color: '#FFF' }} />
-        </Badge>
-      </Fab>
+      {/* ── Floating Notification Button (Removed as per user request to avoid duplication on mobile) ── */}
 
       <Popover
         open={openNotification}

@@ -1,4 +1,4 @@
-import { Typography, Box, Tabs, Tab } from '@mui/material';
+import { Typography, Box, Button } from '@mui/material';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import Products from './Products';
 import Categories from './Categories';
@@ -19,22 +19,12 @@ export default function Settings() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const currentTab = () => {
-    if (location.pathname.includes('/settings/products')) return 0;
-    if (location.pathname.includes('/settings/categories')) return 1;
-    if (location.pathname.includes('/settings/banners')) return 2;
-    if (location.pathname.includes('/settings/godowns')) return 3;
-    return 0;
-  };
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    switch (newValue) {
-      case 0: navigate('/settings/products'); break;
-      case 1: navigate('/settings/categories'); break;
-      case 2: navigate('/settings/banners'); break;
-      case 3: navigate('/settings/godowns'); break;
-    }
-  };
+  const SETTINGS_NAV = [
+    { label: 'Products', path: '/settings/products' },
+    { label: 'Categories', path: '/settings/categories' },
+    { label: 'Banners', path: '/settings/banners' },
+    { label: 'Godowns', path: '/settings/godowns' }
+  ];
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: COLORS.bg, pt: { xs: 4, md: 6 }, pb: 16 }}>
@@ -48,49 +38,53 @@ export default function Settings() {
           </Typography>
         </Box>
         
-        <Box sx={{ mb: 4, display: 'inline-block', backgroundColor: '#E8ECE4', borderRadius: '12px', p: 0.5 }}>
-          <Tabs 
-            value={currentTab()} 
-            onChange={handleTabChange} 
-            sx={{
-              minHeight: '44px',
-              '& .MuiTabs-indicator': { display: 'none' },
-              '& .MuiTab-root': { 
-                fontWeight: 700, 
-                letterSpacing: 0.5, 
-                minHeight: '36px', 
-                height: '36px',
-                borderRadius: '8px',
-                color: COLORS.mutedText,
-                textTransform: 'none',
-                fontSize: '14px',
-                px: 3,
-                mx: 0.5,
-                transition: 'all 0.2s',
-              },
-              '& .Mui-selected': { 
-                color: '#FFF !important', 
-                backgroundColor: COLORS.primaryText,
-                boxShadow: '0 2px 8px rgba(27,67,50,0.2)'
-              }
-            }}
-          >
-            <Tab label="Products" disableRipple />
-            <Tab label="Categories" disableRipple />
-            <Tab label="Banners" disableRipple />
-            <Tab label="Godowns" disableRipple />
-          </Tabs>
-        </Box>
-        
-        <Box>
-          <Routes>
-            <Route path="products" element={<Products />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="banners" element={<Banners />} />
-            <Route path="godowns" element={<Godowns />} />
-            <Route path="/" element={<Navigate to="products" replace />} />
-            <Route path="*" element={<Navigate to="products" replace />} />
-          </Routes>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, md: 5 } }}>
+          {/* Settings Sidebar */}
+          <Box sx={{ width: { xs: '100%', md: 220, lg: 240 }, flexShrink: 0 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {SETTINGS_NAV.map((item) => {
+                const isActive = location.pathname.includes(item.path);
+                return (
+                  <Button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    disableElevation
+                    sx={{
+                      justifyContent: 'flex-start',
+                      px: 2,
+                      py: 1.25,
+                      borderRadius: '8px',
+                      color: isActive ? COLORS.primaryText : COLORS.mutedText,
+                      backgroundColor: isActive ? '#E8ECE4' : 'transparent',
+                      fontWeight: isActive ? 700 : 500,
+                      textTransform: 'none',
+                      fontSize: '14px',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        backgroundColor: isActive ? '#E8ECE4' : 'rgba(0,0,0,0.03)'
+                      }
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                );
+              })}
+            </Box>
+          </Box>
+          
+          {/* Settings Content */}
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Box>
+              <Routes>
+                <Route path="products" element={<Products />} />
+                <Route path="categories" element={<Categories />} />
+                <Route path="banners" element={<Banners />} />
+                <Route path="godowns" element={<Godowns />} />
+                <Route path="/" element={<Navigate to="products" replace />} />
+                <Route path="*" element={<Navigate to="products" replace />} />
+              </Routes>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Box>

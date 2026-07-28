@@ -205,11 +205,11 @@ export default function Inquiries() {
                 <TableCell>
                   {row.items?.map((item: any, i: number) => (
                     <Box key={i} sx={{ fontSize: '0.8rem', color: '#666' }}>
-                      {item.quantityKg} x {item.name}
+                      {item.quantityKg || item.quantity} x {item.name || item.productName}
                     </Box>
                   ))}
                 </TableCell>
-                <TableCell>{row.totalQuantity || row.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || 0), 0) || 0} units</TableCell>
+                <TableCell>{row.totalQuantity || row.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || item.quantity || 0), 0) || 0} units</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString()}</TableCell>
                 <TableCell sx={{ color: '#666', fontSize: '0.85rem' }}>
                   {row.createdAt?.toDate().toLocaleDateString() || 'N/A'}

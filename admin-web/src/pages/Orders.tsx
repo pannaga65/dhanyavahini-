@@ -297,7 +297,7 @@ export default function Orders() {
                   <TableCell sx={{ fontWeight: 700 }}>
                     {row.customerName || 'Unknown Customer'}
                   </TableCell>
-                  <TableCell>{row.totalQuantity || row.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || 0), 0) || 0} units</TableCell>
+                  <TableCell>{row.totalQuantity || row.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || item.quantity || 0), 0) || 0} units</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString() || '—'}</TableCell>
                   <TableCell>
                     <Chip label={row.status} size="small" sx={{ backgroundColor: sc.bg, color: sc.fg, fontWeight: 700 }} />

@@ -142,6 +142,7 @@ class CategoryScreen extends ConsumerWidget {
                                             quantity: product.moqKg > 0 ? product.moqKg : 1, // Quick add moq
                                             moqKg: product.moqKg > 0 ? product.moqKg : 1,
                                             gstPercentage: product.gstPercentage,
+                                            imageUrl: product.imageUrl,
                                           ),
                                         );
                                       }

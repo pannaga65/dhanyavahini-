@@ -732,6 +732,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                         quantity: moq,
                                                         moqKg: moq,
                                                         gstPercentage: product.gstPercentage,
+                                                        imageUrl: product.imageUrl,
                                                       ),
                                                     );
                                                     ScaffoldMessenger.of(context).showSnackBar(

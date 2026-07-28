@@ -246,7 +246,7 @@ function App() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8F9FC', width: '100%' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8F9FC', width: '100%', overflowX: 'hidden' }}>
 
       {/* ── Mobile AppBar ── */}
       <AppBar
@@ -318,6 +318,7 @@ function App() {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
           width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
           p: { xs: 2, sm: 3, md: 5 },
           pt: { xs: 10, md: 6 }, // Extra padding top on mobile to account for AppBar

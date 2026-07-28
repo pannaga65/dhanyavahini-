@@ -43,17 +43,35 @@ exports.placeSecureOrder = onCall(async (request) => {
   try {
     // 3. Run everything inside a Firestore Transaction for atomicity
     const result = await db.runTransaction(async (transaction) => {
-      const orderItems = [];
-      let subtotal = 0;
-      let totalGstAmount = 0;
+      // 3a. ALL READS FIRST: Fetch customer info
+      const userRef = db.collection("users").doc(customerId);
+      const userSnap = await transaction.get(userRef);
+      const userData = userSnap.exists ? userSnap.data() : {};
 
-      // 3a. For each item, fetch the canonical product and inventory docs
+      // 3b. ALL READS FIRST: Fetch all products and inventory docs
+      const productsData = [];
       for (const item of items) {
         const productRef = db.collection("products").doc(item.productId);
         const inventoryRef = db.collection("inventory").doc(item.productId);
 
         const productSnap = await transaction.get(productRef);
         const inventorySnap = await transaction.get(inventoryRef);
+        
+        productsData.push({
+          item,
+          productSnap,
+          inventorySnap,
+          inventoryRef
+        });
+      }
+
+      // 3c. VALIDATION AND WRITES
+      const orderItems = [];
+      let subtotal = 0;
+      let totalGstAmount = 0;
+
+      for (const data of productsData) {
+        const { item, productSnap, inventorySnap, inventoryRef } = data;
 
         if (!productSnap.exists) {
           throw new HttpsError("not-found", `Product ${item.productId} does not exist.`);
@@ -62,14 +80,12 @@ exports.placeSecureOrder = onCall(async (request) => {
         const product = productSnap.data();
         const inventory = inventorySnap.exists ? inventorySnap.data() : null;
 
-        // 3b. Check that the product is active
         if (product.isActive === false) {
           throw new HttpsError("failed-precondition", `Product "${product.name}" is no longer available.`);
         }
 
-        // 3c. Verify stock availability
         const availableStock = inventory ? (inventory.availableStockKg || 0) : 0;
-        const requestedKg = item.quantity; // Quantity is in Kg from the client
+        const requestedKg = item.quantity;
 
         if (requestedKg > availableStock) {
           throw new HttpsError(
@@ -78,7 +94,6 @@ exports.placeSecureOrder = onCall(async (request) => {
           );
         }
 
-        // 3d. Check MOQ (Minimum Order Quantity)
         if (product.moqKg && requestedKg < product.moqKg) {
           throw new HttpsError(
             "invalid-argument",
@@ -86,9 +101,8 @@ exports.placeSecureOrder = onCall(async (request) => {
           );
         }
 
-        // 3e. Calculate line total and line GST using SERVER-SIDE prices
         const lineTotal = product.basePriceKg * requestedKg;
-        const itemGstPercentage = (typeof product.gstPercentage === 'number') ? product.gstPercentage : 5; // Default 5% for legacy products
+        const itemGstPercentage = (typeof product.gstPercentage === 'number') ? product.gstPercentage : 5;
         const lineGst = lineTotal * (itemGstPercentage / 100);
         
         subtotal += lineTotal;
@@ -105,7 +119,7 @@ exports.placeSecureOrder = onCall(async (request) => {
           lineGst: lineGst,
         });
 
-        // 3f. Deduct stock atomically
+        // 3d. WRITE: Deduct stock atomically
         transaction.update(inventoryRef, {
           availableStockKg: FieldValue.increment(-requestedKg),
           allocatedStockKg: FieldValue.increment(requestedKg),
@@ -113,15 +127,11 @@ exports.placeSecureOrder = onCall(async (request) => {
         });
       }
 
-      // 3g. Calculate totals server-side
+      // 3e. Calculate totals server-side
       const gstAmount = Math.round(totalGstAmount * 100) / 100;
       const totalAmount = Math.round((subtotal + gstAmount) * 100) / 100;
 
-      // 3h. Fetch customer info for the order snapshot
-      const userSnap = await transaction.get(db.collection("users").doc(customerId));
-      const userData = userSnap.exists ? userSnap.data() : {};
-
-      // 3i. Create the order document
+      // 3f. WRITE: Create the order document
       const orderRef = db.collection("orders").doc();
       transaction.set(orderRef, {
         customerId: customerId,

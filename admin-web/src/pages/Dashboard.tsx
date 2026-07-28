@@ -8,6 +8,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const db = getFirestore(app);
 
@@ -18,64 +19,99 @@ interface CardProps {
   icon: React.ReactNode;
   accent: string;
   accentLight: string;
+  gradient?: string;
   onClick: () => void;
 }
 
-function StatCard({ title, count, subtitle, icon, accent, accentLight, onClick }: CardProps) {
+function StatCard({ title, count, subtitle, icon, accent, accentLight, gradient, onClick }: CardProps) {
   return (
     <Paper
       elevation={0}
       onClick={onClick}
       sx={{
-        p: { xs: 3, lg: 3 },
-        minHeight: 140,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        border: '1px solid #E2E8F0',
+        overflow: 'hidden',
         '&:hover': { 
-          transform: 'translateY(-2px)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          transform: 'translateY(-4px)',
+          borderColor: accent,
+          boxShadow: '0 12px 24px -8px rgba(0,0,0,0.08), 0 4px 12px -4px rgba(0,0,0,0.04)',
+          '& .action-arrow': {
+            transform: 'translateX(4px)',
+            color: accent,
+          },
+          '& .action-text': {
+            color: accent,
+          }
         },
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Typography sx={{ fontWeight: 700, letterSpacing: 0.5, fontSize: '0.85rem', color: '#475569' }}>
-          {title}
-        </Typography>
-        <Box sx={{ 
-          width: 48, height: 48, borderRadius: 2, 
-          backgroundColor: accentLight, 
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: accent,
-        }}>
-          {icon}
+      <Box sx={{ p: { xs: 2.5, lg: 3 }, flexGrow: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography sx={{ fontWeight: 600, letterSpacing: 0.5, fontSize: '0.85rem', color: '#64748B', textTransform: 'uppercase' }}>
+              {title}
+            </Typography>
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: { xs: '2.5rem', md: '2.75rem' },
+                lineHeight: 1,
+                color: '#0F172A',
+                mt: 1.5,
+              }}
+            >
+              {count}
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            width: 48, height: 48, borderRadius: 3, 
+            background: gradient || accentLight, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: gradient ? '#FFF' : accent,
+            boxShadow: gradient ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'
+          }}>
+            {icon}
+          </Box>
         </Box>
       </Box>
 
-      <Typography
-        sx={{
-          fontWeight: 800,
-          fontSize: { xs: '2.5rem', md: '3rem' },
-          lineHeight: 1,
-          color: '#1A1A2E',
-          my: 2,
+      <Box 
+        sx={{ 
+          px: { xs: 2.5, lg: 3 }, 
+          py: 1.5, 
+          backgroundColor: '#F8FAFC',
+          borderTop: '1px solid #F1F5F9',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
         }}
       >
-        {count}
-      </Typography>
-
-      <Typography
-        sx={{
-          fontWeight: 600,
-          color: accent,
-          fontSize: '0.75rem',
-          letterSpacing: 0.5,
-        }}
-      >
-        {subtitle}
-      </Typography>
+        <Typography
+          className="action-text"
+          sx={{
+            fontWeight: 600,
+            color: '#64748B',
+            fontSize: '0.75rem',
+            letterSpacing: 0.5,
+            transition: 'color 0.2s',
+          }}
+        >
+          {subtitle}
+        </Typography>
+        <ArrowForwardIcon 
+          className="action-arrow" 
+          sx={{ 
+            fontSize: 16, 
+            color: '#94A3B8', 
+            transition: 'all 0.2s',
+          }} 
+        />
+      </Box>
     </Paper>
   );
 }
@@ -135,45 +171,50 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           title="Products"
           count={stats.products}
           subtitle="Manage Catalog →"
-          icon={<Inventory2OutlinedIcon sx={{ fontSize: 22 }} />}
-          accent="#2563EB"
-          accentLight="#DBEAFE"
+          icon={<Inventory2OutlinedIcon sx={{ fontSize: 24 }} />}
+          accent="#3B82F6"
+          accentLight="#EFF6FF"
+          gradient="linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)"
           onClick={() => navigate('/settings/products')}
         />
         <StatCard
           title="Customers"
           count={stats.customers}
           subtitle="Manage Profiles →"
-          icon={<PeopleOutlinedIcon sx={{ fontSize: 22 }} />}
-          accent="#7C3AED"
-          accentLight="#EDE9FE"
+          icon={<PeopleOutlinedIcon sx={{ fontSize: 24 }} />}
+          accent="#8B5CF6"
+          accentLight="#F5F3FF"
+          gradient="linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)"
           onClick={() => navigate('/customers')}
         />
         <StatCard
           title="Inquiries"
           count={stats.inquiries}
           subtitle="Review & Negotiate →"
-          icon={<QuestionAnswerOutlinedIcon sx={{ fontSize: 22 }} />}
-          accent="#D97706"
-          accentLight="#FEF3C7"
+          icon={<QuestionAnswerOutlinedIcon sx={{ fontSize: 24 }} />}
+          accent="#F59E0B"
+          accentLight="#FFFBEB"
+          gradient="linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
           onClick={() => navigate('/inquiries')}
         />
         <StatCard
           title="Orders"
           count={stats.orders}
           subtitle="Manage Dispatches →"
-          icon={<ShoppingCartOutlinedIcon sx={{ fontSize: 22 }} />}
-          accent="#16A34A"
-          accentLight="#DCFCE7"
+          icon={<ShoppingCartOutlinedIcon sx={{ fontSize: 24 }} />}
+          accent="#10B981"
+          accentLight="#ECFDF5"
+          gradient="linear-gradient(135deg, #10B981 0%, #059669 100%)"
           onClick={() => navigate('/orders')}
         />
         <StatCard
           title="Procurement"
           count={stats.procurement}
           subtitle="Farmer Bills →"
-          icon={<ReceiptLongOutlinedIcon sx={{ fontSize: 22 }} />}
-          accent="#0891B2"
-          accentLight="#CFFAFE"
+          icon={<ReceiptLongOutlinedIcon sx={{ fontSize: 24 }} />}
+          accent="#06B6D4"
+          accentLight="#ECFEFF"
+          gradient="linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)"
           onClick={() => navigate('/procurement')}
         />
       </Box>

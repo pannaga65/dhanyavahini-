@@ -60,7 +60,7 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
         action: SnackBarAction(
           label: 'VIEW CART',
           textColor: Colors.white,
-          onPressed: () => context.push('/cart'),
+          onPressed: () => context.go('/cart'),
         ),
       ),
     );
@@ -282,7 +282,7 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
 
     if (isInCart) {
       return GestureDetector(
-        onTap: () => context.push('/cart'),
+        onTap: () => context.go('/cart'),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(

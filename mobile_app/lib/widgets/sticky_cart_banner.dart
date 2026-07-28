@@ -19,7 +19,7 @@ class StickyCartBanner extends ConsumerWidget {
     final totalPrice = ref.watch(cartProvider.notifier).subtotal;
 
     return GestureDetector(
-      onTap: () => context.push('/cart'),
+      onTap: () => context.go('/cart'),
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),

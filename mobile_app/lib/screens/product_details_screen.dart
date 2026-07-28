@@ -48,7 +48,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
         action: SnackBarAction(
           label: 'VIEW CART',
           textColor: Colors.white,
-          onPressed: () => context.push('/cart'),
+          onPressed: () => context.go('/cart'),
         ),
       ),
     );

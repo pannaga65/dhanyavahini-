@@ -48,21 +48,27 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
       
       {/* Global Confirm Dialog */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 900 }}>CONFIRM ACTION</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#1A1A2E', borderBottom: '1px solid #E2E8F0', pb: 2, mb: 2 }}>
+          Confirm Action
+        </DialogTitle>
         <DialogContent>
-          <Typography>{confirmMessage}</Typography>
+          <Typography sx={{ color: '#475569', fontSize: '0.95rem', lineHeight: 1.5 }}>
+            {confirmMessage}
+          </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setConfirmOpen(false)} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleConfirm} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700 }}>
-            CONFIRM
+        <DialogActions sx={{ p: 2, pt: 1, borderTop: '1px solid #F1F5F9' }}>
+          <Button onClick={() => setConfirmOpen(false)} sx={{ fontWeight: 600, color: '#64748B' }}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleConfirm} sx={{ backgroundColor: '#E11D48', color: '#FFF', fontWeight: 600, '&:hover': { backgroundColor: '#BE123C' } }}>
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Global Snackbar */}
       <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={() => setSnackbarOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%', fontWeight: 700 }}>
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%', fontWeight: 600, borderRadius: 2, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>

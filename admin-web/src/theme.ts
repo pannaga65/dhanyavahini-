@@ -138,6 +138,9 @@ export const theme = createTheme({
       },
     },
     MuiTextField: {
+      defaultProps: {
+        size: 'small',
+      },
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
@@ -168,10 +171,18 @@ export const theme = createTheme({
       },
     },
     MuiSelect: {
+      defaultProps: {
+        size: 'small',
+      },
       styleOverrides: {
         root: {
           borderRadius: 8,
         },
+      },
+    },
+    MuiFormControl: {
+      defaultProps: {
+        size: 'small',
       },
     },
     MuiTab: {

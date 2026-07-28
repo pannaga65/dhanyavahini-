@@ -1,7 +1,9 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover } from '@mui/material'
+import { Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover, Avatar, Menu, MenuItem, InputBase } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import NotificationsIcon from '@mui/icons-material/Notifications'
+import SearchIcon from '@mui/icons-material/Search'
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined'
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
@@ -24,6 +26,7 @@ import Procurement from './pages/Procurement'
 import Loans from './pages/Loans'
 import PrintBill from './pages/PrintBill'
 import Settings from './pages/Settings'
+import BusinessProfile from './pages/BusinessProfile'
 import Login from './pages/Login'
 import Inventory from './pages/Inventory'
 import app, { messaging } from './firebase'
@@ -56,8 +59,16 @@ function App() {
   const [inquiryCount, setInquiryCount] = useState(0);
   const [dismissedCount, setDismissedCount] = useState(0);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null);
 
-  const handleNotificationClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileAnchorEl(event.currentTarget);
+  };
+  const handleProfileClose = () => {
+    setProfileAnchorEl(null);
+  };
+
+  const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(anchorEl ? null : event.currentTarget);
   };
   const handleNotificationClose = () => {
@@ -221,8 +232,6 @@ function App() {
         })}
       </List>
 
-      <Box sx={{ flexGrow: 1 }} />
-
       {/* Footer */}
       <Box sx={{ borderTop: '1px solid #E2E8F0', mx: 2 }} />
       <Box sx={{ py: 1.5, px: 1.5 }}>
@@ -320,10 +329,72 @@ function App() {
           flexGrow: 1,
           minWidth: 0,
           width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          p: { xs: 2, sm: 3, md: 5 },
-          pt: { xs: 10, md: 6 }, // Extra padding top on mobile to account for AppBar
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
+        {/* Desktop Top Header (Floating Pill) */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, p: { md: 4 }, pb: { md: 0 }, position: 'sticky', top: 0, zIndex: 1100, backgroundColor: '#F8F9FC' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'flex-end',
+            backgroundColor: '#FFF',
+            borderRadius: 8,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+            p: 1.2,
+            px: 3,
+            width: '100%'
+          }}>
+            {/* Right Side Icons & Profile */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+               
+               {/* Notifications */}
+               <IconButton onClick={handleNotificationClick} sx={{ backgroundColor: '#F8FAFC', border: '1px solid #F1F5F9', '&:hover': { backgroundColor: '#F1F5F9' } }}>
+                 <Badge badgeContent={Math.max(0, inquiryCount - dismissedCount)} color="error" sx={{ '& .MuiBadge-badge': { fontWeight: 800 } }}>
+                   <NotificationsIcon sx={{ fontSize: 20, color: '#475569' }} />
+                 </Badge>
+               </IconButton>
+
+               <Box sx={{ height: 32, width: '1px', backgroundColor: '#E2E8F0', mx: 1 }} />
+
+               {/* Profile Button */}
+               <Box 
+                 onClick={() => navigate('/profile')}
+                 sx={{ 
+                   display: 'flex', 
+                   alignItems: 'center', 
+                   gap: 1.5, 
+                   cursor: 'pointer', 
+                   p: 0.5, 
+                   pr: 1.5, 
+                   borderRadius: 10, 
+                   border: '1px solid transparent',
+                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', 
+                   '&:hover': { 
+                     backgroundColor: '#F8FAFC',
+                     borderColor: '#E2E8F0',
+                     boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                   } 
+                 }}
+               >
+                 <Avatar sx={{ width: 38, height: 38, backgroundColor: '#0F172A', fontSize: '1.1rem', fontWeight: 700 }}>
+                   {user?.email?.charAt(0).toUpperCase() || 'A'}
+                 </Avatar>
+                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#1E293B', lineHeight: 1.2 }}>
+                     Admin User
+                   </Typography>
+                   <Typography sx={{ fontSize: '0.75rem', color: '#64748B' }}>
+                     {user?.email || 'admin@dhanyavahini.com'}
+                   </Typography>
+                 </Box>
+               </Box>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box sx={{ p: { xs: 2, sm: 3, md: 5 }, pt: { xs: 10, md: 4 } }}>
         <Routes>
           <Route path="/" element={<Dashboard userEmail={user.email} />} />
           <Route path="/orders" element={<Orders />} />
@@ -333,18 +404,20 @@ function App() {
           <Route path="/procurement" element={<Procurement />} />
           <Route path="/loans" element={<Loans />} />
           <Route path="/inventory" element={<Inventory />} />
+          <Route path="/profile" element={<BusinessProfile />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Box>
       </Box>
 
-      {/* ── Floating Notification Button ── */}
+      {/* ── Floating Notification Button (Mobile Only) ── */}
       <Fab
         color={inquiryCount - dismissedCount > 0 ? "error" : "primary"}
         aria-label="notifications"
         onClick={handleNotificationClick}
         sx={{
-          display: { xs: 'none', md: 'flex' },
+          display: { xs: 'flex', md: 'none' },
           position: 'fixed',
           top: 28,
           right: 28,

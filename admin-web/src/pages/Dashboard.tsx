@@ -18,12 +18,11 @@ interface CardProps {
   subtitle: string;
   icon: React.ReactNode;
   accent: string;
-  accentLight: string;
   gradient?: string;
   onClick: () => void;
 }
 
-function StatCard({ title, count, subtitle, icon, accent, accentLight, gradient, onClick }: CardProps) {
+function StatCard({ title, count, subtitle, icon, accent, gradient, onClick }: CardProps) {
   return (
     <Paper
       elevation={0}
@@ -167,7 +166,6 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           subtitle="Manage Catalog →"
           icon={<Inventory2OutlinedIcon sx={{ fontSize: 24 }} />}
           accent="#3B82F6"
-          accentLight="#EFF6FF"
           gradient="linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)"
           onClick={() => navigate('/settings/products')}
         />
@@ -177,7 +175,6 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           subtitle="Manage Profiles →"
           icon={<PeopleOutlinedIcon sx={{ fontSize: 24 }} />}
           accent="#8B5CF6"
-          accentLight="#F5F3FF"
           gradient="linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)"
           onClick={() => navigate('/customers')}
         />
@@ -187,7 +184,6 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           subtitle="Review & Negotiate →"
           icon={<QuestionAnswerOutlinedIcon sx={{ fontSize: 24 }} />}
           accent="#F59E0B"
-          accentLight="#FFFBEB"
           gradient="linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
           onClick={() => navigate('/inquiries')}
         />
@@ -197,7 +193,6 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           subtitle="Manage Dispatches →"
           icon={<ShoppingCartOutlinedIcon sx={{ fontSize: 24 }} />}
           accent="#10B981"
-          accentLight="#ECFDF5"
           gradient="linear-gradient(135deg, #10B981 0%, #059669 100%)"
           onClick={() => navigate('/orders')}
         />
@@ -207,7 +202,6 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           subtitle="Farmer Bills →"
           icon={<ReceiptLongOutlinedIcon sx={{ fontSize: 24 }} />}
           accent="#06B6D4"
-          accentLight="#ECFEFF"
           gradient="linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)"
           onClick={() => navigate('/procurement')}
         />

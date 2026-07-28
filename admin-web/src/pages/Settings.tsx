@@ -12,29 +12,25 @@ export default function Settings() {
 
   // Determine which tab is active based on the URL path
   const currentTab = () => {
-    if (location.pathname.includes('/settings/profile')) return 0;
-    if (location.pathname.includes('/settings/products')) return 1;
-    if (location.pathname.includes('/settings/categories')) return 2;
-    if (location.pathname.includes('/settings/banners')) return 3;
-    if (location.pathname.includes('/settings/godowns')) return 4;
-    return 1; // Default to products
+    if (location.pathname.includes('/settings/products')) return 0;
+    if (location.pathname.includes('/settings/categories')) return 1;
+    if (location.pathname.includes('/settings/banners')) return 2;
+    if (location.pathname.includes('/settings/godowns')) return 3;
+    return 0; // Default to products
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     switch (newValue) {
       case 0:
-        navigate('/settings/profile');
-        break;
-      case 1:
         navigate('/settings/products');
         break;
-      case 2:
+      case 1:
         navigate('/settings/categories');
         break;
-      case 3:
+      case 2:
         navigate('/settings/banners');
         break;
-      case 4:
+      case 3:
         navigate('/settings/godowns');
         break;
     }
@@ -65,7 +61,6 @@ export default function Settings() {
             '& .MuiTabs-indicator': { backgroundColor: '#1B2A4A', height: 3 }
           }}
         >
-          <Tab label="PROFILE" />
           <Tab label="PRODUCTS" />
           <Tab label="CATEGORIES" />
           <Tab label="BANNERS" />
@@ -75,13 +70,12 @@ export default function Settings() {
       
       <Box sx={{ pt: 1 }}>
         <Routes>
-          <Route path="profile" element={<BusinessProfile />} />
           <Route path="products" element={<Products />} />
           <Route path="categories" element={<Categories />} />
           <Route path="banners" element={<Banners />} />
           <Route path="godowns" element={<Godowns />} />
-          <Route path="/" element={<Navigate to="profile" replace />} />
-          <Route path="*" element={<Navigate to="profile" replace />} />
+          <Route path="/" element={<Navigate to="products" replace />} />
+          <Route path="*" element={<Navigate to="products" replace />} />
         </Routes>
       </Box>
     </Box>

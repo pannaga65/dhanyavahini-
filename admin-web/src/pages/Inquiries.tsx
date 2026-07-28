@@ -13,7 +13,7 @@ const db = getFirestore(app);
 export default function Inquiries() {
   const { showConfirm, showMessage } = useUI();
   const [inquiries, setInquiries] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

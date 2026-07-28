@@ -274,8 +274,8 @@ function App() {
             Dhanyavahini
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
-          <IconButton color="inherit" onClick={() => navigate('/inquiries')} sx={{ mr: 1 }}>
-            <Badge badgeContent={inquiryCount} color="error" sx={{ '& .MuiBadge-badge': { fontWeight: 900 } }}>
+          <IconButton color="inherit" onClick={handleNotificationClick} sx={{ mr: 1 }}>
+            <Badge badgeContent={Math.max(0, inquiryCount - dismissedCount)} color="error" sx={{ '& .MuiBadge-badge': { fontWeight: 900 } }}>
               <NotificationsIcon sx={{ color: '#1B2A4A' }} />
             </Badge>
           </IconButton>

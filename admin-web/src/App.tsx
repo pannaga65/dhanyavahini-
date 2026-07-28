@@ -178,34 +178,33 @@ function App() {
       </Typography>
 
       {/* Nav Links */}
-      <List disablePadding>
+      <List disablePadding sx={{ px: 1.5 }}>
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
-            <ListItem key={item.text} disablePadding>
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => {
                   navigate(item.path);
                   if (mobileOpen) setMobileOpen(false);
                 }}
                 sx={{
-                  py: 1.2,
-                  px: 2.5,
-                  borderRadius: 0,
-                  backgroundColor: isActive ? '#F0FDF4' : 'transparent',
-                  borderLeft: isActive ? '3px solid #16A34A' : '3px solid transparent',
+                  py: 1,
+                  px: 2,
+                  borderRadius: 2,
+                  backgroundColor: isActive ? '#DCFCE7' : 'transparent',
                   '&:hover': {
-                    backgroundColor: isActive ? '#F0FDF4' : '#F8FAFC',
+                    backgroundColor: isActive ? '#DCFCE7' : '#F1F5F9',
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#16A34A' : '#64748B' }}>
+                <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#14532D' : '#64748B' }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography sx={{ fontWeight: isActive ? 700 : 500, fontSize: '0.84rem', color: isActive ? '#16A34A' : '#475569', letterSpacing: 0.2 }}>
+                      <Typography sx={{ fontWeight: isActive ? 700 : 500, fontSize: '0.84rem', color: isActive ? '#14532D' : '#475569', letterSpacing: 0.2 }}>
                         {item.text}
                       </Typography>
                       {item.text === 'Inquiries' && inquiryCount > 0 && (
@@ -225,11 +224,11 @@ function App() {
       <Box sx={{ flexGrow: 1 }} />
 
       {/* Footer */}
-      <Box sx={{ borderTop: '1px solid #E2E8F0' }} />
-      <Box sx={{ py: 1 }}>
+      <Box sx={{ borderTop: '1px solid #E2E8F0', mx: 2 }} />
+      <Box sx={{ py: 1.5, px: 1.5 }}>
         <ListItemButton
           onClick={confirmSignOut}
-          sx={{ py: 1.2, px: 2.5, borderRadius: 0, '&:hover': { backgroundColor: '#FEF2F2' } }}
+          sx={{ py: 1, px: 2, borderRadius: 2, '&:hover': { backgroundColor: '#FEF2F2' } }}
         >
           <ListItemIcon sx={{ minWidth: 32, color: '#64748B' }}>
             <LogoutOutlinedIcon sx={{ fontSize: 20 }} />

@@ -79,12 +79,12 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         (item, idx) => `
           <tr>
             <td class="text-center">${idx + 1}</td>
-            <td>${escapeHtml(item.name)}</td>
+            <td>${escapeHtml(item.name || item.productName)}</td>
             <td>${escapeHtml(safe(item.hsnCode))}</td>
-            <td class="text-center">${escapeHtml(item.quantityKg)}</td>
-            <td class="text-right">${formatCurrency(item.basePriceKg)}</td>
+            <td class="text-center">${escapeHtml(item.quantityKg || item.quantity)}</td>
+            <td class="text-right">${formatCurrency(item.basePriceKg || item.price || 0)}</td>
             <td class="text-center">Kg</td>
-            <td class="text-right">${formatCurrency(item.lineTotal)}</td>
+            <td class="text-right">${formatCurrency(item.lineTotal || (item.quantity * item.price) || 0)}</td>
           </tr>`
       )
       .join("");

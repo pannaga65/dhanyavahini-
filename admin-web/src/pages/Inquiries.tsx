@@ -45,15 +45,19 @@ export default function Inquiries() {
   };
 
   const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to completely reject and delete this inquiry?", async () => {
+    showConfirm("Are you sure you want to completely delete this inquiry? This cannot be undone.", async () => {
+      // Optimistic update
+      const previousInquiries = [...inquiries];
+      setInquiries(inquiries.filter(i => i.id !== id));
+
       try {
         const deleteOrderFn = httpsCallable(functions, 'deleteOrder');
         await deleteOrderFn({ orderId: id });
-        fetchInquiries();
         showMessage("Inquiry deleted successfully", "success");
       } catch (e) {
         console.error("Error deleting", e);
-        showMessage("Failed to delete.", "error");
+        setInquiries(previousInquiries);
+        showMessage("Failed to delete inquiry.", "error");
       }
     });
   };
@@ -73,6 +77,13 @@ export default function Inquiries() {
   const handleSkipDispatch = async () => {
     if (!approvingId) return;
     setDispatchLoading(true);
+
+    // Optimistic update
+    const previousInquiries = [...inquiries];
+    const targetId = approvingId;
+    setInquiries(inquiries.filter(i => i.id !== targetId));
+    setApprovingId(null);
+
     try {
       await runTransaction(db, async (transaction) => {
         const orderCounterRef = doc(db, 'settings', 'orderCounter');
@@ -84,19 +95,19 @@ export default function Inquiries() {
         transaction.set(orderCounterRef, { seq: nextOrderSeq }, { merge: true });
         const orderNo = `ORD-${nextOrderSeq.toString().padStart(3, '0')}`;
 
-        transaction.update(doc(db, 'orders', approvingId), {
+        const orderRef = doc(db, 'orders', targetId);
+        transaction.update(orderRef, {
           status: 'Confirmed',
           paymentStatus: 'Pending',
           orderNo: orderNo,
           updatedAt: serverTimestamp()
         });
       });
-      fetchInquiries();
-      showMessage("Inquiry converted to Order", "success");
-      setApprovingId(null);
-    } catch (e) {
-      console.error("Error approving", e);
-      showMessage("Failed to approve inquiry.", "error");
+      showMessage("Order confirmed! You can add dispatch details later.", "info");
+    } catch (error) {
+      console.error('Error skipping dispatch:', error);
+      setInquiries(previousInquiries);
+      showMessage("Failed to approve order.", "error");
     } finally {
       setDispatchLoading(false);
     }
@@ -105,6 +116,13 @@ export default function Inquiries() {
   const handleSaveDispatch = async (data: DispatchData) => {
     if (!approvingId) return;
     setDispatchLoading(true);
+
+    // Optimistic update
+    const previousInquiries = [...inquiries];
+    const targetId = approvingId;
+    setInquiries(inquiries.filter(i => i.id !== targetId));
+    setApprovingId(null); // Close instantly
+
     try {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'settings', 'invoiceCounter');
@@ -125,7 +143,7 @@ export default function Inquiries() {
         transaction.set(orderCounterRef, { seq: nextOrderSeq }, { merge: true });
         const orderNo = `ORD-${nextOrderSeq.toString().padStart(3, '0')}`;
         
-        const orderRef = doc(db, 'orders', approvingId);
+        const orderRef = doc(db, 'orders', targetId);
         transaction.update(orderRef, {
           status: 'Confirmed',
           paymentStatus: 'Pending',
@@ -136,12 +154,11 @@ export default function Inquiries() {
           updatedAt: serverTimestamp()
         });
       });
-      fetchInquiries();
       showMessage("Order confirmed and Dispatch Details saved!", "success");
-      setApprovingId(null);
-    } catch (e) {
-      console.error("Error saving dispatch", e);
-      showMessage("Failed to save dispatch details.", "error");
+    } catch (error) {
+      console.error('Error in handleSaveDispatch:', error);
+      setInquiries(previousInquiries);
+      showMessage("Failed to approve order.", "error");
     } finally {
       setDispatchLoading(false);
     }

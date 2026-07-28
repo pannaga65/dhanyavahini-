@@ -99,39 +99,51 @@ export default function Orders() {
   }).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
   const handleUpdateDeliveryStatus = async (orderId: string, newStatus: string) => {
+    const previousOrders = [...orders];
+    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: newStatus });
+    
     try {
       const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
       await updateOrderStatusFn({ orderId, newStatus });
-      fetchOrders();
-      if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: newStatus });
       showMessage(`Delivery status updated to ${newStatus}`, "success");
     } catch (error: any) {
       console.error('Error updating status', error);
+      setOrders(previousOrders);
+      if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: previousOrders.find(o => o.id === orderId)?.status || 'Confirmed' });
       showMessage('Failed to update status', "error");
     }
   };
 
   const handleUpdatePaymentStatus = async (orderId: string, newPaymentStatus: string) => {
+    const previousOrders = [...orders];
+    setOrders(orders.map(o => o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o));
+    if (selectedOrder) setSelectedOrder({ ...selectedOrder, paymentStatus: newPaymentStatus });
+
     try {
       await updateDoc(doc(db, 'orders', orderId), { paymentStatus: newPaymentStatus, updatedAt: new Date() });
-      fetchOrders();
-      if (selectedOrder) setSelectedOrder({ ...selectedOrder, paymentStatus: newPaymentStatus });
       showMessage(`Payment status updated to ${newPaymentStatus}`, "success");
     } catch (error: any) {
       console.error('Error updating payment', error);
+      setOrders(previousOrders);
+      if (selectedOrder) setSelectedOrder({ ...selectedOrder, paymentStatus: previousOrders.find(o => o.id === orderId)?.paymentStatus || 'Pending' });
       showMessage('Failed to update payment', "error");
     }
   };
 
   const handleDelete = async (id: string) => {
     showConfirm("Are you sure you want to completely delete this order? This cannot be undone.", async () => {
+      // Optimistic update
+      const previousOrders = [...orders];
+      setOrders(orders.filter(o => o.id !== id));
+
       try {
         const deleteOrderFn = httpsCallable(functions, 'deleteOrder');
         await deleteOrderFn({ orderId: id });
-        fetchOrders();
         showMessage("Order deleted successfully", "success");
       } catch (e) {
         console.error("Error deleting", e);
+        setOrders(previousOrders); // Revert on failure
         showMessage("Failed to delete order.", "error");
       }
     });
@@ -147,19 +159,25 @@ export default function Orders() {
   const handleSaveEdit = async () => {
     if (!editingId) return;
     setEditLoading(true);
+
+    // Optimistic update
+    const previousOrders = [...orders];
+    setOrders(orders.map(o => o.id === editingId ? { ...o, status: editStatus, paymentStatus: editPaymentStatus } : o));
+    const targetId = editingId;
+    setEditingId(null); // Close instantly
+
     try {
       const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
-      await updateOrderStatusFn({ orderId: editingId, newStatus: editStatus });
+      await updateOrderStatusFn({ orderId: targetId, newStatus: editStatus });
       // Update payment status separately (direct update is fine for this non-financial field)
-      await updateDoc(doc(db, 'orders', editingId), {
+      await updateDoc(doc(db, 'orders', targetId), {
         paymentStatus: editPaymentStatus,
         updatedAt: new Date()
       });
-      setEditingId(null);
-      fetchOrders();
       showMessage("Order updated", "success");
     } catch (e) {
       console.error('Error updating order:', e);
+      setOrders(previousOrders); // Revert on failure
       showMessage('Error updating order.', "error");
     } finally {
       setEditLoading(false);
@@ -169,11 +187,17 @@ export default function Orders() {
   const handleSaveDispatch = async (data: DispatchData) => {
     if (!editDispatchOrder) return;
     setDispatchLoading(true);
+
+    const previousOrders = [...orders];
+    const targetOrder = editDispatchOrder;
+    setOrders(orders.map(o => o.id === targetOrder.id ? { ...o, dispatchDetails: data } : o));
+    setEditDispatchOrder(null); // close instantly
+
     try {
       await runTransaction(db, async (transaction) => {
-        const orderRef = doc(db, 'orders', editDispatchOrder.id);
+        const orderRef = doc(db, 'orders', targetOrder.id);
         
-        let invoiceNo = editDispatchOrder.invoiceNo;
+        let invoiceNo = targetOrder.invoiceNo;
         // If they skipped generating an invoice previously, generate it now
         if (!invoiceNo) {
           const counterRef = doc(db, 'settings', 'invoiceCounter');
@@ -199,11 +223,10 @@ export default function Orders() {
           });
         }
       });
-      fetchOrders();
       showMessage("Dispatch details updated successfully", "success");
-      setEditDispatchOrder(null);
     } catch (e) {
       console.error("Error saving dispatch details:", e);
+      setOrders(previousOrders);
       showMessage("Failed to update dispatch details", "error");
     } finally {
       setDispatchLoading(false);

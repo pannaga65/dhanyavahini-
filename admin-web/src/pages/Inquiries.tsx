@@ -189,15 +189,15 @@ export default function Inquiries() {
       {/* Page Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
         <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
-            INQUIRIES
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 0.5, color: '#1A1A2E' }}>
+            Inquiries
           </Typography>
-          <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
-            REVIEW AND NEGOTIATE NEW REQUESTS
+          <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mt: 0.5 }}>
+            Review and negotiate new requests
           </Typography>
         </Box>
       </Box>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 4, mt: 2 }} />
+      <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 4, mt: 2 }} />
 
       <TableContainer>
         <Table>
@@ -248,14 +248,14 @@ export default function Inquiries() {
                     size="small" 
                     startIcon={<CheckIcon />}
                     onClick={() => handleApproveConvert(row.id)}
-                    sx={{ mr: 1, fontWeight: 700, borderRadius: 0 }}
+                    sx={{ mr: 1, fontWeight: 600 }}
                   >
                     APPROVE
                   </Button>
-                  <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
+                  <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#64748B' }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: '#DC2626' }}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </TableCell>
@@ -286,10 +286,10 @@ export default function Inquiries() {
             </Typography>
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
-          <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSaveNegotiation} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE CHANGES'}
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
+          <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 600, color: '#64748B' }}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveNegotiation} disabled={loading}>
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

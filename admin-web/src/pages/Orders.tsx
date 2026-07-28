@@ -236,26 +236,26 @@ export default function Orders() {
 
   const statusColor = (status: string) => {
     switch (status) {
-      case 'Confirmed': return { bg: '#000', fg: '#FFF' };
-      case 'Dispatched': return { bg: '#333', fg: '#FFF' };
-      case 'Delivered': return { bg: '#666', fg: '#FFF' };
-      default: return { bg: '#E0E0E0', fg: '#000' };
+      case 'Confirmed': return { bg: '#DBEAFE', fg: '#1D4ED8' };
+      case 'Dispatched': return { bg: '#FEF3C7', fg: '#D97706' };
+      case 'Delivered': return { bg: '#DCFCE7', fg: '#16A34A' };
+      default: return { bg: '#F1F5F9', fg: '#64748B' };
     }
   };
 
   return (
     <Box>
       {/* Page Header */}
-      <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3, mb: 1 }}>
-        ORDERS & PAYMENTS
+      <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 0.5, mb: 1, color: '#1A1A2E' }}>
+        Orders & Payments
       </Typography>
-      <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mb: 3 }}>
-        MANAGE DISPATCHES AND FINANCES
+      <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mb: 3 }}>
+        Manage dispatches and finances
       </Typography>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 4 }} />
+      <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 4 }} />
 
       {/* Filter Bar */}
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 4, p: 2, backgroundColor: '#FAFAFA', borderRadius: 2, border: '1px solid #E0E0E0' }}>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 4, p: 2, backgroundColor: '#FFF', borderRadius: 3, border: '1px solid #E2E8F0' }}>
         <TextField 
           placeholder="Search by ID or Customer..." 
           size="small" 
@@ -348,21 +348,21 @@ export default function Orders() {
                             : `https://us-central1-${projectId}.cloudfunctions.net/downloadInvoice?orderId=${row.id}`;
                           window.open(url, '_blank');
                         }} 
-                        sx={{ mr: 1, backgroundColor: '#000', color: '#FFF', fontSize: '0.7rem' }}
+                        sx={{ mr: 1, fontSize: '0.7rem' }}
                       >
                         Print Invoice
                       </Button>
                     )}
-                    <Button variant="outlined" size="small" onClick={() => setEditDispatchOrder(row)} sx={{ mr: 1, borderColor: '#000', color: '#000', fontSize: '0.7rem' }}>
+                    <Button variant="outlined" size="small" onClick={() => setEditDispatchOrder(row)} sx={{ mr: 1, fontSize: '0.7rem' }}>
                       Dispatch Info
                     </Button>
                     <Button variant="outlined" size="small" onClick={() => setSelectedOrder(row)} sx={{ mr: 1 }}>
                       Details
                     </Button>
-                    <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
+                    <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#64748B' }}>
                       <EditIcon fontSize="small" />
                     </IconButton>
-                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
+                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: '#DC2626' }}>
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
@@ -384,7 +384,7 @@ export default function Orders() {
       <Dialog open={!!selectedOrder} onClose={() => setSelectedOrder(null)} maxWidth="lg" fullWidth>
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           {/* Header */}
-          <Box sx={{ p: 3, borderBottom: '1px solid #E0E0E0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FAFAFA' }}>
+          <Box sx={{ p: 3, borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
             <Box>
               <Typography sx={{ fontWeight: 900, letterSpacing: 1, fontSize: '1.4rem' }}>
                 ORDER: {selectedOrder?.orderNo || `ORD-${selectedOrder?.id.substring(0, 6).toUpperCase()}`}
@@ -404,7 +404,7 @@ export default function Orders() {
                   <Chip label={(selectedOrder?.paymentStatus || 'Pending').toUpperCase()} size="small" color={selectedOrder?.paymentStatus === 'Done' ? 'success' : 'warning'} sx={{ fontWeight: 800 }} />
                 </Box>
               </Box>
-              <IconButton onClick={() => setSelectedOrder(null)} sx={{ color: '#000' }}>
+              <IconButton onClick={() => setSelectedOrder(null)} sx={{ color: '#64748B' }}>
                 <CloseIcon />
               </IconButton>
             </Box>
@@ -414,8 +414,8 @@ export default function Orders() {
             
             {/* Left Column: Customer & Address */}
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: '1rem', mb: 2, borderBottom: '2px solid #000', pb: 1 }}>
-                CUSTOMER & DISPATCH DETAILS
+              <Typography sx={{ fontWeight: 700, fontSize: '1rem', mb: 2, borderBottom: '1px solid #E2E8F0', pb: 1, color: '#475569' }}>
+                Customer & Dispatch Details
               </Typography>
               
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -463,8 +463,8 @@ export default function Orders() {
 
             {/* Right Column: Order Items */}
             <Box sx={{ flex: 2 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: '1rem', mb: 2, borderBottom: '2px solid #000', pb: 1 }}>
-                ORDER ITEMS
+              <Typography sx={{ fontWeight: 700, fontSize: '1rem', mb: 2, borderBottom: '1px solid #E2E8F0', pb: 1, color: '#475569' }}>
+                Order Items
               </Typography>
               
               <TableContainer sx={{ border: '1px solid #E0E0E0', borderRadius: 2 }}>
@@ -514,7 +514,7 @@ export default function Orders() {
         </Box>
 
         {/* Action Footer */}
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 3, backgroundColor: '#FAFAFA', display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 3, backgroundColor: '#F8FAFC', display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#999', mr: 1 }}>DELIVERY:</Typography>

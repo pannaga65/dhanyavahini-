@@ -68,25 +68,39 @@ export default function Login() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#FFF',
+        background: 'linear-gradient(135deg, #F8F9FC 0%, #EEF2FF 50%, #F0FDF4 100%)',
       }}
     >
       <Box
         sx={{
-          width: 440,
-          border: '2px solid #000',
+          width: 420,
+          backgroundColor: '#FFF',
+          borderRadius: 4,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
           p: 5,
         }}
       >
         {/* Header */}
-        <Typography sx={{ fontWeight: 900, fontSize: '2rem', letterSpacing: 3, mb: 0.5 }}>
-          ADMIN
-        </Typography>
-        <Typography sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#999', letterSpacing: 2, mb: 4 }}>
-          DHANYAVAHINI CMS
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+          <Box sx={{ width: 44, height: 44, borderRadius: 2.5, backgroundColor: '#EBF5EB', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <img src="/logo.png" alt="Logo" style={{ width: 34, height: 34, objectFit: 'contain' }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: 0.5, color: '#1B2A4A', lineHeight: 1 }}>
+              Dhanyavahini
+            </Typography>
+            <Typography sx={{ fontWeight: 500, fontSize: '0.7rem', color: '#94A3B8', letterSpacing: 1, mt: 0.3 }}>
+              Admin Panel
+            </Typography>
+          </Box>
+        </Box>
 
-        <Box sx={{ borderBottom: '2px solid #000', mb: 4 }} />
+        <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 3, mt: 2 }} />
+
+        <Typography sx={{ fontWeight: 600, fontSize: '1rem', color: '#1A1A2E', mb: 3 }}>
+          Sign in to your account
+        </Typography>
 
         {/* Form */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -113,7 +127,7 @@ export default function Login() {
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
-                      sx={{ color: '#000' }}
+                      sx={{ color: '#94A3B8' }}
                     >
                       {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                     </IconButton>
@@ -124,9 +138,11 @@ export default function Login() {
           />
 
           {error && (
-            <Typography sx={{ color: '#C00', fontWeight: 700, fontSize: '0.85rem' }}>
-              {error}
-            </Typography>
+            <Box sx={{ p: 1.5, backgroundColor: '#FEF2F2', borderRadius: 2, border: '1px solid #FECACA' }}>
+              <Typography sx={{ color: '#DC2626', fontWeight: 600, fontSize: '0.85rem' }}>
+                {error}
+              </Typography>
+            </Box>
           )}
 
           <Button
@@ -134,14 +150,21 @@ export default function Login() {
             fullWidth
             onClick={handleLogin}
             disabled={loading}
-            sx={{ py: 1.5, mt: 1, fontSize: '0.9rem', letterSpacing: 1 }}
+            sx={{ 
+              py: 1.5, 
+              mt: 1, 
+              fontSize: '0.9rem', 
+              letterSpacing: 0.5,
+              backgroundColor: '#2E7D32',
+              '&:hover': { backgroundColor: '#1B5E20' },
+            }}
           >
-            {loading ? <CircularProgress size={22} color="inherit" /> : 'SIGN IN'}
+            {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign In'}
           </Button>
         </Box>
 
-        <Typography sx={{ mt: 4, textAlign: 'center', fontSize: '0.75rem', color: '#999', letterSpacing: 1 }}>
-          AUTHORIZED PERSONNEL ONLY
+        <Typography sx={{ mt: 4, textAlign: 'center', fontSize: '0.75rem', color: '#CBD5E1', letterSpacing: 0.5 }}>
+          Authorized personnel only
         </Typography>
       </Box>
     </Box>

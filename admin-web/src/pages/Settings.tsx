@@ -44,11 +44,11 @@ export default function Settings() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
         <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
-            SETTINGS HUB
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 0.5, color: '#1A1A2E' }}>
+            Settings
           </Typography>
-          <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
-            MANAGE APP CONFIGURATION AND CONTENT
+          <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mt: 0.5 }}>
+            Manage app configuration and content
           </Typography>
         </Box>
       </Box>
@@ -60,9 +60,9 @@ export default function Settings() {
           textColor="inherit"
           indicatorColor="primary"
           sx={{
-            '& .MuiTab-root': { fontWeight: 700, letterSpacing: 1 },
-            '& .Mui-selected': { color: '#000' },
-            '& .MuiTabs-indicator': { backgroundColor: '#000', height: 3 }
+            '& .MuiTab-root': { fontWeight: 600, letterSpacing: 0.5 },
+            '& .Mui-selected': { color: '#1B2A4A' },
+            '& .MuiTabs-indicator': { backgroundColor: '#1B2A4A', height: 3 }
           }}
         >
           <Tab label="PROFILE" />

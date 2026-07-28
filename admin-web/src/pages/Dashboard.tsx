@@ -6,8 +6,8 @@ import app from '../firebase';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
-import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
-import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
+import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 
 const db = getFirestore(app);
 
@@ -16,39 +16,50 @@ interface CardProps {
   count: number;
   subtitle: string;
   icon: React.ReactNode;
+  accent: string;
+  accentLight: string;
   onClick: () => void;
 }
 
-function BrutalistCard({ title, count, subtitle, icon, onClick }: CardProps) {
+function StatCard({ title, count, subtitle, icon, accent, accentLight, onClick }: CardProps) {
   return (
     <Paper
       elevation={0}
       onClick={onClick}
       sx={{
         p: { xs: 3, lg: 4 },
-        aspectRatio: { xs: 'auto', md: '5 / 4' },
-        minHeight: { xs: 200, md: 'auto' },
+        minHeight: { xs: 180, md: 200 },
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         cursor: 'pointer',
-        transition: 'background-color 0.15s ease',
-        '&:hover': { backgroundColor: '#F5F5F5' },
+        transition: 'all 0.2s ease',
+        '&:hover': { 
+          transform: 'translateY(-2px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        },
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: { xs: '0.85rem', md: '1rem' } }}>
+        <Typography sx={{ fontWeight: 700, letterSpacing: 0.5, fontSize: '0.85rem', color: '#475569' }}>
           {title}
         </Typography>
-        {icon}
+        <Box sx={{ 
+          width: 40, height: 40, borderRadius: 2, 
+          backgroundColor: accentLight, 
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: accent,
+        }}>
+          {icon}
+        </Box>
       </Box>
 
       <Typography
         sx={{
-          fontWeight: 900,
-          fontSize: { xs: '4rem', md: '7rem' },
+          fontWeight: 800,
+          fontSize: { xs: '3.5rem', md: '4.5rem' },
           lineHeight: 1,
-          color: '#000',
+          color: '#1A1A2E',
           my: 2,
         }}
       >
@@ -57,11 +68,10 @@ function BrutalistCard({ title, count, subtitle, icon, onClick }: CardProps) {
 
       <Typography
         sx={{
-          fontWeight: 700,
-          color: '#999',
+          fontWeight: 600,
+          color: accent,
           fontSize: '0.75rem',
-          letterSpacing: 1.5,
-          textTransform: 'uppercase',
+          letterSpacing: 0.5,
         }}
       >
         {subtitle}
@@ -101,21 +111,19 @@ export default function Dashboard({ userEmail }: DashboardProps) {
     })();
   }, []);
 
-  const iconSx = { fontSize: 28, color: '#999' };
-
   return (
     <Box>
       {/* Header */}
-      <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.8rem' }, letterSpacing: 3, lineHeight: 1 }}>
-        OVERVIEW
+      <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 0.5, lineHeight: 1, color: '#1A1A2E' }}>
+        Overview
       </Typography>
-      <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, mt: 1.5, mb: 4, textTransform: 'uppercase', fontSize: '0.8rem' }}>
-        WELCOME BACK, {userEmail?.toUpperCase() || 'ADMIN'}
+      <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.5, mt: 1, mb: 4, fontSize: '0.9rem' }}>
+        Welcome back, {userEmail || 'Admin'}
       </Typography>
 
-      <Box sx={{ borderBottom: '2px solid #000', mb: 5 }} />
+      <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 4 }} />
 
-      {/* Cards Grid — Strict 4-column layout on Desktop */}
+      {/* Cards Grid */}
       <Box 
         sx={{ 
           display: 'grid', 
@@ -123,39 +131,49 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           gap: 3 
         }}
       >
-        <BrutalistCard
-          title="PRODUCTS"
+        <StatCard
+          title="Products"
           count={stats.products}
-          subtitle="MANAGE CATALOG"
-          icon={<Inventory2OutlinedIcon sx={iconSx} />}
+          subtitle="Manage Catalog →"
+          icon={<Inventory2OutlinedIcon sx={{ fontSize: 22 }} />}
+          accent="#2563EB"
+          accentLight="#DBEAFE"
           onClick={() => navigate('/settings/products')}
         />
-        <BrutalistCard
-          title="CUSTOMERS"
+        <StatCard
+          title="Customers"
           count={stats.customers}
-          subtitle="MANAGE PROFILES"
-          icon={<PeopleOutlinedIcon sx={iconSx} />}
+          subtitle="Manage Profiles →"
+          icon={<PeopleOutlinedIcon sx={{ fontSize: 22 }} />}
+          accent="#7C3AED"
+          accentLight="#EDE9FE"
           onClick={() => navigate('/customers')}
         />
-        <BrutalistCard
-          title="INQUIRIES"
+        <StatCard
+          title="Inquiries"
           count={stats.inquiries}
-          subtitle="MANAGE NEGOTIATIONS"
-          icon={<AssignmentOutlinedIcon sx={iconSx} />}
+          subtitle="Review & Negotiate →"
+          icon={<QuestionAnswerOutlinedIcon sx={{ fontSize: 22 }} />}
+          accent="#D97706"
+          accentLight="#FEF3C7"
           onClick={() => navigate('/inquiries')}
         />
-        <BrutalistCard
-          title="ORDERS"
+        <StatCard
+          title="Orders"
           count={stats.orders}
-          subtitle="MANAGE DISPATCHES"
-          icon={<ShoppingCartOutlinedIcon sx={iconSx} />}
+          subtitle="Manage Dispatches →"
+          icon={<ShoppingCartOutlinedIcon sx={{ fontSize: 22 }} />}
+          accent="#16A34A"
+          accentLight="#DCFCE7"
           onClick={() => navigate('/orders')}
         />
-        <BrutalistCard
-          title="PROCUREMENT"
+        <StatCard
+          title="Procurement"
           count={stats.procurement}
-          subtitle="FARMER BILLS"
-          icon={<PaymentsOutlinedIcon sx={iconSx} />}
+          subtitle="Farmer Bills →"
+          icon={<ReceiptLongOutlinedIcon sx={{ fontSize: 22 }} />}
+          accent="#0891B2"
+          accentLight="#CFFAFE"
           onClick={() => navigate('/procurement')}
         />
       </Box>

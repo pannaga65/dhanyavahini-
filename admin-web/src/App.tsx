@@ -1,7 +1,17 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { Box, Typography, List, ListItem, ListItemButton, ListItemText, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover } from '@mui/material'
+import { Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Drawer, IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogActions, Button, Badge, Fab, Popover } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import NotificationsIcon from '@mui/icons-material/Notifications'
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
+import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined'
+import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined'
+import AgricultureOutlinedIcon from '@mui/icons-material/AgricultureOutlined'
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
+import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined'
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore'
 import { useState, useEffect } from 'react'
@@ -25,15 +35,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const NAV_ITEMS = [
-  { text: 'DASHBOARD', path: '/' },
-  { text: 'INQUIRIES', path: '/inquiries' },
-  { text: 'ORDERS', path: '/orders' },
-  { text: 'CUSTOMERS', path: '/customers' },
-  { text: 'FARMERS', path: '/farmers' },
-  { text: 'PROCUREMENT', path: '/procurement' },
-  { text: 'LOANS', path: '/loans' },
-  { text: 'INVENTORY', path: '/inventory' },
-  { text: 'SETTINGS', path: '/settings' },
+  { text: 'Dashboard', path: '/', icon: <DashboardOutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Inquiries', path: '/inquiries', icon: <QuestionAnswerOutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Orders', path: '/orders', icon: <ShoppingCartOutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Customers', path: '/customers', icon: <PeopleOutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Farmers', path: '/farmers', icon: <AgricultureOutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Procurement', path: '/procurement', icon: <ReceiptLongOutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Loans', path: '/loans', icon: <AccountBalanceOutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Inventory', path: '/inventory', icon: <Inventory2OutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Settings', path: '/settings', icon: <SettingsOutlinedIcon sx={{ fontSize: 20 }} /> },
 ];
 
 function App() {
@@ -118,8 +128,8 @@ function App() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <Typography sx={{ fontWeight: 900, letterSpacing: 3, fontSize: '1.2rem' }}>LOADING…</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#F8F9FC' }}>
+        <Typography sx={{ fontWeight: 700, letterSpacing: 2, fontSize: '1rem', color: '#64748B' }}>Loading…</Typography>
       </Box>
     );
   }
@@ -144,26 +154,28 @@ function App() {
   }
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#FFF' }}>
       {/* Logo */}
-      <Box sx={{ px: 3, pt: 5, pb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <img src="/logo.png" alt="Logo" style={{ width: 45, height: 45, objectFit: 'contain' }} />
+      <Box sx={{ px: 3, pt: 4, pb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ width: 40, height: 40, borderRadius: 2, backgroundColor: '#EBF5EB', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <img src="/logo.png" alt="Logo" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+        </Box>
         <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', letterSpacing: 2, lineHeight: 1 }}>
-            ADMIN
+          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: 1, lineHeight: 1, color: '#1B2A4A' }}>
+            Dhanyavahini
           </Typography>
-          <Typography sx={{ fontWeight: 600, fontSize: '0.65rem', color: '#999', letterSpacing: 2, mt: 0.5 }}>
-            DHANYAVAHINI
+          <Typography sx={{ fontWeight: 600, fontSize: '0.6rem', color: '#94A3B8', letterSpacing: 1.5, mt: 0.5 }}>
+            Admin Panel
           </Typography>
         </Box>
       </Box>
 
-      <Box sx={{ borderBottom: '2px solid #000', mx: 3, mb: 3 }} />
+      <Box sx={{ borderBottom: '1px solid #E2E8F0', mx: 2, mb: 2 }} />
 
       {/* Nav Links */}
       <List disablePadding sx={{ px: 1.5 }}>
         {NAV_ITEMS.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
@@ -172,23 +184,27 @@ function App() {
                   if (mobileOpen) setMobileOpen(false);
                 }}
                 sx={{
-                  py: 1.2,
-                  px: 2,
-                  backgroundColor: isActive ? '#000' : 'transparent',
-                  color: isActive ? '#FFF' : '#000',
+                  py: 1,
+                  px: 1.5,
+                  borderRadius: 2,
+                  backgroundColor: isActive ? '#EFF6FF' : 'transparent',
+                  color: isActive ? '#1B2A4A' : '#64748B',
                   '&:hover': {
-                    backgroundColor: isActive ? '#000' : '#F0F0F0',
+                    backgroundColor: isActive ? '#EFF6FF' : '#F8FAFC',
                   },
                 }}
               >
+                <ListItemIcon sx={{ minWidth: 36, color: isActive ? '#1B2A4A' : '#94A3B8' }}>
+                  {item.icon}
+                </ListItemIcon>
                 <ListItemText
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', letterSpacing: 1.2 }}>
+                      <Typography sx={{ fontWeight: isActive ? 700 : 500, fontSize: '0.85rem', letterSpacing: 0.2 }}>
                         {item.text}
                       </Typography>
-                      {item.text === 'INQUIRIES' && inquiryCount > 0 && (
-                        <Box sx={{ backgroundColor: 'red', color: 'white', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900 }}>
+                      {item.text === 'Inquiries' && inquiryCount > 0 && (
+                        <Box sx={{ backgroundColor: '#DC2626', color: 'white', borderRadius: 10, minWidth: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700, px: 0.5 }}>
                           {inquiryCount}
                         </Box>
                       )}
@@ -204,16 +220,19 @@ function App() {
       <Box sx={{ flexGrow: 1 }} />
 
       {/* Footer */}
-      <Box sx={{ borderTop: '2px solid #000', mx: 3 }} />
+      <Box sx={{ borderTop: '1px solid #E2E8F0', mx: 2 }} />
       <Box sx={{ px: 1.5, py: 2 }}>
         <ListItemButton
           onClick={confirmSignOut}
-          sx={{ py: 1.2, px: 2, '&:hover': { backgroundColor: '#F0F0F0' } }}
+          sx={{ py: 1, px: 1.5, borderRadius: 2, '&:hover': { backgroundColor: '#FEF2F2' } }}
         >
+          <ListItemIcon sx={{ minWidth: 36, color: '#94A3B8' }}>
+            <LogoutOutlinedIcon sx={{ fontSize: 20 }} />
+          </ListItemIcon>
           <ListItemText
             primary={
-              <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', letterSpacing: 1.2 }}>
-                ← SIGN OUT
+              <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: '#64748B' }}>
+                Sign Out
               </Typography>
             }
           />
@@ -223,7 +242,7 @@ function App() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#FFF', width: '100%' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8F9FC', width: '100%' }}>
 
       {/* ── Mobile AppBar ── */}
       <AppBar
@@ -232,8 +251,8 @@ function App() {
         sx={{
           display: { md: 'none' },
           backgroundColor: '#FFF',
-          borderBottom: '2px solid #000',
-          color: '#000'
+          borderBottom: '1px solid #E2E8F0',
+          color: '#1B2A4A'
         }}
       >
         <Toolbar>
@@ -248,8 +267,8 @@ function App() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', letterSpacing: 2 }}>
-            ADMIN
+          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: 1, color: '#1B2A4A' }}>
+            Dhanyavahini
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
           <IconButton color="inherit" onClick={() => navigate('/inquiries')} sx={{ mr: 1 }}>
@@ -272,7 +291,7 @@ function App() {
           onClose={handleDrawerToggle}
           sx={{
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '2px solid #000' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '1px solid #E2E8F0' },
           }}
         >
           {drawerContent}
@@ -282,7 +301,7 @@ function App() {
           variant="permanent"
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '2px solid #000', border: 'none', borderRightStyle: 'solid' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '1px solid #E2E8F0', border: 'none', borderRightStyle: 'solid' },
           }}
           open
         >
@@ -322,14 +341,14 @@ function App() {
         sx={{
           display: { xs: 'none', md: 'flex' },
           position: 'fixed',
-          top: 32,
-          right: 32,
+          top: 28,
+          right: 28,
           zIndex: 9999,
-          backgroundColor: inquiryCount - dismissedCount > 0 ? '#d32f2f' : '#000',
-          '&:hover': { backgroundColor: inquiryCount - dismissedCount > 0 ? '#c62828' : '#333' }
+          backgroundColor: inquiryCount - dismissedCount > 0 ? '#DC2626' : '#1B2A4A',
+          '&:hover': { backgroundColor: inquiryCount - dismissedCount > 0 ? '#B91C1C' : '#2D4A7A' }
         }}
       >
-        <Badge badgeContent={Math.max(0, inquiryCount - dismissedCount)} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#000', fontWeight: 900 } }}>
+        <Badge badgeContent={Math.max(0, inquiryCount - dismissedCount)} color="error" sx={{ '& .MuiBadge-badge': { backgroundColor: '#FFF', color: '#1B2A4A', fontWeight: 700 } }}>
           <NotificationsIcon sx={{ color: '#FFF' }} />
         </Badge>
       </Fab>
@@ -340,11 +359,11 @@ function App() {
         onClose={handleNotificationClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)', borderRadius: 2, mt: 1, mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.65)', backdropFilter: 'blur(24px)' } } }}
+        slotProps={{ paper: { sx: { border: '1px solid #E2E8F0', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)', borderRadius: 3, mt: 1, mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(20px)' } } }}
       >
         <Box sx={{ p: 2, minWidth: 250 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography sx={{ fontWeight: 900, letterSpacing: 1 }}>NEW NOTIFICATIONS</Typography>
+            <Typography sx={{ fontWeight: 700, letterSpacing: 0.5, color: '#1B2A4A' }}>Notifications</Typography>
             {inquiryCount - dismissedCount > 0 && (
               <Button
                 size="small"
@@ -355,7 +374,7 @@ function App() {
               </Button>
             )}
           </Box>
-          <Box sx={{ borderBottom: '1px solid #000', mb: 1 }} />
+          <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 1 }} />
           {inquiryCount > 0 ? (
             <ListItemButton
               onClick={() => {
@@ -383,31 +402,31 @@ function App() {
         onClose={cancelSignOut}
         slotProps={{
           paper: {
-            sx: { border: '2px solid #000', borderRadius: 0 }
+            sx: { border: '1px solid #E2E8F0', borderRadius: 3 }
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1 }}>
-          CONFIRM SIGN OUT
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.1rem', pb: 1 }}>
+          Sign Out
         </DialogTitle>
         <Box sx={{ px: 3, pb: 2 }}>
-          <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-            Are you sure you want to end your session and sign out of the CMS?
+          <Typography sx={{ fontWeight: 500, fontSize: '0.9rem', color: '#64748B' }}>
+            Are you sure you want to end your session and sign out?
           </Typography>
         </Box>
         <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button
             onClick={cancelSignOut}
-            sx={{ color: '#000', fontWeight: 700 }}
+            sx={{ color: '#64748B', fontWeight: 600 }}
           >
-            CANCEL
+            Cancel
           </Button>
           <Button
             onClick={handleSignOut}
             variant="contained"
-            sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0, '&:hover': { backgroundColor: '#333' } }}
+            sx={{ backgroundColor: '#DC2626', color: '#FFF', fontWeight: 600, '&:hover': { backgroundColor: '#B91C1C' } }}
           >
-            SIGN OUT
+            Sign Out
           </Button>
         </DialogActions>
       </Dialog>

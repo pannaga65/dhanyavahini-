@@ -191,6 +191,7 @@ function App() {
                 sx={{
                   py: 1.2,
                   px: 2.5,
+                  borderRadius: 0,
                   backgroundColor: isActive ? 'rgba(255,255,255,0.04)' : 'transparent',
                   borderLeft: isActive ? '3px solid #4ADE80' : '3px solid transparent',
                   '&:hover': {
@@ -228,7 +229,7 @@ function App() {
       <Box sx={{ py: 1 }}>
         <ListItemButton
           onClick={confirmSignOut}
-          sx={{ py: 1.2, px: 2.5, '&:hover': { backgroundColor: 'rgba(239,68,68,0.1)' } }}
+          sx={{ py: 1.2, px: 2.5, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(239,68,68,0.1)' } }}
         >
           <ListItemIcon sx={{ minWidth: 32, color: '#64748B' }}>
             <LogoutOutlinedIcon sx={{ fontSize: 20 }} />

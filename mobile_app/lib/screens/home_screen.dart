@@ -234,54 +234,68 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           scrolledUnderElevation: 1,
           surfaceTintColor: Colors.transparent,
           toolbarHeight: 70,
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryAction.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+          title: InkWell(
+            onTap: () async {
+              final result = await requestAndSaveLocation();
+              if (result && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Location updated successfully!'),
+                  backgroundColor: AppTheme.primaryAction,
+                ));
+              } else if (!result && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Could not access location.'),
+                ));
+              }
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryAction.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.my_location, color: AppTheme.primaryAction, size: 24),
                 ),
-                child: const Icon(Icons.location_on, color: AppTheme.primaryAction, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          'Delivery to',
-                          style: TextStyle(
-                            color: AppTheme.textDark,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Deliver to',
+                            style: TextStyle(
+                              color: AppTheme.textDark,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down, color: AppTheme.textDark, size: 20),
-                      ],
-                    ),
-                    locationAsync.when(
-                      data: (loc) => Text(
-                        loc != null && loc.address.isNotEmpty ? loc.address : 'Select your location for accurate stock',
-                        style: const TextStyle(
-                          color: AppTheme.textLight,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        ],
                       ),
-                      loading: () => const Text('Locating...', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
-                      error: (_, __) => const Text('Select your location for accurate stock', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
-                    ),
-                  ],
+                      locationAsync.when(
+                        data: (loc) => Text(
+                          loc != null && loc.address.isNotEmpty ? loc.address : 'Use my current location',
+                          style: const TextStyle(
+                            color: AppTheme.textLight,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        loading: () => const Text('Locating...', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
+                        error: (_, __) => const Text('Use my current location', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const Icon(Icons.keyboard_arrow_right, color: AppTheme.textDark, size: 20),
+              ],
+            ),
           ),
           actions: [
             Padding(

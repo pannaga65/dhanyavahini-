@@ -26,6 +26,7 @@ interface Order {
   dispatchDetails?: DispatchData;
   shippingAddress?: string;
   billingAddress?: string;
+  location?: { lat: number; lng: number; address: string };
   items?: any[];
   subtotal?: number;
   gstAmount?: number;
@@ -430,6 +431,23 @@ export default function Orders() {
                   <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
                     {selectedOrder?.shippingAddress || selectedOrder?.billingAddress || 'Address not provided by customer'}
                   </Typography>
+                  {selectedOrder?.location && selectedOrder.location.lat && (
+                    <Box sx={{ mt: 1 }}>
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${selectedOrder.location.lat},${selectedOrder.location.lng}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{ color: '#0055CC', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        📍 View on Google Maps
+                      </a>
+                      {selectedOrder.location.address && (
+                         <Typography sx={{ fontSize: '0.8rem', color: '#666', mt: 0.5 }}>
+                           Location match: {selectedOrder.location.address}
+                         </Typography>
+                      )}
+                    </Box>
+                  )}
                 </Box>
 
                 {selectedOrder?.dispatchDetails?.lrNumber && (

@@ -217,7 +217,17 @@ export default function Inquiries() {
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
                 <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>ORD-{row.id.substring(0, 6).toUpperCase()}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>
-                  {row.customerName || 'Unknown Customer'}
+                  <Box>{row.customerName || 'Unknown Customer'}</Box>
+                  {row.location && row.location.lat && (
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${row.location.lat},${row.location.lng}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ color: '#0055CC', fontWeight: 600, fontSize: '0.75rem', textDecoration: 'none', display: 'flex', alignItems: 'center', marginTop: '4px' }}
+                    >
+                      📍 View Map
+                    </a>
+                  )}
                 </TableCell>
                 <TableCell>
                   {row.items?.map((item: any, i: number) => (

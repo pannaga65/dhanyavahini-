@@ -139,6 +139,7 @@ exports.placeSecureOrder = onCall(async (request) => {
         customerEmail: userData.email || "",
         billingAddress: userData.billingAddress || "",
         shippingAddress: (userData.mailingAddresses && userData.mailingAddresses.length > 0) ? userData.mailingAddresses[0] : "",
+        location: userData.lastKnownLocation || null,
         items: orderItems,
         subtotal: subtotal,
         gstAmount: gstAmount,

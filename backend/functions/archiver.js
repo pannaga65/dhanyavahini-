@@ -2,7 +2,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { getFirestore } = require("firebase-admin/firestore");
 
 // Runs once a week to archive old orders
-exports.archiveOldOrders = onSchedule("every 7 days", async (event) => {
+exports.archiveOldOrders = onSchedule("0 0 * * 0", async (event) => {
   const db = getFirestore();
   
   // Calculate date 1 year ago

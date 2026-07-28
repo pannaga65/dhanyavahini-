@@ -61,7 +61,8 @@ export default function Inquiries() {
   const handleOpenEdit = (inquiry: any) => {
     setEditingId(inquiry.id);
     setNegotiatedPrice(inquiry.totalAmount?.toString() || '');
-    setNegotiatedQuantity(inquiry.totalQuantity?.toString() || '');
+    const calculatedTotalQty = inquiry.totalQuantity || inquiry.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || 0), 0) || 0;
+    setNegotiatedQuantity(calculatedTotalQty.toString() || '');
     setOpen(true);
   };
 
@@ -204,11 +205,11 @@ export default function Inquiries() {
                 <TableCell>
                   {row.items?.map((item: any, i: number) => (
                     <Box key={i} sx={{ fontSize: '0.8rem', color: '#666' }}>
-                      {item.quantity} x {item.productName}
+                      {item.quantityKg} x {item.name}
                     </Box>
                   ))}
                 </TableCell>
-                <TableCell>{row.totalQuantity} units</TableCell>
+                <TableCell>{row.totalQuantity || row.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || 0), 0) || 0} units</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>₹{row.totalAmount?.toLocaleString()}</TableCell>
                 <TableCell sx={{ color: '#666', fontSize: '0.85rem' }}>
                   {row.createdAt?.toDate().toLocaleDateString() || 'N/A'}

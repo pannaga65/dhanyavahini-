@@ -62,7 +62,7 @@ Future<bool> requestAndSaveLocation() async {
     
     String address = "Unknown Location";
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
+      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
           position.latitude, position.longitude);
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;

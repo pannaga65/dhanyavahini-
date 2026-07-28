@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'theme/app_theme.dart';
 import 'screens/main_scaffold.dart';
 import 'screens/home_screen.dart';
@@ -16,10 +17,29 @@ import 'screens/login_screen.dart';
 import 'screens/category_screen.dart';
 import 'screens/all_products_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'providers/notification_provider.dart';
+
+// Must be a top-level function for FCM background messages
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  // Background messages with 'notification' payload are automatically shown
+  // by the system, so no additional handling is needed here.
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  
+  // Setup FCM background handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  
+  // Initialize local notifications (creates Android channel)
+  await initLocalNotifications();
+  
+  // Setup foreground FCM listeners
+  await setupFCMListeners();
+  
   runApp(const ProviderScope(child: MyApp()));
 }
 

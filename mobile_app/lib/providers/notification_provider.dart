@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationModel {
   final String id;
@@ -60,6 +61,80 @@ final markNotificationReadProvider = Provider((ref) => (String notificationId) {
       .doc(notificationId)
       .update({'isRead': true});
 });
+
+// ─── Local Notifications Plugin ───
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+const AndroidNotificationChannel _channel = AndroidNotificationChannel(
+  'high_importance_channel',
+  'High Importance Notifications',
+  description: 'This channel is used for order updates and important notifications.',
+  importance: Importance.high,
+  playSound: true,
+);
+
+/// Initialize local notifications and create the Android channel
+Future<void> initLocalNotifications() async {
+  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const iosSettings = DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
+  const initSettings = InitializationSettings(
+    android: androidSettings,
+    iOS: iosSettings,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initSettings);
+
+  // Create the notification channel on Android
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(_channel);
+}
+
+/// Show a local notification in the status bar
+Future<void> _showLocalNotification(RemoteMessage message) async {
+  final notification = message.notification;
+  if (notification == null) return;
+
+  await flutterLocalNotificationsPlugin.show(
+    notification.hashCode,
+    notification.title,
+    notification.body,
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        _channel.id,
+        _channel.name,
+        channelDescription: _channel.description,
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        playSound: true,
+      ),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    ),
+  );
+}
+
+/// Setup all FCM listeners (call this once after login/app start)
+Future<void> setupFCMListeners() async {
+  // Foreground messages — show as local notification in status bar
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    _showLocalNotification(message);
+  });
+
+  // When user taps on a notification to open the app
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    // Could navigate to notifications screen here if needed
+  });
+}
 
 Future<void> requestAndSaveFCMToken() async {
   final messaging = FirebaseMessaging.instance;

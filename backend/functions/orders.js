@@ -18,10 +18,20 @@ exports.updateOrderStatus = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Order ID is required.");
   }
 
-  const validStatuses = ["pending", "under review", "confirmed", "rejected", "dispatched", "delivered", "cancelled"];
+  const validStatuses = ["inquiry", "confirmed", "dispatched", "delivered", "cancelled"];
   if (!validStatuses.includes(newStatus.toLowerCase())) {
     throw new HttpsError("invalid-argument", `Invalid order status. Must be one of: ${validStatuses.join(", ")}`);
   }
+
+  // Normalize to PascalCase for consistent storage
+  const statusMap = {
+    "inquiry": "Inquiry",
+    "confirmed": "Confirmed",
+    "dispatched": "Dispatched",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled",
+  };
+  const normalizedStatus = statusMap[newStatus.toLowerCase()] || newStatus;
 
   try {
     const orderRef = db.collection("orders").doc(orderId);
@@ -35,12 +45,12 @@ exports.updateOrderStatus = onCall(async (request) => {
 
     // 3. Update the order
     await orderRef.update({
-      status: newStatus,
+      status: normalizedStatus,
       updatedAt: FieldValue.serverTimestamp(),
     });
 
     // 4. If cancelled, restore inventory stock
-    if (newStatus.toLowerCase() === "cancelled" && previousStatus !== "cancelled") {
+    if (normalizedStatus === "Cancelled" && previousStatus !== "Cancelled") {
       const items = orderSnap.data().items || [];
       for (const item of items) {
         if (item.productId && item.quantityKg) {
@@ -58,7 +68,7 @@ exports.updateOrderStatus = onCall(async (request) => {
       action: "UPDATE_ORDER_STATUS",
       targetId: orderId,
       previousStatus: previousStatus,
-      newStatus: newStatus,
+      newStatus: normalizedStatus,
       performedBy: request.auth.uid,
       performedByEmail: request.auth.token.email || "",
       timestamp: FieldValue.serverTimestamp(),

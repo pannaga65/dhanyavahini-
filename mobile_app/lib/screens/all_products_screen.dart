@@ -17,6 +17,7 @@ class AllProductsScreen extends ConsumerStatefulWidget {
 class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
   late TextEditingController _searchController;
   String _currentQuery = '';
+  final Set<String> _recentlyAdded = {};
 
   @override
   void initState() {
@@ -31,9 +32,44 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
     super.dispose();
   }
 
+  void _addToCart(product) {
+    ref.read(cartProvider.notifier).addItem(
+      CartItem(
+        productId: product.id,
+        name: product.name,
+        price: product.basePriceKg,
+        quantity: product.moqKg > 0 ? product.moqKg : 1,
+        moqKg: product.moqKg > 0 ? product.moqKg : 1,
+        gstPercentage: product.gstPercentage,
+        imageUrl: product.imageUrl,
+      ),
+    );
+
+    setState(() => _recentlyAdded.add(product.id));
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _recentlyAdded.remove(product.id));
+    });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} added to cart'),
+        backgroundColor: AppTheme.primaryAction,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'VIEW CART',
+          textColor: Colors.white,
+          onPressed: () => context.push('/cart'),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
+    final cartItems = ref.watch(cartProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -120,6 +156,9 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
                         itemCount: filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = filteredProducts[index];
+                          final isInCart = cartItems.any((c) => c.productId == product.id);
+                          final justAdded = _recentlyAdded.contains(product.id);
+
                           return GestureDetector(
                             onTap: () => context.push('/product/${product.id}'),
                             child: Container(
@@ -195,31 +234,7 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
                                                 '₹${product.basePriceKg.toStringAsFixed(0)}/kg', 
                                                 style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryAction, fontSize: 14),
                                               ),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  if (product.availableStockKg > 0) {
-                                                    ref.read(cartProvider.notifier).addItem(
-                                                      CartItem(
-                                                        productId: product.id,
-                                                        name: product.name,
-                                                        price: product.basePriceKg,
-                                                        quantity: product.moqKg > 0 ? product.moqKg : 1,
-                                                        moqKg: product.moqKg > 0 ? product.moqKg : 1,
-                                                        gstPercentage: product.gstPercentage,
-                                                      ),
-                                                    );
-                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${product.name} added to cart')));
-                                                  }
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.all(6),
-                                                  decoration: BoxDecoration(
-                                                    color: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
-                                                    borderRadius: BorderRadius.circular(10),
-                                                  ),
-                                                  child: const Icon(Icons.add, color: Colors.white, size: 16),
-                                                ),
-                                              )
+                                              _buildCartButton(product, isInCart, justAdded),
                                             ],
                                           )
                                         ],
@@ -238,6 +253,71 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Widget _buildCartButton(product, bool isInCart, bool justAdded) {
+    if (product.availableStockKg <= 0) {
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade400,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.block, color: Colors.white, size: 16),
+      );
+    }
+
+    if (justAdded) {
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2E7D32),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.check, color: Colors.white, size: 16),
+      );
+    }
+
+    if (isInCart) {
+      return GestureDetector(
+        onTap: () => context.push('/cart'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryAction.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppTheme.primaryAction.withValues(alpha: 0.5)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.shopping_cart, color: AppTheme.primaryAction, size: 12),
+              SizedBox(width: 3),
+              Text('In Cart', style: TextStyle(color: AppTheme.primaryAction, fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => _addToCart(product),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryAction,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add, color: Colors.white, size: 14),
+            SizedBox(width: 2),
+            Text('Add', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

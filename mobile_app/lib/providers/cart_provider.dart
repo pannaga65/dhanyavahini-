@@ -7,8 +7,9 @@ class CartItem {
   final int quantity;
   final int moqKg;
   final double gstPercentage;
+  final String imageUrl;
   
-  CartItem({required this.productId, required this.name, required this.price, required this.quantity, required this.moqKg, required this.gstPercentage});
+  CartItem({required this.productId, required this.name, required this.price, required this.quantity, required this.moqKg, required this.gstPercentage, this.imageUrl = ''});
 }
 
 class CartNotifier extends Notifier<List<CartItem>> {
@@ -28,6 +29,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
         quantity: state[existingIndex].quantity + item.quantity,
         moqKg: item.moqKg,
         gstPercentage: item.gstPercentage,
+        imageUrl: item.imageUrl,
       );
       state = updatedList;
     } else {
@@ -53,6 +55,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
           quantity: newQuantity,
           moqKg: state[index].moqKg,
           gstPercentage: state[index].gstPercentage,
+          imageUrl: state[index].imageUrl,
         );
         state = updatedList;
       }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_provider.dart';
@@ -17,6 +18,41 @@ class ProductDetailsScreen extends ConsumerStatefulWidget {
 class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
   int quantity = 0;
   bool isInitialized = false;
+  bool _justAdded = false;
+
+  void _handleAddToCart(product) {
+    ref.read(cartProvider.notifier).addItem(
+      CartItem(
+        productId: widget.productId,
+        name: product.name,
+        price: product.basePriceKg,
+        quantity: quantity,
+        moqKg: product.moqKg > 0 ? product.moqKg : 1,
+        gstPercentage: product.gstPercentage,
+        imageUrl: product.imageUrl,
+      ),
+    );
+
+    setState(() => _justAdded = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _justAdded = false);
+    });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} added to cart'),
+        backgroundColor: AppTheme.primaryAction,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'VIEW CART',
+          textColor: Colors.white,
+          onPressed: () => context.push('/cart'),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,25 +181,33 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        child: ElevatedButton.icon(
+                          icon: Icon(
+                            _justAdded ? Icons.check_circle : Icons.shopping_cart_outlined,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          label: Text(
+                            product.availableStockKg <= 0
+                                ? 'Out of Stock'
+                                : _justAdded
+                                    ? '✓ Added to Cart'
+                                    : 'Add to Cart',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: product.availableStockKg <= 0
+                                ? Colors.grey
+                                : _justAdded
+                                    ? const Color(0xFF2E7D32)
+                                    : AppTheme.primaryAction,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: product.availableStockKg <= 0 ? null : () => _handleAddToCart(product),
                         ),
-                        onPressed: product.availableStockKg <= 0 ? null : () {
-                          ref.read(cartProvider.notifier).addItem(
-                            CartItem(
-                              productId: widget.productId,
-                              name: product.name,
-                              price: product.basePriceKg,
-                              quantity: quantity,
-                              moqKg: product.moqKg > 0 ? product.moqKg : 1,
-                              gstPercentage: product.gstPercentage,
-                            ),
-                          );
-                        },
-                        child: Text(product.availableStockKg > 0 ? 'Add to Cart' : 'Out of Stock', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                       ),
                     ),
                   ],

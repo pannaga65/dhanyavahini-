@@ -20,13 +20,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   // Normalize status for display and stepper
   String _normalizeStatus(String rawStatus) {
-    if (rawStatus.isEmpty) return 'Inquiry';
+    if (rawStatus.isEmpty) return 'Order Placed';
     final s = rawStatus.toLowerCase();
-    if (s == 'inquiry' || s == 'pending') return 'Inquiry';
-    if (s == 'under review') return 'Review';
+    if (s == 'inquiry' || s == 'pending') return 'Order Placed';
     if (s == 'confirmed') return 'Confirmed';
-    if (s == 'processing') return 'Processing';
-    if (s == 'shipped') return 'Shipped';
+    if (s == 'dispatched' || s == 'shipped' || s == 'processing') return 'Dispatched';
     if (s == 'delivered') return 'Delivered';
     if (s == 'rejected' || s == 'cancelled') return 'Cancelled';
     
@@ -34,8 +32,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return rawStatus[0].toUpperCase() + rawStatus.substring(1);
   }
 
-  // Define steps for the stepper UI
-  final List<String> statusSteps = ['Inquiry', 'Confirmed', 'Processing', 'Shipped', 'Delivered'];
+  // Define steps for the stepper UI — matches admin panel exactly
+  final List<String> statusSteps = ['Order Placed', 'Confirmed', 'Dispatched', 'Delivered'];
 
   @override
   Widget build(BuildContext context) {
@@ -111,9 +109,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   : 'Unknown Date';
 
               int currentStepIndex = statusSteps.indexOf(status);
-              
-              // If status is 'Review', it's between Inquiry and Confirmed.
-              if (status == 'Review') currentStepIndex = 0; 
 
               final isCancelled = status == 'Cancelled';
 

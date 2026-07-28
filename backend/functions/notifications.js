@@ -24,11 +24,10 @@ exports.onOrderUpdate = onDocumentWritten("orders/{orderId}", async (event) => {
     // Scenario 2: Order status changed by Admin (Notify Customer)
     if (previousData && previousData.status !== newData.status && newData.status !== "Inquiry") {
       const statusMessages = {
-        "pending": "Your order is pending review.",
-        "under review": "Your order is currently under review by our team.",
-        "confirmed": "Great news! Your order has been confirmed.",
-        "rejected": "Unfortunately, your order has been rejected. Contact us for details.",
-        "delivered": "Your order has been delivered successfully!"
+        "Confirmed": "Great news! Your order has been confirmed.",
+        "Dispatched": "Your order has been dispatched! Track your delivery soon.",
+        "Delivered": "Your order has been delivered successfully!",
+        "Cancelled": "Unfortunately, your order has been cancelled. Contact us for details.",
       };
       
       const messageBody = statusMessages[newData.status] || `Your order status changed to ${newData.status}.`;
@@ -69,6 +68,13 @@ async function notifyAdmins(title, body) {
     
     const payload = {
       notification: { title, body },
+      android: {
+        notification: {
+          channelId: "high_importance_channel",
+          priority: "high",
+          sound: "default",
+        },
+      },
       tokens: tokens
     };
     
@@ -100,6 +106,13 @@ async function notifyCustomer(customerId, title, body) {
     
     const payload = {
       notification: { title, body },
+      android: {
+        notification: {
+          channelId: "high_importance_channel",
+          priority: "high",
+          sound: "default",
+        },
+      },
       token: fcmToken
     };
     

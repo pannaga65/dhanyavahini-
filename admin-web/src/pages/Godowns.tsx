@@ -112,7 +112,7 @@ export default function Godowns() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-        <Button variant="contained" onClick={() => handleOpen()} sx={{ fontWeight: 700, backgroundColor: '#000', color: '#FFF' }}>
+        <Button variant="contained" onClick={() => handleOpen()} sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}>
           + ADD GODOWN
         </Button>
       </Box>
@@ -208,9 +208,9 @@ export default function Godowns() {
             />
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE'}
           </Button>
         </DialogActions>

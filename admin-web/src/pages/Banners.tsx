@@ -138,15 +138,15 @@ export default function Banners() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#000', color: '#FFF', borderRadius: 0, fontWeight: 700, px: 3, '&:hover': { backgroundColor: '#333' } }}>
-          + ADD BANNER
+        <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 600, px: 3 }}>
+          + Add Banner
         </Button>
       </Box>
 
-      <TableContainer sx={{ border: '2px solid #000', borderRadius: 0, backgroundColor: '#FFF' }}>
+      <TableContainer>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#F5F5F5', '& th': { borderBottom: '2px solid #000', fontWeight: 900, color: '#000' } }}>
+            <TableRow>
               <TableCell>IMAGE</TableCell>
               <TableCell>REDIRECT LINK</TableCell>
               <TableCell>ORDER</TableCell>
@@ -187,10 +187,10 @@ export default function Banners() {
       </TableContainer>
 
       {/* Add / Edit Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0 } } }}>
-        <Box sx={{ p: 3, borderBottom: '2px solid #000', backgroundColor: '#F5F5F5' }}>
-          <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', letterSpacing: 1 }}>
-            {editingId ? 'EDIT BANNER' : 'ADD NEW BANNER'}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <Box sx={{ p: 3, borderBottom: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#1A1A2E' }}>
+            {editingId ? 'Edit Banner' : 'Add New Banner'}
           </Typography>
         </Box>
         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -200,13 +200,13 @@ export default function Banners() {
               variant="outlined"
               startIcon={<CloudUploadIcon />}
               disabled={uploading}
-              sx={{ width: '100%', height: 100, borderStyle: 'dashed', borderWidth: 2, borderColor: '#000', color: '#000' }}
+              sx={{ width: '100%', height: 100, borderStyle: 'dashed', borderWidth: 2, borderColor: '#CBD5E1', color: '#64748B' }}
             >
               {uploading ? 'UPLOADING...' : 'UPLOAD IMAGE (MAX 2MB)'}
               <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
             </Button>
             {formData.imageUrl && (
-              <Box component="img" src={formData.imageUrl} sx={{ width: '100%', height: 150, objectFit: 'cover', mt: 2, border: '1px solid #000' }} />
+              <Box component="img" src={formData.imageUrl} sx={{ width: '100%', height: 150, objectFit: 'cover', mt: 2, borderRadius: 2, border: '1px solid #E2E8F0' }} />
             )}
           </Box>
           <TextField
@@ -226,9 +226,9 @@ export default function Banners() {
           />
         </Box>
         <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: '#000', fontWeight: 700 }}>CANCEL</Button>
-          <Button onClick={handleSave} variant="contained" disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0, '&:hover': { backgroundColor: '#333' } }}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'SAVE'}
+          <Button onClick={() => setOpen(false)} sx={{ color: '#64748B', fontWeight: 600 }}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

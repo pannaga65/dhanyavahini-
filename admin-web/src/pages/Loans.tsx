@@ -345,12 +345,12 @@ export default function Loans() {
           <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
             LOANS & ADVANCES
           </Typography>
-          <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
+          <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mt: 0.5 }}>
             MANAGE FINANCIAL ADVANCES ISSUED TO FARMERS
           </Typography>
         </Box>
       </Box>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 3, mt: 2 }} />
+      <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 3, mt: 2 }} />
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <TextField
@@ -422,7 +422,7 @@ export default function Loans() {
                   />
                 </TableCell>
                 <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                  <Button size="small" variant="contained" onClick={() => setSelectedFarmerIdForPopup(group.farmerId)} sx={{ fontWeight: 700, backgroundColor: '#000', color: '#FFF' }}>
+                  <Button size="small" variant="contained" onClick={() => setSelectedFarmerIdForPopup(group.farmerId)} sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}>
                     VIEW DETAILS
                   </Button>
                 </TableCell>
@@ -449,7 +449,7 @@ export default function Loans() {
       >
         {selectedFarmerGroup && (
           <>
-            <DialogTitle sx={{ p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #000' }}>
+            <DialogTitle sx={{ p: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #E2E8F0' }}>
               <Box>
                 <Typography sx={{ fontWeight: 900, fontSize: '1.5rem', letterSpacing: 1, textTransform: 'uppercase' }}>
                   {selectedFarmerGroup.farmerName}
@@ -467,7 +467,7 @@ export default function Loans() {
                 </Box>
               </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button variant="contained" onClick={() => handleOpenNewLoan(selectedFarmerGroup.farmerId)} sx={{ fontWeight: 700, backgroundColor: '#000' }}>
+                <Button variant="contained" onClick={() => handleOpenNewLoan(selectedFarmerGroup.farmerId)} sx={{ fontWeight: 700, backgroundColor: '#1B2A4A' }}>
                   + ISSUE LOAN
                 </Button>
                 <IconButton onClick={() => setSelectedFarmerIdForPopup(null)}>
@@ -645,9 +645,9 @@ export default function Loans() {
             />
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setOpenNewLoan(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSaveLoan} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={handleSaveLoan} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : (editingLoanId ? 'UPDATE LOAN' : 'SAVE LOAN')}
           </Button>
         </DialogActions>
@@ -711,9 +711,9 @@ export default function Loans() {
             />
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setOpenRecovery(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSaveRecovery} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={handleSaveRecovery} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE RECOVERY'}
           </Button>
         </DialogActions>

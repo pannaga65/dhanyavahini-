@@ -230,7 +230,7 @@ export default function BusinessProfile() {
           left: '50%',
           transform: 'translateX(-50%)', // Centering horizontally
           width: { xs: '90%', sm: 600 },
-          backgroundColor: '#000',
+          backgroundColor: '#1B2A4A',
           color: '#FFF',
           borderRadius: 3,
           boxShadow: '0 8px 32px rgba(0,0,0,0.3)',

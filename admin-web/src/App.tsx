@@ -30,7 +30,7 @@ import app, { messaging } from './firebase'
 import { getToken } from 'firebase/messaging'
 import './index.css'
 
-const DRAWER_WIDTH = 220;
+const DRAWER_WIDTH = 240;
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -154,57 +154,61 @@ function App() {
   }
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#FFF' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#0F172A' }}>
       {/* Logo */}
-      <Box sx={{ px: 3, pt: 4, pb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Box sx={{ width: 40, height: 40, borderRadius: 2, backgroundColor: '#EBF5EB', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+      <Box sx={{ px: 2.5, pt: 3, pb: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={{ width: 36, height: 36, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <img src="/logo.png" alt="Logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
         </Box>
         <Box>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: 1, lineHeight: 1, color: '#1B2A4A' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '1rem', letterSpacing: 0.5, lineHeight: 1, color: '#F1F5F9' }}>
             Dhanyavahini
           </Typography>
-          <Typography sx={{ fontWeight: 600, fontSize: '0.6rem', color: '#94A3B8', letterSpacing: 1.5, mt: 0.5 }}>
+          <Typography sx={{ fontWeight: 500, fontSize: '0.6rem', color: '#64748B', letterSpacing: 1, mt: 0.3 }}>
             Admin Panel
           </Typography>
         </Box>
       </Box>
 
-      <Box sx={{ borderBottom: '1px solid #E2E8F0', mx: 2, mb: 2 }} />
+      <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', mx: 2, mb: 1 }} />
+
+      {/* Section Label */}
+      <Typography sx={{ px: 2.5, pt: 1.5, pb: 1, fontSize: '0.65rem', fontWeight: 600, color: '#475569', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+        Menu
+      </Typography>
 
       {/* Nav Links */}
-      <List disablePadding sx={{ px: 1.5 }}>
+      <List disablePadding sx={{ px: 1 }}>
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.3 }}>
               <ListItemButton
                 onClick={() => {
                   navigate(item.path);
                   if (mobileOpen) setMobileOpen(false);
                 }}
                 sx={{
-                  py: 1,
+                  py: 0.9,
                   px: 1.5,
-                  borderRadius: 2,
-                  backgroundColor: isActive ? '#EFF6FF' : 'transparent',
-                  color: isActive ? '#1B2A4A' : '#64748B',
+                  borderRadius: 1.5,
+                  backgroundColor: isActive ? 'rgba(46, 125, 50, 0.15)' : 'transparent',
                   '&:hover': {
-                    backgroundColor: isActive ? '#EFF6FF' : '#F8FAFC',
+                    backgroundColor: isActive ? 'rgba(46, 125, 50, 0.15)' : 'rgba(255,255,255,0.05)',
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 36, color: isActive ? '#1B2A4A' : '#94A3B8' }}>
+                <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#4ADE80' : '#64748B' }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography sx={{ fontWeight: isActive ? 700 : 500, fontSize: '0.85rem', letterSpacing: 0.2 }}>
+                      <Typography sx={{ fontWeight: isActive ? 600 : 400, fontSize: '0.84rem', color: isActive ? '#F1F5F9' : '#94A3B8', letterSpacing: 0.2 }}>
                         {item.text}
                       </Typography>
                       {item.text === 'Inquiries' && inquiryCount > 0 && (
-                        <Box sx={{ backgroundColor: '#DC2626', color: 'white', borderRadius: 10, minWidth: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700, px: 0.5 }}>
+                        <Box sx={{ backgroundColor: '#EF4444', color: 'white', borderRadius: 10, minWidth: 20, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 700, px: 0.5 }}>
                           {inquiryCount}
                         </Box>
                       )}
@@ -220,18 +224,18 @@ function App() {
       <Box sx={{ flexGrow: 1 }} />
 
       {/* Footer */}
-      <Box sx={{ borderTop: '1px solid #E2E8F0', mx: 2 }} />
-      <Box sx={{ px: 1.5, py: 2 }}>
+      <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.08)', mx: 2 }} />
+      <Box sx={{ px: 1, py: 1.5 }}>
         <ListItemButton
           onClick={confirmSignOut}
-          sx={{ py: 1, px: 1.5, borderRadius: 2, '&:hover': { backgroundColor: '#FEF2F2' } }}
+          sx={{ py: 0.9, px: 1.5, borderRadius: 1.5, '&:hover': { backgroundColor: 'rgba(239,68,68,0.1)' } }}
         >
-          <ListItemIcon sx={{ minWidth: 36, color: '#94A3B8' }}>
+          <ListItemIcon sx={{ minWidth: 32, color: '#64748B' }}>
             <LogoutOutlinedIcon sx={{ fontSize: 20 }} />
           </ListItemIcon>
           <ListItemText
             primary={
-              <Typography sx={{ fontWeight: 500, fontSize: '0.85rem', color: '#64748B' }}>
+              <Typography sx={{ fontWeight: 400, fontSize: '0.84rem', color: '#94A3B8' }}>
                 Sign Out
               </Typography>
             }
@@ -291,7 +295,7 @@ function App() {
           onClose={handleDrawerToggle}
           sx={{
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '1px solid #E2E8F0' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none' },
           }}
         >
           {drawerContent}
@@ -301,7 +305,7 @@ function App() {
           variant="permanent"
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '1px solid #E2E8F0', border: 'none', borderRightStyle: 'solid' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, border: 'none' },
           }}
           open
         >

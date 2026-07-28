@@ -243,10 +243,10 @@ export default function Products() {
                     <img
                       src={row.imageUrl}
                       alt={row.name}
-                      style={{ width: 48, height: 48, objectFit: 'cover', border: '2px solid #000' }}
+                      style={{ width: 48, height: 48, objectFit: 'cover', border: '1px solid #E2E8F0' }}
                     />
                   ) : (
-                    <Box sx={{ width: 48, height: 48, border: '2px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F0F0' }}>
+                    <Box sx={{ width: 48, height: 48, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F0F0' }}>
                       <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: '#999' }}>NO IMG</Typography>
                     </Box>
                   )}
@@ -380,9 +380,9 @@ export default function Products() {
           </Box>
         </Box>
         
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE'}
           </Button>
         </DialogActions>

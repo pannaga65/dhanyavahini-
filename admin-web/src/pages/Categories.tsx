@@ -127,15 +127,15 @@ export default function Categories() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#000', color: '#FFF', borderRadius: 0, fontWeight: 700, px: 3, '&:hover': { backgroundColor: '#333' } }}>
-          + ADD CATEGORY
+        <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 600, px: 3 }}>
+          + Add Category
         </Button>
       </Box>
 
-      <TableContainer sx={{ border: '2px solid #000', borderRadius: 0, backgroundColor: '#FFF' }}>
+      <TableContainer>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#F5F5F5', '& th': { borderBottom: '2px solid #000', fontWeight: 900, color: '#000' } }}>
+            <TableRow>
               <TableCell>ICON</TableCell>
               <TableCell>NAME</TableCell>
               <TableCell>ORDER</TableCell>
@@ -172,9 +172,9 @@ export default function Categories() {
       </TableContainer>
 
       {/* Add / Edit Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { border: '2px solid #000', borderRadius: 0 } } }}>
-        <Box sx={{ p: 3, borderBottom: '2px solid #000', backgroundColor: '#F5F5F5' }}>
-          <Typography sx={{ fontWeight: 900, fontSize: '1.2rem', letterSpacing: 1 }}>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <Box sx={{ p: 3, borderBottom: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#1A1A2E' }}>
             {editingId ? 'EDIT CATEGORY' : 'ADD NEW CATEGORY'}
           </Typography>
         </Box>
@@ -192,14 +192,14 @@ export default function Categories() {
               variant="outlined"
               startIcon={<CloudUploadIcon />}
               disabled={uploading}
-              sx={{ width: '100%', height: 100, borderStyle: 'dashed', borderWidth: 2, borderColor: '#000', color: '#000' }}
+              sx={{ width: '100%', height: 100, borderStyle: 'dashed', borderWidth: 2, borderColor: '#CBD5E1', color: '#64748B' }}
             >
               {uploading ? 'UPLOADING...' : 'UPLOAD ICON (PNG, MAX 2MB)'}
               <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
             </Button>
             {formData.iconUrl && (
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-                <Box component="img" src={formData.iconUrl} sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '50%', border: '2px solid #000' }} />
+                <Box component="img" src={formData.iconUrl} sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '50%', border: '2px solid #E2E8F0' }} />
               </Box>
             )}
           </Box>
@@ -213,9 +213,9 @@ export default function Categories() {
           />
         </Box>
         <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setOpen(false)} sx={{ color: '#000', fontWeight: 700 }}>CANCEL</Button>
-          <Button onClick={handleSave} variant="contained" disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0, '&:hover': { backgroundColor: '#333' } }}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'SAVE'}
+          <Button onClick={() => setOpen(false)} sx={{ color: '#64748B', fontWeight: 600 }}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

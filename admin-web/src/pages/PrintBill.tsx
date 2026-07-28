@@ -103,12 +103,12 @@ export default function PrintBill() {
           maxWidth: '100%',
           p: 2,
           m: 0,
-          borderRadius: 0,
+          
         }
       }}>
       
       {/* ── HEADER ── */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, borderBottom: '2px solid #000', pb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, borderBottom: '1px solid #E2E8F0', pb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {profile?.logoUrl && (
             <img src={profile.logoUrl} alt="Logo" style={{ width: 80, height: 80, objectFit: 'contain' }} />
@@ -228,7 +228,7 @@ export default function PrintBill() {
             <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Total Paid:</Typography>
             <Typography sx={{ fontWeight: 900, fontSize: '0.9rem' }}>{formatCurrency(bill.amountPaid)}</Typography>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, pt: 1, borderTop: '2px solid #000' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, pt: 1, borderTop: '1px solid #E2E8F0' }}>
             <Typography sx={{ fontWeight: 900, fontSize: '1.1rem' }}>BALANCE DUE:</Typography>
             <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', color: bill.balance > 0 ? 'red' : 'green' }}>
               {formatCurrency(bill.balance)}

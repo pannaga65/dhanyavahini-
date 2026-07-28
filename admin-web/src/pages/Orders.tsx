@@ -586,9 +586,9 @@ export default function Orders() {
             />
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setEditingId(null)} disabled={editLoading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSaveEdit} disabled={editLoading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={handleSaveEdit} disabled={editLoading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {editLoading ? <CircularProgress size={20} color="inherit" /> : 'SAVE CHANGES'}
           </Button>
         </DialogActions>

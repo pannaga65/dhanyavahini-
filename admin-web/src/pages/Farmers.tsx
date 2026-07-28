@@ -174,12 +174,12 @@ export default function Farmers() {
           <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
             FARMERS
           </Typography>
-          <Typography sx={{ fontWeight: 600, color: '#999', letterSpacing: 1.5, fontSize: '0.8rem', mt: 0.5 }}>
+          <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mt: 0.5 }}>
             MANAGE FARMER PROFILES & BANK DETAILS
           </Typography>
         </Box>
       </Box>
-      <Box sx={{ borderBottom: '2px solid #000', mb: 3, mt: 2 }} />
+      <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 3, mt: 2 }} />
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <TextField
@@ -343,9 +343,9 @@ export default function Farmers() {
 
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '2px solid #000', p: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE'}
           </Button>
         </DialogActions>

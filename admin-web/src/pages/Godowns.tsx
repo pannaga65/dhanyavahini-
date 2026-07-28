@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Switch, FormControlLabel } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Switch, FormControlLabel, Card } from '@mui/material';
 import { collection, getDocs, getFirestore, addDoc, serverTimestamp, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -111,22 +111,24 @@ export default function Godowns() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-        <Button variant="contained" onClick={() => handleOpen()} sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}>
-          + ADD GODOWN
+      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FAFAF7', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, sm: 3 }, borderBottom: '1px solid #E2E8F0' }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '18px', color: '#1B4332' }}>Godowns</Typography>
+        <Button variant="contained" onClick={() => handleOpen()} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 700, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
+          + Add Godown
         </Button>
       </Box>
 
       <TableContainer>
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: '#F3F5F1' }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 900 }}>NAME</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>LOCATION</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>MANAGER</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>CAPACITY</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>STATUS</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>NAME</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>LOCATION</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>MANAGER</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>CAPACITY</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>STATUS</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -155,14 +157,18 @@ export default function Godowns() {
             ))}
             {godowns.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
-                  NO GODOWNS FOUND
+                <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>No godowns found.</Typography>
+                  <Button variant="outlined" onClick={() => handleOpen()} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
+                    Create First Godown
+                  </Button>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+    </Card>
 
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>
         <Box sx={{ p: 3 }}>

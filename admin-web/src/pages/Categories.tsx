@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Card } from '@mui/material';
 import { collection, getDocs, getFirestore, updateDoc, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, getStorage } from 'firebase/storage';
 import EditIcon from '@mui/icons-material/Edit';
@@ -134,20 +134,22 @@ export default function Categories() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 600, px: 3 }}>
+      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FAFAF7', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, sm: 3 }, borderBottom: '1px solid #E2E8F0' }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '18px', color: '#1B4332' }}>Categories</Typography>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 700, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
           + Add Category
         </Button>
       </Box>
 
       <TableContainer>
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: '#F3F5F1' }}>
             <TableRow>
-              <TableCell>ICON</TableCell>
-              <TableCell>NAME</TableCell>
-              <TableCell>ORDER</TableCell>
-              <TableCell align="right">ACTIONS</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>ICON</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>NAME</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>ORDER</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -170,14 +172,18 @@ export default function Categories() {
             ))}
             {categories.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 3, color: '#666' }}>
-                  No categories found. Add some to display on the mobile app home screen.
+                <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
+                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>No categories found.</Typography>
+                  <Button variant="outlined" onClick={handleOpenNew} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
+                    Create First Category
+                  </Button>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+    </Card>
 
       {/* Add / Edit Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>

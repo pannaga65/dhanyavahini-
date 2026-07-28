@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, IconButton } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, IconButton, Card } from '@mui/material';
 import { collection, getDocs, addDoc, serverTimestamp, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
@@ -224,23 +224,25 @@ export default function Products() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-        <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 700 }}>
-          + ADD PRODUCT
+      <Card elevation={0} sx={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FAFAF7', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: { xs: 2, sm: 3 }, borderBottom: '1px solid #E2E8F0' }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '18px', color: '#1B4332' }}>Product Catalog</Typography>
+        <Button variant="contained" onClick={handleOpenNew} sx={{ backgroundColor: '#1B4332', color: '#FFF', fontWeight: 700, borderRadius: '8px', boxShadow: 'none', px: 3, '&:hover': { backgroundColor: '#143325', boxShadow: 'none' } }}>
+          + Add Product
         </Button>
       </Box>
 
       <TableContainer>
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: '#F3F5F1' }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 900 }}>IMAGE</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>CATEGORY</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>PRODUCT NAME</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>HSN</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>PRICE (PER KG)</TableCell>
-              <TableCell sx={{ fontWeight: 900 }}>AVAILABLE STOCK</TableCell>
-              <TableCell sx={{ fontWeight: 900 }} align="right">ACTIONS</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>IMAGE</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>CATEGORY</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>PRODUCT NAME</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>HSN</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>PRICE (PER KG)</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>AVAILABLE STOCK</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }} align="right">ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -264,8 +266,14 @@ export default function Products() {
                 <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
                 <TableCell>{row.hsnCode || '-'}</TableCell>
                 <TableCell>₹{row.basePriceKg?.toLocaleString()} / Kg</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: row.availableStockKg && row.availableStockKg > 0 ? 'green' : 'red' }}>
-                  {formatKg(row.availableStockKg)}
+                <TableCell>
+                  <Box sx={{ 
+                    backgroundColor: row.availableStockKg && row.availableStockKg > 0 ? '#E8F5E9' : '#FEF2F2', 
+                    color: row.availableStockKg && row.availableStockKg > 0 ? '#2E7D32' : '#DC2626',
+                    px: 1.5, py: 0.5, borderRadius: '6px', fontSize: '12px', fontWeight: 700, display: 'inline-block'
+                  }}>
+                    {formatKg(row.availableStockKg)}
+                  </Box>
                 </TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => handleOpenEdit(row)} size="small" sx={{ mr: 1, color: '#000' }}>
@@ -283,14 +291,18 @@ export default function Products() {
             ))}
             {products.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
-                  NO PRODUCTS YET — ADD ONE ABOVE
+                <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>No products found in the catalog.</Typography>
+                  <Button variant="outlined" onClick={handleOpenNew} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
+                    Create First Product
+                  </Button>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+    </Card>
 
       {/* Add/Edit Product Dialog */}
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>

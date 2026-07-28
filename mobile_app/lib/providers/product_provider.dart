@@ -2,60 +2,90 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_model.dart';
 
-final productsProvider = FutureProvider<List<ProductModel>>((ref) async {
-  final db = FirebaseFirestore.instance;
-  
-  // 1. Fetch active products
-  final productsSnapshot = await db
-      .collection('products')
-      .where('isActive', isEqualTo: true)
-      .get();
-      
-  // 2. Fetch all inventory docs
-  final inventorySnapshot = await db.collection('inventory').get();
-  
-  // 3. Map inventory for O(1) lookup — handle both int and double from Firestore
+// Streams from Firestore
+final _productsStreamProvider = StreamProvider<QuerySnapshot>((ref) {
+  return FirebaseFirestore.instance.collection('products').where('isActive', isEqualTo: true).snapshots();
+});
+
+final _inventoryStreamProvider = StreamProvider<QuerySnapshot>((ref) {
+  return FirebaseFirestore.instance.collection('inventory').snapshots();
+});
+
+// Combined Provider that mimics the old FutureProvider for the UI
+final productsProvider = Provider<AsyncValue<List<ProductModel>>>((ref) {
+  final productsAsync = ref.watch(_productsStreamProvider);
+  final inventoryAsync = ref.watch(_inventoryStreamProvider);
+
+  if (productsAsync.isLoading || inventoryAsync.isLoading) {
+    return const AsyncValue.loading();
+  }
+  if (productsAsync.hasError) {
+    return AsyncValue.error(productsAsync.error!, productsAsync.stackTrace!);
+  }
+  if (inventoryAsync.hasError) {
+    return AsyncValue.error(inventoryAsync.error!, inventoryAsync.stackTrace!);
+  }
+
   final inventoryMap = <String, double>{};
-  for (var doc in inventorySnapshot.docs) {
-    final raw = doc.data()['availableStockKg'];
+  for (var doc in inventoryAsync.value!.docs) {
+    final data = doc.data() as Map<String, dynamic>;
+    final raw = data['availableStockKg'];
     inventoryMap[doc.id] = (raw is num) ? raw.toDouble() : 0.0;
   }
-  
-  // 4. Combine into ProductModels
-  final products = productsSnapshot.docs.map((doc) {
+
+  final products = productsAsync.value!.docs.map((doc) {
     return ProductModel.fromFirestore(
-      doc.data(), 
+      doc.data() as Map<String, dynamic>, 
       doc.id, 
       inventoryStock: inventoryMap[doc.id] ?? 0.0,
     );
   }).toList();
-  
-  return products;
+
+  return AsyncValue.data(products);
 });
 
-final singleProductProvider = FutureProvider.family<ProductModel, String>((ref, productId) async {
-  final db = FirebaseFirestore.instance;
-  
-  final productSnap = await db.collection('products').doc(productId).get();
-  if (!productSnap.exists) {
-    throw Exception('Product not found');
+// Single Product Stream
+final _singleProductStreamProvider = StreamProvider.family<DocumentSnapshot, String>((ref, productId) {
+  return FirebaseFirestore.instance.collection('products').doc(productId).snapshots();
+});
+
+final _singleInventoryStreamProvider = StreamProvider.family<DocumentSnapshot, String>((ref, productId) {
+  return FirebaseFirestore.instance.collection('inventory').doc(productId).snapshots();
+});
+
+final singleProductProvider = Provider.family<AsyncValue<ProductModel>, String>((ref, productId) {
+  final productAsync = ref.watch(_singleProductStreamProvider(productId));
+  final inventoryAsync = ref.watch(_singleInventoryStreamProvider(productId));
+
+  if (productAsync.isLoading || inventoryAsync.isLoading) {
+    return const AsyncValue.loading();
   }
-  
-  final inventorySnap = await db.collection('inventory').doc(productId).get();
-  final inventoryData = inventorySnap.data();
-  final rawStock = inventoryData != null ? inventoryData['availableStockKg'] : 0;
+  if (productAsync.hasError) {
+    return AsyncValue.error(productAsync.error!, productAsync.stackTrace!);
+  }
+  if (inventoryAsync.hasError) {
+    return AsyncValue.error(inventoryAsync.error!, inventoryAsync.stackTrace!);
+  }
+
+  final productSnap = productAsync.value!;
+  if (!productSnap.exists) {
+    return AsyncValue.error(Exception('Product not found'), StackTrace.current);
+  }
+
+  final inventoryData = inventoryAsync.value!.data() as Map<String, dynamic>?;
+  final rawStock = inventoryData?['availableStockKg'] ?? 0;
   final inventoryStock = (rawStock is num) ? rawStock.toDouble() : 0.0;
       
-  return ProductModel.fromFirestore(
-    productSnap.data()!, 
+  return AsyncValue.data(ProductModel.fromFirestore(
+    productSnap.data() as Map<String, dynamic>, 
     productSnap.id, 
     inventoryStock: inventoryStock,
-  );
+  ));
 });
 
 // Categories provider for dynamic "Shop by Category"
-final categoriesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final db = FirebaseFirestore.instance;
-  final snapshot = await db.collection('categories').orderBy('order').get();
-  return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+final categoriesProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  return FirebaseFirestore.instance.collection('categories').orderBy('order').snapshots().map(
+    (snap) => snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList()
+  );
 });

@@ -87,7 +87,7 @@ Future<void> initLocalNotifications() async {
     iOS: iosSettings,
   );
 
-  await flutterLocalNotificationsPlugin.initialize(initSettings);
+  await flutterLocalNotificationsPlugin.initialize(settings: initSettings);
 
   // Create the notification channel on Android
   await flutterLocalNotificationsPlugin
@@ -101,10 +101,10 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   if (notification == null) return;
 
   await flutterLocalNotificationsPlugin.show(
-    notification.hashCode,
-    notification.title,
-    notification.body,
-    NotificationDetails(
+    id: notification.hashCode,
+    title: notification.title,
+    body: notification.body,
+    notificationDetails: NotificationDetails(
       android: AndroidNotificationDetails(
         _channel.id,
         _channel.name,

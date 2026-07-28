@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogActions, IconButton, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, Divider, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, Timestamp } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -59,15 +59,18 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'orders'));
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const q = query(
+        collection(db, 'orders'), 
+        where('createdAt', '>=', Timestamp.fromDate(thirtyDaysAgo))
+      );
+      
+      const querySnapshot = await getDocs(q);
       let data = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[];
       // Filter out Inquiries, we only want Approved orders here
       data = data.filter(o => o.status !== 'Inquiry');
-      // Fetch customers for fallback
-      const custSnap = await getDocs(collection(db, 'users'));
-      const cmap: Record<string, any> = {};
-      custSnap.forEach(d => { cmap[d.id] = d.data(); });
-      setCustomersMap(cmap);
 
       setOrders(data);
     } catch (e) {
@@ -87,7 +90,7 @@ export default function Orders() {
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const cName = (o.customerName || customersMap[o.customerId]?.displayName || customersMap[o.customerId]?.tradeName || '').toLowerCase();
+      const cName = (o.customerName || 'Unknown Customer').toLowerCase();
       const oId = (o.orderNo || o.id).toLowerCase();
       if (!cName.includes(q) && !oId.includes(q)) return false;
     }

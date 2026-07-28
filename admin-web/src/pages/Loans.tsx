@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent } from '@mui/material';
-import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, where } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -65,7 +65,15 @@ export default function Loans() {
 
   const fetchLoans = async () => {
     try {
-      const q = query(collection(db, 'farmer_loans'), orderBy('date', 'desc'));
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      const q = query(
+        collection(db, 'farmer_loans'), 
+        where('date', '>=', dateStr),
+        orderBy('date', 'desc')
+      );
       const querySnapshot = await getDocs(q);
       setLoansList(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e: any) {

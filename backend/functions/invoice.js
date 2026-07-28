@@ -97,232 +97,330 @@ exports.downloadInvoice = onRequest(async (req, res) => {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Invoice - ${escapeHtml(order.invoiceNo)}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
       <style>
-        * {
-          box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
-          font-family: 'Segoe UI', Arial, sans-serif;
+          font-family: 'Inter', sans-serif;
           margin: 0;
-          padding: 24px;
-          color: #1a1a1a;
+          padding: 40px 20px;
+          color: #1f2937;
           font-size: 13px;
-          background: #f4f4f5;
+          background: #f3f4f6;
+          -webkit-font-smoothing: antialiased;
         }
         .container {
           width: 100%;
-          max-width: 820px;
+          max-width: 850px;
           margin: 0 auto;
-          background: #fff;
-          border: 1px solid #d0d0d0;
-          border-radius: 6px;
+          background: #ffffff;
+          border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
-        .header-title {
-          text-align: center;
-          font-size: 20px;
-          font-weight: 700;
-          letter-spacing: 1px;
-          background: #fafafa;
-          border-bottom: 1px solid #d0d0d0;
-          padding: 14px;
-          text-transform: uppercase;
-        }
-        .row {
-          display: flex;
-          border-bottom: 1px solid #d0d0d0;
-        }
-        .col-left {
-          width: 50%;
-          border-right: 1px solid #d0d0d0;
-          padding: 14px 16px;
-        }
-        .col-right {
-          width: 50%;
-          padding: 14px 16px;
-        }
-        .grid-2 {
+        .header {
+          background: #111827;
+          color: #ffffff;
+          padding: 40px;
           display: flex;
           justify-content: space-between;
-          gap: 10px;
-          margin-bottom: 8px;
+          align-items: center;
         }
-        .grid-2 > div {
-          flex: 1;
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 20px;
         }
-        .bold {
-          font-weight: 700;
-        }
-        .muted {
-          color: #555;
-        }
-        h2, h3, p {
-          margin: 0 0 6px 0;
-        }
-        h2 {
-          font-size: 16px;
-        }
-        h3 {
-          font-size: 14px;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        th, td {
-          border: 1px solid #d0d0d0;
-          padding: 8px 10px;
-          text-align: left;
-        }
-        th {
-          background-color: #fafafa;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-        }
-        tbody tr:nth-child(odd) td {
-          background-color: #fcfcfc;
-        }
-        .text-right {
+        .header-right {
           text-align: right;
         }
-        .text-center {
-          text-align: center;
+        .invoice-title {
+          font-size: 32px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          margin: 0;
+          text-transform: uppercase;
         }
-        .totals-row td {
-          background-color: #fafafa !important;
-        }
-        .grand-total td {
+        .invoice-subtitle {
+          color: #9ca3af;
           font-size: 14px;
-          background-color: #f0f0f0 !important;
+          margin-top: 4px;
         }
-        .bank-details {
-          padding: 14px 16px;
+        .section-wrapper {
+          padding: 0 40px;
         }
-        .footer-note {
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          margin-top: 40px;
+          margin-bottom: 40px;
+        }
+        .info-box {
+          background: #f9fafb;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 20px;
+        }
+        .info-title {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: #6b7280;
+          font-weight: 700;
+          margin-bottom: 12px;
+        }
+        .info-text {
+          line-height: 1.6;
+        }
+        .bold { font-weight: 700; color: #111827; }
+        .muted { color: #6b7280; }
+        
+        .meta-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 15px;
+          margin-bottom: 30px;
+          padding-bottom: 30px;
+          border-bottom: 1px dashed #e5e7eb;
+        }
+        .meta-item > span {
+          display: block;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #6b7280;
+          margin-bottom: 4px;
+        }
+        .meta-item > div {
+          font-weight: 600;
+          font-size: 13px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          margin-bottom: 40px;
+        }
+        th, td {
+          padding: 16px;
+          text-align: left;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+          background-color: #f9fafb;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: #6b7280;
+          font-weight: 700;
+          border-top: 1px solid #e5e7eb;
+        }
+        th:first-child { border-top-left-radius: 8px; border-left: 1px solid #e5e7eb; }
+        th:last-child { border-top-right-radius: 8px; border-right: 1px solid #e5e7eb; }
+        td:first-child { border-left: 1px solid #e5e7eb; }
+        td:last-child { border-right: 1px solid #e5e7eb; }
+        tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+        tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+        
+        tbody tr:hover td { background-color: #f9fafb; }
+        
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        
+        .totals-container {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 40px;
+        }
+        .totals-box {
+          width: 320px;
+          background: #f9fafb;
+          border-radius: 8px;
+          padding: 24px;
+        }
+        .totals-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          color: #4b5563;
+        }
+        .totals-row.grand-total {
+          margin-bottom: 0;
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid #e5e7eb;
+          font-size: 18px;
+          font-weight: 800;
+          color: #111827;
+        }
+        
+        .footer {
+          border-top: 1px solid #e5e7eb;
+          padding: 30px 40px;
+          display: flex;
+          justify-content: space-between;
+          background: #f9fafb;
+        }
+        .bank-details { width: 50%; }
+        .bank-details p { margin: 4px 0; }
+        
+        .signature {
           text-align: center;
-          padding: 14px;
-          font-size: 12px;
-          color: #666;
-          border-top: 1px solid #d0d0d0;
-          background: #fafafa;
+          align-self: flex-end;
         }
+        .sig-line {
+          width: 150px;
+          border-bottom: 1px solid #111827;
+          margin-bottom: 8px;
+        }
+
         @media print {
-          @page {
-            margin: 0; /* This removes the default browser headers/footers (URL & Date) */
-          }
+          @page { margin: 0; }
           body {
-            padding: 20px; /* Add padding back so content doesn't hit paper edge */
+            padding: 0;
             background: #fff;
           }
           .container {
-            border: 1px solid #000;
+            border: none;
             border-radius: 0;
             box-shadow: none;
+            max-width: 100%;
           }
         }
       </style>
     </head>
     <body>
       <div class="container">
-        <div class="header-title">Bill of Supply</div>
-
-        <div class="row">
-          <div class="col-left">
+        
+        <div class="header">
+          <div class="header-left">
             ${
               profile.logoUrl
-                ? `<img src="${escapeHtml(profile.logoUrl)}" alt="Logo" style="max-width: 150px; max-height: 60px; margin-bottom: 10px;" />`
+                ? `<img src="${escapeHtml(profile.logoUrl)}" alt="Logo" style="max-height: 70px; border-radius: 8px; background: white; padding: 4px;" />`
                 : ""
             }
-            <h2>${escapeHtml(safe(profile.companyName, "YOUR COMPANY NAME"))}</h2>
-            <p class="muted">${escapeHtml(safe(profile.addressLine1, ""))}</p>
-            <p class="muted">${escapeHtml(safe(profile.addressLine2, ""))}</p>
-            <p class="muted">${escapeHtml(safe(profile.city, ""))}, ${escapeHtml(safe(profile.state, ""))} - ${escapeHtml(safe(profile.pincode, ""))}</p>
-            <p class="muted">Email: ${escapeHtml(safe(profile.email, ""))}</p>
-            <p class="muted">Phone: ${escapeHtml(safe(profile.phone, ""))}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(profile.gstin, ""))}</p>
-            <p><span class="bold">UDYAM Reg No:</span> ${escapeHtml(safe(profile.udyam, ""))}</p>
+            <div>
+              <h2 style="margin:0; font-size: 20px;">${escapeHtml(safe(profile.companyName, "YOUR COMPANY NAME"))}</h2>
+              <div style="color: #9ca3af; font-size: 12px; margin-top: 4px;">
+                ${escapeHtml(safe(profile.city, ""))}, ${escapeHtml(safe(profile.state, ""))}
+              </div>
+            </div>
           </div>
-          <div class="col-right">
-            <div class="grid-2">
-              <div><span class="bold">Invoice No.</span><br/>${escapeHtml(order.invoiceNo)}</div>
-              <div><span class="bold">Dated</span><br/>${invoiceDateStr}</div>
+          <div class="header-right">
+            <h1 class="invoice-title">INVOICE</h1>
+            <div class="invoice-subtitle">TAX INVOICE / BILL OF SUPPLY</div>
+          </div>
+        </div>
+
+        <div class="section-wrapper">
+          <div class="info-grid">
+            <div class="info-box">
+              <div class="info-title">Billed To</div>
+              <div class="info-text">
+                <div class="bold" style="font-size: 16px; margin-bottom: 4px;">${escapeHtml(safe(customerName, "Customer"))}</div>
+                <div class="muted">${escapeHtml(safe(customerBillingAddress, "Address not provided"))}</div>
+                <div style="margin-top: 12px;"><span class="muted">GSTIN:</span> <span class="bold">${escapeHtml(safe(customerGst, "Unregistered"))}</span></div>
+              </div>
             </div>
-            <div class="grid-2">
-              <div><span class="bold">Mode/Terms of Payment</span><br/>${escapeHtml(safe(dispatch.paymentTerms))}</div>
-              <div><span class="bold">Destination</span><br/>${escapeHtml(safe(dispatch.destination))}</div>
+            
+            <div class="info-box" style="background: #fff; border-color: transparent; border-left: 1px solid #e5e7eb; border-radius: 0; padding-left: 30px;">
+              <div class="info-title">Shipped To</div>
+              <div class="info-text">
+                <div class="bold" style="font-size: 14px; margin-bottom: 4px;">${escapeHtml(safe(customerName, "Customer"))}</div>
+                <div class="muted">${escapeHtml(safe(shippingAddress, "Address not provided"))}</div>
+              </div>
             </div>
-            <div class="grid-2">
-              <div><span class="bold">Dispatched through</span><br/>${escapeHtml(safe(dispatch.dispatchedThrough))}</div>
-              <div><span class="bold">Motor Vehicle No.</span><br/>${escapeHtml(safe(dispatch.motorVehicleNo))}</div>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span>Invoice No.</span>
+              <div>${escapeHtml(order.invoiceNo)}</div>
             </div>
-            <div class="grid-2" style="margin-bottom:0;">
-              <div><span class="bold">Bill of Lading/LR-RR No.</span><br/>${escapeHtml(safe(dispatch.lrNumber))}</div>
+            <div class="meta-item">
+              <span>Invoice Date</span>
+              <div>${invoiceDateStr}</div>
+            </div>
+            <div class="meta-item">
+              <span>Payment Terms</span>
+              <div>${escapeHtml(safe(dispatch.paymentTerms, "Not specified"))}</div>
+            </div>
+            <div class="meta-item">
+              <span>Dispatched Through</span>
+              <div>${escapeHtml(safe(dispatch.dispatchedThrough, "Not specified"))}</div>
+            </div>
+            <div class="meta-item">
+              <span>Destination</span>
+              <div>${escapeHtml(safe(dispatch.destination, "Not specified"))}</div>
+            </div>
+            <div class="meta-item">
+              <span>Vehicle No.</span>
+              <div>${escapeHtml(safe(dispatch.motorVehicleNo, "Not specified"))}</div>
+            </div>
+            <div class="meta-item">
+              <span>LR / RR No.</span>
+              <div>${escapeHtml(safe(dispatch.lrNumber, "Not specified"))}</div>
+            </div>
+            <div class="meta-item">
+              <span>Company GSTIN</span>
+              <div>${escapeHtml(safe(profile.gstin, "Unregistered"))}</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th class="text-center" style="width:5%;">#</th>
+                <th style="width:33%;">Item Description</th>
+                <th style="width:13%;">HSN/SAC</th>
+                <th class="text-center" style="width:10%;">Qty (Kg)</th>
+                <th class="text-right" style="width:15%;">Rate</th>
+                <th class="text-right" style="width:24%;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <div class="totals-container">
+            <div class="totals-box">
+              <div class="totals-row">
+                <span>Subtotal</span>
+                <span class="bold">${formatCurrency(order.subtotal)}</span>
+              </div>
+              <div class="totals-row">
+                <span>Total GST</span>
+                <span class="bold">${formatCurrency(order.gstAmount)}</span>
+              </div>
+              <div class="totals-row grand-total">
+                <span>Total</span>
+                <span>${formatCurrency(order.totalAmount)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Customer Details Section -->
-        <div class="row section-margin">
-          <div class="col-left">
-            <p class="bold">Buyer (Bill to)</p>
-            <h3>${escapeHtml(safe(customerName, "Customer"))}</h3>
-            <p class="muted">${escapeHtml(safe(customerBillingAddress, "Address not provided"))}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(customerGst, "Unregistered"))}</p>
+        <div class="footer">
+          <div class="bank-details">
+            <div class="info-title">Payment Details</div>
+            <p><span class="muted">Bank:</span> <span class="bold">${escapeHtml(safe(profile.bankName, "Not provided"))}</span></p>
+            <p><span class="muted">Account No:</span> <span class="bold">${escapeHtml(safe(profile.accountNumber, "Not provided"))}</span></p>
+            <p><span class="muted">IFSC:</span> <span class="bold">${escapeHtml(safe(profile.ifscCode, "Not provided"))}</span></p>
+            <p><span class="muted">Branch:</span> <span class="bold">${escapeHtml(safe(profile.branch, "Not provided"))}</span></p>
           </div>
-          <div class="col-right">
-            <p class="bold">Consignee (Ship to)</p>
-            <h3>${escapeHtml(safe(customerName, "Customer"))}</h3>
-            <p class="muted">${escapeHtml(safe(shippingAddress, "Address not provided"))}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${escapeHtml(safe(customerGst, "Unregistered"))}</p>
+          <div class="signature">
+            <div class="sig-line"></div>
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Authorized Signature</div>
           </div>
         </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th class="text-center" style="width:5%;">Sl No.</th>
-              <th style="width:33%;">Description of Goods</th>
-              <th style="width:13%;">HSN/SAC</th>
-              <th class="text-center" style="width:10%;">Quantity</th>
-              <th class="text-right" style="width:15%;">Rate</th>
-              <th class="text-center" style="width:5%;">Per</th>
-              <th class="text-right" style="width:19%;">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-            <tr class="totals-row">
-              <td colspan="6" class="text-right bold">Subtotal</td>
-              <td class="text-right">${formatCurrency(order.subtotal)}</td>
-            </tr>
-            <tr class="totals-row">
-              <td colspan="6" class="text-right bold">Total GST</td>
-              <td class="text-right">${formatCurrency(order.gstAmount)}</td>
-            </tr>
-            <tr class="grand-total">
-              <td colspan="6" class="text-right bold">Total Amount</td>
-              <td class="text-right bold">${formatCurrency(order.totalAmount)}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="bank-details">
-          <p class="bold">Company's Bank Details</p>
-          <p>Bank Name: <span class="bold">${escapeHtml(safe(profile.bankName, ""))}</span></p>
-          <p>A/c No: <span class="bold">${escapeHtml(safe(profile.accountNumber, ""))}</span></p>
-          <p>Branch &amp; IFSC Code: <span class="bold">${escapeHtml(safe(profile.branch, ""))} ${escapeHtml(safe(profile.ifscCode, ""))}</span></p>
-        </div>
-
-        <div class="footer-note">
-          This is a computer generated invoice and does not require a signature.
-        </div>
+        
       </div>
       <script>
-        // Auto-print when opened
         window.onload = function () {
-          window.print();
+          setTimeout(function() { window.print(); }, 500);
         };
       </script>
     </body>

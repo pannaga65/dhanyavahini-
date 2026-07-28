@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
@@ -262,70 +263,19 @@ class CartScreen extends ConsumerWidget {
                     if (confirm != true) return;
                     
                     try {
-                      final db = FirebaseFirestore.instance;
-                      final user = FirebaseAuth.instance.currentUser;
-                      if (user == null) throw Exception("Not logged in");
-
-                      // Fetch user profile to get addresses and GST details
-                      final userDoc = await db.collection('users').doc(user.uid).get();
-                      final userData = userDoc.data() ?? {};
+                      final functions = FirebaseFunctions.instance;
                       
-                      final billingAddress = userData['billingAddress'] ?? '';
-                      final shippingList = userData['mailingAddresses'] as List<dynamic>?;
-                      final shippingAddress = (shippingList != null && shippingList.isNotEmpty) ? shippingList.first.toString() : '';
-                      final customerGst = userData['gstNumber'] ?? '';
-
-                      final batch = db.batch();
-                      final orderRef = db.collection('orders').doc();
-                      
-                      // 1. Create order
                       final itemsData = cartItems.map((item) {
                         return {
                           'productId': item.productId,
-                          'name': item.name,
-                          'quantityKg': item.quantity,
-                          'basePriceKg': item.price,
-                          'lineTotal': item.price * item.quantity,
-                          'gstPercentage': item.gstPercentage,
-                          'lineGst': (item.price * item.quantity) * (item.gstPercentage / 100),
+                          'quantity': item.quantity,
                         };
                       }).toList();
-                      
-                      final customerName = (userData['displayName']?.toString().isNotEmpty == true)
-                          ? userData['displayName']
-                          : (userData['tradeName']?.toString().isNotEmpty == true)
-                              ? userData['tradeName']
-                              : (user.displayName?.isNotEmpty == true)
-                                  ? user.displayName
-                                  : "Customer";
 
-                      batch.set(orderRef, {
-                        'customerId': user.uid,
-                        'customerName': customerName,
-                        'customerGst': customerGst,
-                        'billingAddress': billingAddress,
-                        'shippingAddress': shippingAddress,
+                      final callable = functions.httpsCallable('placeSecureOrder');
+                      await callable.call({
                         'items': itemsData,
-                        'subtotal': cartNotifier.subtotal,
-                        'gstAmount': gstAmount,
-                        'totalAmount': totalAmount,
-                        'status': 'Inquiry',
-                        'paymentStatus': 'Pending',
-                        'createdAt': FieldValue.serverTimestamp(),
-                        'updatedAt': FieldValue.serverTimestamp(),
                       });
-
-                      // 2. Decrement inventory securely
-                      for (var item in cartItems) {
-                        final invRef = db.collection('inventory').doc(item.productId);
-                        batch.update(invRef, {
-                          'availableStockKg': FieldValue.increment(-item.quantity),
-                          'allocatedStockKg': FieldValue.increment(item.quantity),
-                          'lastUpdated': FieldValue.serverTimestamp(),
-                        });
-                      }
-
-                      await batch.commit();
                       
                       cartNotifier.clear();
                       if (context.mounted) {
@@ -335,6 +285,10 @@ class CartScreen extends ConsumerWidget {
                           behavior: SnackBarBehavior.floating,
                         ));
                         context.go('/orders');
+                      }
+                    } on FirebaseFunctionsException catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order: ${e.message}')));
                       }
                     } catch (e) {
                       if (context.mounted) {

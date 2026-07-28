@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent, Checkbox, FormControlLabel } from '@mui/material';
-import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, where } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -86,7 +86,15 @@ export default function Procurement() {
 
   const fetchSettlements = async () => {
     try {
-      const q = query(collection(db, 'farmer_settlements'), orderBy('date', 'desc'));
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      const q = query(
+        collection(db, 'farmer_settlements'), 
+        where('date', '>=', dateStr),
+        orderBy('date', 'desc')
+      );
       const querySnapshot = await getDocs(q);
       setSettlements(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) {
@@ -779,6 +787,7 @@ export default function Procurement() {
                                         <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>AMOUNT</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>MODE</TableCell>
                                         <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>REFERENCE</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>NOTES</TableCell>
                                       </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -788,6 +797,7 @@ export default function Procurement() {
                                           <TableCell sx={{ fontWeight: 800, color: 'green', fontSize: '0.8rem' }}>{formatCurrency(p.amount)}</TableCell>
                                           <TableCell sx={{ fontSize: '0.8rem' }}>{p.mode}</TableCell>
                                           <TableCell sx={{ fontSize: '0.8rem', color: '#666' }}>{p.reference || '-'}</TableCell>
+                                          <TableCell sx={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>{p.notes || '-'}</TableCell>
                                         </TableRow>
                                       ))}
                                     </TableBody>

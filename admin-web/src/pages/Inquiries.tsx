@@ -35,11 +35,6 @@ export default function Inquiries() {
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       // Sort by latest (client side for now)
       data.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
-      // Fetch customers for fallback
-      const custSnap = await getDocs(collection(db, 'users'));
-      const cmap: Record<string, any> = {};
-      custSnap.forEach(d => { cmap[d.id] = d.data(); });
-      setCustomersMap(cmap);
 
       setInquiries(data);
     } catch (e) {
@@ -201,7 +196,7 @@ export default function Inquiries() {
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
                 <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace' }}>ORD-{row.id.substring(0, 6).toUpperCase()}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>
-                  {row.customerName || customersMap[row.customerId]?.displayName || customersMap[row.customerId]?.tradeName || 'Unknown Customer'}
+                  {row.customerName || 'Unknown Customer'}
                 </TableCell>
                 <TableCell>
                   {row.items?.map((item: any, i: number) => (
@@ -276,7 +271,10 @@ export default function Inquiries() {
         onSave={handleSaveDispatch}
         onSkip={handleSkipDispatch}
         isApprovalMode={true}
-        customer={approvingId ? customersMap[inquiries.find(i => i.id === approvingId)?.customerId || ''] : null}
+        customer={{ 
+          billingAddress: inquiries.find(i => i.id === approvingId)?.billingAddress,
+          mailingAddresses: [inquiries.find(i => i.id === approvingId)?.shippingAddress].filter(Boolean)
+        }}
       />
     </Box>
   );

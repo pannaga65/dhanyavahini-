@@ -178,21 +178,20 @@ function App() {
       </Typography>
 
       {/* Nav Links */}
-      <List disablePadding sx={{ px: 1 }}>
+      <List disablePadding>
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.3 }}>
+            <ListItem key={item.text} disablePadding>
               <ListItemButton
                 onClick={() => {
                   navigate(item.path);
                   if (mobileOpen) setMobileOpen(false);
                 }}
                 sx={{
-                  py: 0.9,
-                  px: 1.5,
-                  borderRadius: 1.5,
-                  backgroundColor: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  py: 1.2,
+                  px: 2.5,
+                  backgroundColor: isActive ? 'rgba(255,255,255,0.04)' : 'transparent',
                   borderLeft: isActive ? '3px solid #4ADE80' : '3px solid transparent',
                   '&:hover': {
                     backgroundColor: isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
@@ -225,11 +224,11 @@ function App() {
       <Box sx={{ flexGrow: 1 }} />
 
       {/* Footer */}
-      <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.08)', mx: 2 }} />
-      <Box sx={{ px: 1, py: 1.5 }}>
+      <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.08)' }} />
+      <Box sx={{ py: 1 }}>
         <ListItemButton
           onClick={confirmSignOut}
-          sx={{ py: 0.9, px: 1.5, borderRadius: 1.5, '&:hover': { backgroundColor: 'rgba(239,68,68,0.1)' } }}
+          sx={{ py: 1.2, px: 2.5, '&:hover': { backgroundColor: 'rgba(239,68,68,0.1)' } }}
         >
           <ListItemIcon sx={{ minWidth: 32, color: '#64748B' }}>
             <LogoutOutlinedIcon sx={{ fontSize: 20 }} />

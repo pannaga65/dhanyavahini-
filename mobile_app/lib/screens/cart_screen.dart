@@ -262,6 +262,23 @@ class CartScreen extends ConsumerWidget {
                     
                     if (confirm != true) return;
                     
+                    // Show a non-dismissible loading dialog while the Cloud Function runs
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return const Dialog(
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryAction),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                    
                     try {
                       final functions = FirebaseFunctions.instance;
                       
@@ -279,6 +296,7 @@ class CartScreen extends ConsumerWidget {
                       
                       cartNotifier.clear();
                       if (context.mounted) {
+                        Navigator.pop(context); // Close the loading dialog
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: const Text('Order Placed Successfully!'),
                           backgroundColor: AppTheme.primaryAction,
@@ -288,10 +306,12 @@ class CartScreen extends ConsumerWidget {
                       }
                     } on FirebaseFunctionsException catch (e) {
                       if (context.mounted) {
+                        Navigator.pop(context); // Close the loading dialog
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order: ${e.message}')));
                       }
                     } catch (e) {
                       if (context.mounted) {
+                        Navigator.pop(context); // Close the loading dialog
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order: $e')));
                       }
                     }

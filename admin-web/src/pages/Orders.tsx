@@ -514,7 +514,30 @@ export default function Orders() {
         </Box>
 
         {/* Action Footer */}
-        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 3, backgroundColor: '#F8FAFC', display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 2 }}>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 3, backgroundColor: '#F8FAFC', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            {selectedOrder?.invoiceNo ? (
+              <Button 
+                variant="contained" 
+                size="small"
+                onClick={() => {
+                  const isLocal = window.location.hostname === 'localhost';
+                  const projectId = app.options.projectId;
+                  const url = isLocal 
+                    ? `http://127.0.0.1:5001/${projectId}/us-central1/downloadInvoice?orderId=${selectedOrder.id}`
+                    : `https://us-central1-${projectId}.cloudfunctions.net/downloadInvoice?orderId=${selectedOrder.id}`;
+                  window.open(url, '_blank');
+                }}
+                sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}
+              >
+                Download Invoice
+              </Button>
+            ) : (
+              <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8', fontStyle: 'italic', display: 'flex', alignItems: 'center', height: '100%' }}>
+                Invoice not generated yet.
+              </Typography>
+            )}
+          </Box>
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#999', mr: 1 }}>DELIVERY:</Typography>

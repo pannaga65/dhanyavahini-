@@ -13,7 +13,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore'
+import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc, getDoc } from 'firebase/firestore'
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
@@ -51,6 +51,7 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
+  const [adminProfile, setAdminProfile] = useState<any>({ name: 'Admin User', logoUrl: '' });
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
@@ -71,8 +72,22 @@ function App() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      if (firebaseUser) {
+        try {
+          const profileDoc = await getDoc(doc(db, 'settings', 'businessProfile'));
+          if (profileDoc.exists()) {
+            const data = profileDoc.data();
+            setAdminProfile({
+              name: data.adminName || 'Admin User',
+              logoUrl: data.logoUrl || ''
+            });
+          }
+        } catch (e) {
+          console.error('Error fetching admin profile:', e);
+        }
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -373,12 +388,15 @@ function App() {
                    } 
                  }}
                >
-                 <Avatar sx={{ width: 38, height: 38, backgroundColor: '#0F172A', fontSize: '1.1rem', fontWeight: 700 }}>
-                   {user?.email?.charAt(0).toUpperCase() || 'A'}
-                 </Avatar>
-                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#1E293B', lineHeight: 1.2 }}>
-                     Admin User
+                 <Avatar 
+                    src={adminProfile.logoUrl || undefined}
+                    sx={{ width: 38, height: 38, backgroundColor: '#0F172A', fontSize: '1.1rem', fontWeight: 700 }}
+                  >
+                    {!adminProfile.logoUrl && (adminProfile.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'A')}
+                  </Avatar>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#1E293B', lineHeight: 1.2 }}>
+                      {adminProfile.name}
                    </Typography>
                    <Typography sx={{ fontSize: '0.75rem', color: '#64748B' }}>
                      {user?.email || 'admin@dhanyavahini.com'}

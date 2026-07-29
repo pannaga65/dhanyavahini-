@@ -19,6 +19,7 @@ const storage = getStorage(app);
 
 const emptyProfile = {
   companyName: '',
+  adminName: '',
   addressLine1: '',
   addressLine2: '',
   city: '',
@@ -364,7 +365,8 @@ export default function BusinessProfile() {
           </Box>
 
           <Grid container rowSpacing={0.5} columnSpacing={1}>
-            <EditableField label="Legal Company Name" fieldKey="companyName" value={draftData.companyName} gridProps={{ xs: 12 }} />
+            <EditableField label="Legal Company Name" fieldKey="companyName" value={draftData.companyName} gridProps={{ xs: 12, sm: 6 }} />
+            <EditableField label="Admin / Contact Name" fieldKey="adminName" value={draftData.adminName} gridProps={{ xs: 12, sm: 6 }} />
             <EditableField label="GSTIN / Tax ID" fieldKey="gstin" value={draftData.gstin} />
             <EditableField label="UDYAM / Registration No." fieldKey="udyam" value={draftData.udyam} />
             <EditableField label="Support Email" type="email" fieldKey="email" value={draftData.email} />

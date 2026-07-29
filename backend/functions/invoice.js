@@ -32,6 +32,19 @@ exports.downloadInvoice = onRequest(async (req, res) => {
     const profileSnap = await db.collection("settings").doc("businessProfile").get();
     const profile = profileSnap.exists ? profileSnap.data() : {};
 
+    // Fetch customer data as fallback (to fix missing GST/address from older orders)
+    let customerData = {};
+    if (order.customerId) {
+      const custSnap = await db.collection("customers").doc(order.customerId).get();
+      if (custSnap.exists) customerData = custSnap.data();
+    }
+    
+    const resolvedCustomerName = order.customerName || customerData.displayName || customerData.tradeName || 'Customer';
+    const resolvedBillingAddr = order.billingAddress || customerData.billingAddress || 'Address not provided';
+    let resolvedShippingAddr = order.shippingAddress || (customerData.mailingAddresses && customerData.mailingAddresses.length > 0 ? customerData.mailingAddresses[0] : null);
+    if (!resolvedShippingAddr) resolvedShippingAddr = resolvedBillingAddr;
+    const resolvedGst = order.customerGst || customerData.gstNumber || 'Unregistered';
+
     const dispatch = order.dispatchDetails || {};
     
     // Date formatting
@@ -168,15 +181,15 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         <div class="row">
           <div class="col-left">
             <p class="bold">Buyer (Bill to)</p>
-            <h3>${order.customerName || 'Customer'}</h3>
-            <p>${order.billingAddress || 'Address not provided'}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${order.customerGst || 'Unregistered'}</p>
+            <h3>${resolvedCustomerName}</h3>
+            <p>${resolvedBillingAddr}</p>
+            <p><span class="bold">GSTIN/UIN:</span> ${resolvedGst}</p>
           </div>
           <div class="col-right">
             <p class="bold">Consignee (Ship to)</p>
-            <h3>${order.customerName || 'Customer'}</h3>
-            <p>${order.shippingAddress || order.billingAddress || 'Address not provided'}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${order.customerGst || 'Unregistered'}</p>
+            <h3>${resolvedCustomerName}</h3>
+            <p>${resolvedShippingAddr}</p>
+            <p><span class="bold">GSTIN/UIN:</span> ${resolvedGst}</p>
           </div>
         </div>
 

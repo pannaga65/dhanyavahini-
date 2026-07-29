@@ -126,24 +126,29 @@ export default function Inquiries() {
     try {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'settings', 'invoiceCounter');
+        const orderCounterRef = doc(db, 'settings', 'orderCounter');
+        const orderRef = doc(db, 'orders', targetId);
+
+        // -- READS --
         const counterSnap = await transaction.get(counterRef);
+        const orderCounterSnap = await transaction.get(orderCounterRef);
+
         let nextSeq = 1;
         if (counterSnap.exists()) {
           nextSeq = counterSnap.data().seq + 1;
         }
-        transaction.set(counterRef, { seq: nextSeq }, { merge: true });
         const invoiceNo = `INV-${nextSeq.toString().padStart(3, '0')}`;
         
-        const orderCounterRef = doc(db, 'settings', 'orderCounter');
-        const orderCounterSnap = await transaction.get(orderCounterRef);
         let nextOrderSeq = 1;
         if (orderCounterSnap.exists()) {
           nextOrderSeq = orderCounterSnap.data().seq + 1;
         }
-        transaction.set(orderCounterRef, { seq: nextOrderSeq }, { merge: true });
         const orderNo = `ORD-${nextOrderSeq.toString().padStart(3, '0')}`;
+
+        // -- WRITES --
+        transaction.set(counterRef, { seq: nextSeq }, { merge: true });
+        transaction.set(orderCounterRef, { seq: nextOrderSeq }, { merge: true });
         
-        const orderRef = doc(db, 'orders', targetId);
         transaction.update(orderRef, {
           status: 'Confirmed',
           paymentStatus: 'Pending',

@@ -163,7 +163,7 @@ class CartScreen extends ConsumerWidget {
                                     child: Row(
                                       children: [
                                         GestureDetector(
-                                          onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity - item.moqKg),
+                                          onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity - item.incrementStepKg),
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                             decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: const BorderRadius.horizontal(left: Radius.circular(8))),
@@ -177,7 +177,7 @@ class CartScreen extends ConsumerWidget {
                                           child: Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                         ),
                                         GestureDetector(
-                                          onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity + item.moqKg),
+                                          onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity + item.incrementStepKg),
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                             decoration: BoxDecoration(color: AppTheme.primaryAction.withValues(alpha: 0.1), borderRadius: const BorderRadius.horizontal(right: Radius.circular(8))),

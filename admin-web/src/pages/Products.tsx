@@ -24,6 +24,7 @@ interface Product {
   category?: string;
   basePriceKg: number;
   moqKg: number;
+  incrementStepKg?: number;
   imageUrl: string;
   availableStockKg?: number; // Fetched from inventory collection
   gstPercentage?: number;
@@ -56,6 +57,7 @@ export default function Products() {
   const [inputUnit, setInputUnit] = useState('Quintal'); // Kg, Quintal, Ton
   const [pricePerUnit, setPricePerUnit] = useState('');
   const [moqInUnit, setMoqInUnit] = useState('');
+  const [incrementStepInUnit, setIncrementStepInUnit] = useState('');
   const [stockInUnit, setStockInUnit] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState('');
@@ -107,7 +109,7 @@ export default function Products() {
 
   const handleOpenNew = () => {
     setEditingId(null);
-    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl(''); setGstPercentage('5'); setHsnCode('');
+    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setIncrementStepInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl(''); setGstPercentage('5'); setHsnCode('');
     setOpen(true);
   };
 
@@ -118,6 +120,7 @@ export default function Products() {
     setInputUnit('Kg'); // Default to Kg for editing to show exact values
     setPricePerUnit(product.basePriceKg.toString());
     setMoqInUnit(product.moqKg.toString());
+    setIncrementStepInUnit((product.incrementStepKg || product.moqKg).toString());
     setStockInUnit((product.availableStockKg || 0).toString());
     setExistingImageUrl(product.imageUrl);
     setImageFile(null);
@@ -165,6 +168,7 @@ export default function Products() {
       const multiplier = getMultiplier(inputUnit);
       const basePriceKg = pricePerUnit ? Number(pricePerUnit) / multiplier : 0;
       const moqKg = moqInUnit ? Number(moqInUnit) * multiplier : 0;
+      const incrementStepKg = incrementStepInUnit ? Number(incrementStepInUnit) * multiplier : moqKg;
       const stockKg = stockInUnit ? Number(stockInUnit) * multiplier : 0;
       const gstNum = gstPercentage ? Number(gstPercentage) : 5;
 
@@ -189,6 +193,7 @@ export default function Products() {
           category,
           basePriceKg,
           moqKg,
+          incrementStepKg,
           isActive: true,
           gstPercentage: gstNum,
           hsnCode,
@@ -206,6 +211,7 @@ export default function Products() {
           category,
           basePriceKg,
           moqKg,
+          incrementStepKg,
           imageUrl: downloadUrl,
           createdAt: serverTimestamp(),
           isActive: true,
@@ -462,8 +468,18 @@ export default function Products() {
                 fullWidth 
                 value={moqInUnit} 
                 onChange={e => setMoqInUnit(e.target.value)} 
+                helperText="Minimum quantity customer must order"
               />
             </Box>
+
+            <TextField 
+              label={`Increment Step (in ${inputUnit}s)`} 
+              type="number" 
+              fullWidth 
+              value={incrementStepInUnit} 
+              onChange={e => setIncrementStepInUnit(e.target.value)} 
+              helperText="After MOQ, quantity increases in multiples of this value (e.g., 50 = +50, +100, +150...)"
+            />
 
             <TextField 
               label={editingId ? `Update Total Stock (in ${inputUnit}s)` : `Initial Stock (in ${inputUnit}s)`} 

@@ -141,6 +141,7 @@ class CategoryScreen extends ConsumerWidget {
                                             price: product.basePriceKg,
                                             quantity: product.moqKg > 0 ? product.moqKg : 1, // Quick add moq
                                             moqKg: product.moqKg > 0 ? product.moqKg : 1,
+                                            incrementStepKg: product.incrementStepKg,
                                             gstPercentage: product.gstPercentage,
                                             imageUrl: product.imageUrl,
                                           ),

@@ -28,6 +28,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
         price: product.basePriceKg,
         quantity: quantity,
         moqKg: product.moqKg > 0 ? product.moqKg : 1,
+        incrementStepKg: product.incrementStepKg,
         gstPercentage: product.gstPercentage,
         imageUrl: product.imageUrl,
       ),

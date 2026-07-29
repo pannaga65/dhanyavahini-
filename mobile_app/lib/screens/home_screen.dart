@@ -745,6 +745,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                         price: product.basePriceKg,
                                                         quantity: moq,
                                                         moqKg: moq,
+                                                        incrementStepKg: product.incrementStepKg,
                                                         gstPercentage: product.gstPercentage,
                                                         imageUrl: product.imageUrl,
                                                       ),

@@ -6,10 +6,12 @@ class CartItem {
   final double price;
   final int quantity;
   final int moqKg;
+  final int incrementStepKg;
   final double gstPercentage;
   final String imageUrl;
   
-  CartItem({required this.productId, required this.name, required this.price, required this.quantity, required this.moqKg, required this.gstPercentage, this.imageUrl = ''});
+  CartItem({required this.productId, required this.name, required this.price, required this.quantity, required this.moqKg, int? incrementStepKg, required this.gstPercentage, this.imageUrl = ''})
+    : incrementStepKg = incrementStepKg ?? moqKg;
 }
 
 class CartNotifier extends Notifier<List<CartItem>> {
@@ -28,6 +30,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
         price: item.price,
         quantity: state[existingIndex].quantity + item.quantity,
         moqKg: item.moqKg,
+        incrementStepKg: item.incrementStepKg,
         gstPercentage: item.gstPercentage,
         imageUrl: item.imageUrl,
       );
@@ -54,6 +57,7 @@ class CartNotifier extends Notifier<List<CartItem>> {
           price: state[index].price,
           quantity: newQuantity,
           moqKg: state[index].moqKg,
+          incrementStepKg: state[index].incrementStepKg,
           gstPercentage: state[index].gstPercentage,
           imageUrl: state[index].imageUrl,
         );

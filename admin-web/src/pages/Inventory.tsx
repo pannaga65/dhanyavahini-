@@ -27,6 +27,7 @@ export default function Inventory() {
   // Filters
   const [stockFilter, setStockFilter] = useState('ALL');
   const [godownFilter, setGodownFilter] = useState('ALL');
+  const [productFilter, setProductFilter] = useState('ALL');
 
   const [formData, setFormData] = useState({
     godownId: '',
@@ -268,6 +269,9 @@ export default function Inventory() {
         // Godown Filter
         if (godownFilter !== 'ALL' && g.godownId !== godownFilter) return false;
 
+        // Product Filter
+        if (productFilter !== 'ALL' && g.productId !== productFilter) return false;
+
         // Stock Filter
         if (stockFilter === 'IN_STOCK' && g.balanceWeight <= 0) return false;
         if (stockFilter === 'EMPTY' && g.balanceWeight > 0) return false;
@@ -316,6 +320,15 @@ export default function Inventory() {
               <MenuItem value="ALL">All Godowns</MenuItem>
               {godowns.map(g => (
                 <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
+            <Select value={productFilter} onChange={(e) => setProductFilter(e.target.value)} sx={{ borderRadius: 2 }}>
+              <MenuItem value="ALL">All Crops</MenuItem>
+              {products.map(p => (
+                <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
               ))}
             </Select>
           </FormControl>

@@ -43,6 +43,8 @@ export default function Loans() {
   // Filters
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('ALL');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   const [loanData, setLoanData] = useState({
     farmerId: '',
@@ -152,7 +154,6 @@ export default function Loans() {
     if (dateFilter !== 'ALL') {
       const today = new Date();
       result = result.filter(g => {
-        // Find if they have any loan matching the date filter
         return g.loans.some(l => {
           if (!l.date) return false;
           const lDate = new Date(l.date);
@@ -166,6 +167,11 @@ export default function Loans() {
           }
           if (dateFilter === 'THIS_MONTH') {
             return lDate.getMonth() === today.getMonth() && lDate.getFullYear() === today.getFullYear();
+          }
+          if (dateFilter === 'CUSTOM') {
+            if (customStartDate && lDate < new Date(customStartDate)) return false;
+            if (customEndDate && lDate > new Date(customEndDate)) return false;
+            return true;
           }
           return true;
         });
@@ -424,8 +430,32 @@ export default function Loans() {
               <MenuItem value="TODAY">Today</MenuItem>
               <MenuItem value="THIS_WEEK">This Week</MenuItem>
               <MenuItem value="THIS_MONTH">This Month</MenuItem>
+              <MenuItem value="CUSTOM">Custom Range</MenuItem>
             </Select>
           </FormControl>
+
+          {dateFilter === 'CUSTOM' && (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                type="date"
+                size="small"
+                label="From"
+                slotProps={{ inputLabel: { shrink: true } }}
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                sx={{ width: 140, backgroundColor: '#FFF', '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+              <TextField
+                type="date"
+                size="small"
+                label="To"
+                slotProps={{ inputLabel: { shrink: true } }}
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                sx={{ width: 140, backgroundColor: '#FFF', '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            </Box>
+          )}
         </Box>
 
         <Button variant="contained" onClick={() => handleOpenNewLoan()} sx={{ fontWeight: 700, backgroundColor: '#0F172A', color: '#FFF', borderRadius: 2, px: 3 }}>

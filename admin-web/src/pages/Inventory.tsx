@@ -28,7 +28,7 @@ export default function Inventory() {
     godownId: '',
     date: new Date().toISOString().split('T')[0],
     productId: '',
-    farmerId: '',
+    selectedFarmers: [] as any[], // Array of selected farmer objects
     otherFarmerName: '',
     slipNo: '',
     lotNo: '',
@@ -82,7 +82,7 @@ export default function Inventory() {
       godownId: '',
       date: new Date().toISOString().split('T')[0],
       productId: '',
-      farmerId: '',
+      selectedFarmers: [],
       otherFarmerName: '',
       slipNo: '',
       lotNo: '',
@@ -121,8 +121,11 @@ export default function Inventory() {
   const handleSave = async () => {
     if (!formData.godownId) return showMessage('Please select a Godown.', 'error');
     if (!formData.productId) return showMessage('Please select an Item.', 'error');
-    if (!formData.farmerId) return showMessage('Please select a Farmer.', 'error');
-    if (formData.farmerId === 'OTHER' && !formData.otherFarmerName.trim()) return showMessage('Please enter the Farmer name.', 'error');
+    if (formData.selectedFarmers.length === 0) return showMessage('Please select at least one Farmer.', 'error');
+    
+    const hasOther = formData.selectedFarmers.some(f => f.id === 'OTHER');
+    if (hasOther && !formData.otherFarmerName.trim()) return showMessage('Please enter Custom Farmer Name(s).', 'error');
+    
     if (!formData.totalBags || isNaN(Number(formData.totalBags)) || Number(formData.totalBags) <= 0) return showMessage('Enter valid Total Bags.', 'error');
 
     setLoading(true);
@@ -130,13 +133,12 @@ export default function Inventory() {
       const selectedGodown = godowns.find(g => g.id === formData.godownId);
       const selectedProduct = products.find(p => p.id === formData.productId);
       
-      let finalFarmerName = 'Unknown Farmer';
-      if (formData.farmerId === 'OTHER') {
-        finalFarmerName = formData.otherFarmerName.trim();
-      } else {
-        const selectedFarmer = farmers.find(f => f.id === formData.farmerId);
-        finalFarmerName = selectedFarmer?.name || 'Unknown Farmer';
-      }
+      const farmerNames = formData.selectedFarmers.map(f => {
+        if (f.id === 'OTHER') return formData.otherFarmerName.trim();
+        return f.name;
+      });
+      
+      const finalFarmerName = farmerNames.join(', ');
 
       const payload = {
         type: 'IN', // Manual Add is always IN
@@ -145,7 +147,7 @@ export default function Inventory() {
         date: formData.date,
         productId: formData.productId,
         productName: selectedProduct?.name || 'Unknown Item',
-        farmerId: formData.farmerId,
+        farmerId: formData.selectedFarmers.map(f => f.id).join(','),
         farmerName: finalFarmerName,
         slipNo: formData.slipNo.trim(),
         lotNo: formData.lotNo.trim(),
@@ -260,129 +262,148 @@ export default function Inventory() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
-            GODOWN INVENTORY
-          </Typography>
-          <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mt: 0.5 }}>
-            AGGREGATED RAW STOCK & B2B TRANSFERS
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.5rem', md: '2rem' }, color: '#1E293B', letterSpacing: '-0.5px' }}>
+            Godown Inventory
           </Typography>
         </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            placeholder="Search..."
+            variant="outlined"
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ width: { xs: '100%', sm: 300 }, backgroundColor: '#FFF', '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#94A3B8' }} />
+                  </InputAdornment>
+                ),
+              }
+            } as any}
+          />
+          <Button 
+            variant="contained" 
+            onClick={handleOpen} 
+            sx={{ 
+              fontWeight: 700, 
+              backgroundColor: '#0F172A', 
+              color: '#FFF', 
+              borderRadius: 2,
+              px: 3,
+              boxShadow: 'none',
+              '&:hover': { backgroundColor: '#334155', boxShadow: 'none' }
+            }}
+          >
+            + Manual Intake
+          </Button>
+        </Box>
       </Box>
-      <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 3, mt: 2 }} />
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <TextField
-          placeholder="Search Godown, Item..."
-          variant="outlined"
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 350 }, backgroundColor: '#FFF' }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }
-          } as any}
-        />
-        <Button variant="contained" onClick={handleOpen} sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}>
-          + MANUAL INTAKE (IN)
-        </Button>
-      </Box>
-
-      <TableContainer sx={{ width: '100%', overflowX: 'auto', backgroundColor: '#FFF', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <TableContainer sx={{ width: '100%', overflowX: 'auto', backgroundColor: '#FFF', borderRadius: 3, border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
-              <TableCell sx={{ width: 40 }}></TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#475569' }}>GODOWN</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#475569' }}>ITEM</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#059669' }}>TOTAL IN</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#DC2626' }}>TOTAL OUT</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#1E293B' }}>BALANCE WEIGHT</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#1E293B' }}>BALANCE BAGS</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#475569' }}>ACTIONS</TableCell>
+              <TableCell sx={{ width: 40, borderBottom: '1px solid #E2E8F0' }}></TableCell>
+              <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}>GODOWN</TableCell>
+              <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}>ITEM</TableCell>
+              <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}>IN (KG / BAGS)</TableCell>
+              <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}>OUT (KG / BAGS)</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#0F172A', borderBottom: '1px solid #E2E8F0' }}>BALANCE WEIGHT</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#0F172A', borderBottom: '1px solid #E2E8F0' }}>BALANCE BAGS</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748B', borderBottom: '1px solid #E2E8F0' }}></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {groupedLedger.map((group) => (
               <React.Fragment key={group.id}>
-                <TableRow sx={{ '&:hover': { backgroundColor: '#F1F5F9' }, transition: '0.2s', borderBottom: '2px solid #E2E8F0' }}>
-                  <TableCell>
-                    <IconButton size="small" onClick={() => setExpandedGroup(expandedGroup === group.id ? null : group.id)}>
+                <TableRow sx={{ '&:hover': { backgroundColor: '#F8FAFC' }, transition: 'all 0.2s', borderBottom: '1px solid #E2E8F0' }}>
+                  <TableCell sx={{ borderBottom: 'none' }}>
+                    <IconButton size="small" onClick={() => setExpandedGroup(expandedGroup === group.id ? null : group.id)} sx={{ color: '#64748B' }}>
                       {expandedGroup === group.id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                     </IconButton>
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: '#334155' }}>{group.godownName}</TableCell>
-                  <TableCell sx={{ fontWeight: 800, color: '#0F172A', fontSize: '1rem' }}>{group.productName}</TableCell>
-                  <TableCell sx={{ color: '#059669', fontWeight: 600 }}>{group.totalWeightIn.toFixed(1)} kg ({group.totalBagsIn} bags)</TableCell>
-                  <TableCell sx={{ color: '#DC2626', fontWeight: 600 }}>{group.totalWeightOut.toFixed(1)} kg ({group.totalBagsOut} bags)</TableCell>
-                  <TableCell sx={{ fontWeight: 900, fontSize: '1.1rem', color: group.balanceWeight <= 0 ? '#DC2626' : '#1E293B' }}>
+                  <TableCell sx={{ fontWeight: 600, color: '#475569', borderBottom: 'none' }}>{group.godownName}</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem', borderBottom: 'none' }}>{group.productName}</TableCell>
+                  <TableCell sx={{ color: '#059669', fontWeight: 500, borderBottom: 'none' }}>
+                    {group.totalWeightIn.toFixed(1)} kg <Box component="span" sx={{ color: '#94A3B8', fontSize: '0.8rem' }}>({group.totalBagsIn})</Box>
+                  </TableCell>
+                  <TableCell sx={{ color: '#DC2626', fontWeight: 500, borderBottom: 'none' }}>
+                    {group.totalWeightOut.toFixed(1)} kg <Box component="span" sx={{ color: '#94A3B8', fontSize: '0.8rem' }}>({group.totalBagsOut})</Box>
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '1rem', color: group.balanceWeight <= 0 ? '#DC2626' : '#0F172A', borderBottom: 'none' }}>
                     {group.balanceWeight.toFixed(1)} kg
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 900, fontSize: '1.1rem', color: group.balanceBags <= 0 ? '#DC2626' : '#1E293B' }}>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '1rem', color: group.balanceBags <= 0 ? '#DC2626' : '#0F172A', borderBottom: 'none' }}>
                     {group.balanceBags}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell align="right" sx={{ borderBottom: 'none' }}>
                     <Button 
-                      variant="contained" 
+                      variant="outlined" 
                       size="small" 
                       startIcon={<SwapHorizIcon />}
                       onClick={() => handleOpenTransfer(group)}
-                      sx={{ backgroundColor: '#0284C7', color: '#FFF', fontWeight: 700, borderRadius: 1 }}
+                      sx={{ 
+                        color: '#0284C7', 
+                        borderColor: '#E0F2FE', 
+                        backgroundColor: '#F0F9FF',
+                        fontWeight: 600, 
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        '&:hover': { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }
+                      }}
                     >
-                      TRANSFER TO B2B
+                      Transfer
                     </Button>
                   </TableCell>
                 </TableRow>
                 
                 {/* Expandable History Drawer */}
                 <TableRow>
-                  <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                  <TableCell style={{ paddingBottom: 0, paddingTop: 0, borderBottom: expandedGroup === group.id ? '1px solid #E2E8F0' : 'none' }} colSpan={8}>
                     <Collapse in={expandedGroup === group.id} timeout="auto" unmountOnExit>
-                      <Box sx={{ margin: 2, p: 2, backgroundColor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0' }}>
-                        <Typography sx={{ fontWeight: 800, mb: 1, color: '#475569', fontSize: '0.85rem' }}>HISTORY & CONTRIBUTORS</Typography>
+                      <Box sx={{ margin: 2, ml: 6, p: 2, backgroundColor: '#F8FAFC', borderRadius: 2, border: '1px solid #F1F5F9' }}>
+                        <Typography sx={{ fontWeight: 700, mb: 1, color: '#64748B', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ledger History</Typography>
                         <Table size="small">
                           <TableHead>
                             <TableRow>
-                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>TYPE</TableCell>
-                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>DATE</TableCell>
-                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>FARMER / EVENT</TableCell>
-                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>SLIP NO</TableCell>
-                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>WEIGHT</TableCell>
-                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>BAGS</TableCell>
-                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}></TableCell>
+                              <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}>TYPE</TableCell>
+                              <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}>DATE</TableCell>
+                              <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}>CONTRIBUTOR / EVENT</TableCell>
+                              <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}>SLIP NO</TableCell>
+                              <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}>WEIGHT</TableCell>
+                              <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}>BAGS</TableCell>
+                              <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}></TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
                             {group.history.map((h: any) => {
                               const isOut = h.type === 'OUT';
                               return (
-                                <TableRow key={h.id}>
-                                  <TableCell>
+                                <TableRow key={h.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                  <TableCell sx={{ borderBottom: '1px solid #F1F5F9' }}>
                                     <Box sx={{ 
-                                      display: 'inline-block', px: 1, py: 0.2, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800,
+                                      display: 'inline-block', px: 1, py: 0.2, borderRadius: 1, fontSize: '0.65rem', fontWeight: 700,
                                       backgroundColor: isOut ? '#FEE2E2' : '#D1FAE5',
                                       color: isOut ? '#DC2626' : '#059669'
                                     }}>
                                       {isOut ? 'OUT' : 'IN'}
                                     </Box>
                                   </TableCell>
-                                  <TableCell>{new Date(h.date).toLocaleDateString('en-IN')}</TableCell>
-                                  <TableCell sx={{ fontWeight: 600 }}>{h.farmerName}</TableCell>
-                                  <TableCell sx={{ fontSize: '0.8rem' }}>{h.slipNo || '-'}</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, color: isOut ? '#DC2626' : '#059669' }}>
+                                  <TableCell sx={{ borderBottom: '1px solid #F1F5F9', color: '#64748B', fontSize: '0.8rem' }}>{new Date(h.date).toLocaleDateString('en-IN')}</TableCell>
+                                  <TableCell sx={{ fontWeight: 500, color: '#334155', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem' }}>{h.farmerName}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.8rem', color: '#94A3B8', borderBottom: '1px solid #F1F5F9' }}>{h.slipNo || '-'}</TableCell>
+                                  <TableCell sx={{ fontWeight: 600, color: isOut ? '#DC2626' : '#059669', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem' }}>
                                     {isOut ? '-' : '+'}{h.weight} kg
                                   </TableCell>
-                                  <TableCell sx={{ fontWeight: 700 }}>
+                                  <TableCell sx={{ fontWeight: 600, color: '#475569', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem' }}>
                                     {isOut ? '-' : '+'}{h.totalBags}
                                   </TableCell>
-                                  <TableCell align="right">
+                                  <TableCell align="right" sx={{ borderBottom: '1px solid #F1F5F9' }}>
                                     {!h.linkedProcurement && (
                                       <IconButton onClick={() => handleDelete(h.id, isOut ? 'Transfer OUT' : 'Manual IN')} size="small" sx={{ color: '#EF4444' }}>
                                         <DeleteIcon fontSize="small" />
@@ -402,8 +423,8 @@ export default function Inventory() {
             ))}
             {groupedLedger.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 8, color: '#94A3B8', fontWeight: 600, letterSpacing: 1 }}>
-                  NO INVENTORY FOUND
+                <TableCell colSpan={8} align="center" sx={{ py: 8, color: '#94A3B8', fontWeight: 500, fontSize: '0.9rem' }}>
+                  No inventory found. Add manual intake to get started.
                 </TableCell>
               </TableRow>
             )}
@@ -412,12 +433,12 @@ export default function Inventory() {
       </TableContainer>
 
       {/* Manual IN Dialog */}
-      <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>
-        <Box sx={{ p: 3 }}>
-          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
-            ADD MANUAL INVENTORY (IN)
+      <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth sx={{ '& .MuiDialog-paper': { borderRadius: 3 } }}>
+        <Box sx={{ p: 4 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: '#0F172A', mb: 3 }}>
+            Manual Godown Intake
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <FormControl fullWidth required>
                 <InputLabel>Godown</InputLabel>
@@ -425,11 +446,12 @@ export default function Inventory() {
                   value={formData.godownId}
                   label="Godown"
                   onChange={(e) => setFormData({ ...formData, godownId: e.target.value as string })}
+                  sx={{ borderRadius: 2 }}
                 >
                   {godowns.map(g => (
                     <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
                   ))}
-                  {godowns.length === 0 && <MenuItem disabled>No Godowns Found (Add in Settings)</MenuItem>}
+                  {godowns.length === 0 && <MenuItem disabled>No Godowns Found</MenuItem>}
                 </Select>
               </FormControl>
               <TextField
@@ -440,6 +462,7 @@ export default function Inventory() {
                 slotProps={{ inputLabel: { shrink: true } }}
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
             </Box>
 
@@ -449,6 +472,7 @@ export default function Inventory() {
                 value={formData.productId}
                 label="Item / Crop"
                 onChange={(e) => setFormData({ ...formData, productId: e.target.value as string })}
+                sx={{ borderRadius: 2 }}
               >
                 {products.map(p => (
                   <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
@@ -457,21 +481,25 @@ export default function Inventory() {
             </FormControl>
 
             <Autocomplete
+              multiple
               fullWidth
               options={[{ id: 'OTHER', name: 'OTHER (Not in list)' }, ...farmers]}
-              getOptionLabel={(option) => option.id === 'OTHER' ? option.name : `${option.name} ${option.farmerId ? `[ID: ${option.farmerId}]` : ''} ${option.phoneNumber ? `(${option.phoneNumber})` : ''}`}
-              value={formData.farmerId === 'OTHER' ? { id: 'OTHER', name: 'OTHER (Not in list)' } : farmers.find(f => f.id === formData.farmerId) || null}
-              onChange={(_, newValue) => setFormData({ ...formData, farmerId: newValue ? newValue.id : '' })}
-              renderInput={(params) => <TextField {...params} label="Select Farmer or OTHER" required />}
+              getOptionLabel={(option) => option.id === 'OTHER' ? option.name : `${option.name} ${option.farmerId ? `[ID: ${option.farmerId}]` : ''}`}
+              value={formData.selectedFarmers}
+              onChange={(_, newValue) => setFormData({ ...formData, selectedFarmers: newValue })}
+              renderInput={(params) => <TextField {...params} label="Select Farmer(s) or OTHER" required />}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
             
-            {formData.farmerId === 'OTHER' && (
+            {formData.selectedFarmers.some(f => f.id === 'OTHER') && (
               <TextField
-                label="Custom Farmer Name"
+                label="Custom Farmer Name(s) (comma separated)"
                 fullWidth
                 required
                 value={formData.otherFarmerName}
                 onChange={(e) => setFormData({ ...formData, otherFarmerName: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                placeholder="e.g. Guest A, Guest B"
               />
             )}
 
@@ -481,23 +509,26 @@ export default function Inventory() {
                 fullWidth
                 value={formData.slipNo}
                 onChange={(e) => setFormData({ ...formData, slipNo: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
               <TextField
                 label="Lot No (Optional)"
                 fullWidth
                 value={formData.lotNo}
                 onChange={(e) => setFormData({ ...formData, lotNo: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
               <TextField
-                label="Weight (kg)"
+                label="Total Weight (kg)"
                 fullWidth
                 required
                 type="number"
                 value={formData.weight}
                 onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, backgroundColor: '#F8FAFC' } }}
               />
               <TextField
                 label="Total Bags"
@@ -506,29 +537,30 @@ export default function Inventory() {
                 type="number"
                 value={formData.totalBags}
                 onChange={(e) => setFormData({ ...formData, totalBags: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, backgroundColor: '#F8FAFC' } }}
               />
             </Box>
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
-          <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE INVENTORY'}
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 600, color: '#64748B', textTransform: 'none' }}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#0F172A', color: '#FFF', fontWeight: 600, borderRadius: 2, textTransform: 'none', px: 3, '&:hover': { backgroundColor: '#334155' } }}>
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'Save Intake'}
           </Button>
         </DialogActions>
       </Dialog>
 
 
       {/* Transfer to B2B Catalog Dialog */}
-      <Dialog open={openTransfer} onClose={() => !loading && setOpenTransfer(false)} maxWidth="sm" fullWidth>
-        <Box sx={{ p: 3 }}>
-          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 1, color: '#0284C7' }}>
-            TRANSFER TO B2B CATALOG
+      <Dialog open={openTransfer} onClose={() => !loading && setOpenTransfer(false)} maxWidth="sm" fullWidth sx={{ '& .MuiDialog-paper': { borderRadius: 3 } }}>
+        <Box sx={{ p: 4 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: '#0284C7', mb: 1 }}>
+            Transfer to B2B Catalog
           </Typography>
-          <Typography sx={{ color: '#475569', fontSize: '0.85rem', mb: 3 }}>
-            Transferring stock for <strong>{transferData.groupName}</strong>. This will reduce Godown balance and increase live Product stock.
+          <Typography sx={{ color: '#64748B', fontSize: '0.9rem', mb: 4 }}>
+            Move stock from <strong>{transferData.groupName}</strong> to the live B2B product catalog.
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField
               label="Date"
               type="date"
@@ -537,6 +569,7 @@ export default function Inventory() {
               slotProps={{ inputLabel: { shrink: true } }}
               value={transferData.date}
               onChange={(e) => setTransferData({ ...transferData, date: e.target.value })}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -547,6 +580,7 @@ export default function Inventory() {
                 type="number"
                 value={transferData.weight}
                 onChange={(e) => setTransferData({ ...transferData, weight: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, backgroundColor: '#F0F9FF' } }}
               />
               <TextField
                 label="Transfer Bags"
@@ -555,6 +589,7 @@ export default function Inventory() {
                 type="number"
                 value={transferData.totalBags}
                 onChange={(e) => setTransferData({ ...transferData, totalBags: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, backgroundColor: '#F0F9FF' } }}
               />
             </Box>
             
@@ -565,13 +600,14 @@ export default function Inventory() {
               rows={2}
               value={transferData.notes}
               onChange={(e) => setTransferData({ ...transferData, notes: e.target.value })}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
           </Box>
         </Box>
-        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
-          <Button onClick={() => setOpenTransfer(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
-          <Button variant="contained" onClick={handleTransfer} disabled={loading} sx={{ backgroundColor: '#0284C7', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
-            {loading ? <CircularProgress size={20} color="inherit" /> : 'CONFIRM TRANSFER'}
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={() => setOpenTransfer(false)} disabled={loading} sx={{ fontWeight: 600, color: '#64748B', textTransform: 'none' }}>Cancel</Button>
+          <Button variant="contained" onClick={handleTransfer} disabled={loading} sx={{ backgroundColor: '#0284C7', color: '#FFF', fontWeight: 600, borderRadius: 2, textTransform: 'none', px: 3, boxShadow: 'none', '&:hover': { backgroundColor: '#0369A1', boxShadow: 'none' } }}>
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'Confirm Transfer'}
           </Button>
         </DialogActions>
       </Dialog>

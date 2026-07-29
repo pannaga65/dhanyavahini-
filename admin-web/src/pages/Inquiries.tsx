@@ -4,6 +4,7 @@ import { collection, getDocs, query, where, getFirestore, updateDoc, doc, runTra
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
@@ -230,7 +231,7 @@ export default function Inquiries() {
                       rel="noreferrer"
                       style={{ color: '#0055CC', fontWeight: 600, fontSize: '0.75rem', textDecoration: 'none', display: 'flex', alignItems: 'center', marginTop: '4px' }}
                     >
-                      📍 View Map
+                      <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} /> View Map
                     </a>
                   )}
                 </TableCell>

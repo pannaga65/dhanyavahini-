@@ -41,11 +41,10 @@ exports.downloadInvoice = onRequest(async (req, res) => {
     
     const resolvedCustomerName = order.customerName || customerData.displayName || customerData.tradeName || 'Customer';
     const resolvedBillingAddr = order.billingAddress || customerData.billingAddress || 'Address not provided';
-    let resolvedShippingAddr = order.shippingAddress || (customerData.mailingAddresses && customerData.mailingAddresses.length > 0 ? customerData.mailingAddresses[0] : null);
+    const dispatch = order.dispatchDetails || {};
+    let resolvedShippingAddr = dispatch.shippingAddress || order.shippingAddress || (customerData.mailingAddresses && customerData.mailingAddresses.length > 0 ? customerData.mailingAddresses[0] : null);
     if (!resolvedShippingAddr) resolvedShippingAddr = resolvedBillingAddr;
     const resolvedGst = order.customerGst || customerData.gstNumber || 'Unregistered';
-
-    const dispatch = order.dispatchDetails || {};
     
     // Date formatting
     const invoiceDateStr = order.invoiceDate 

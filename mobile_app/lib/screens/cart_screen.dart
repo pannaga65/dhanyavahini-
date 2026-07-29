@@ -267,13 +267,16 @@ class CartScreen extends ConsumerWidget {
                     // Fetch user's shipping addresses
                     final user = FirebaseAuth.instance.currentUser;
                     int selectedAddressIndex = 0;
+                    bool useBillingAsShipping = false;
                     if (user != null) {
                       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-                      final addresses = (userDoc.data()?['mailingAddresses'] as List<dynamic>?)?.cast<String>() ?? [];
+                      final userData = userDoc.data() ?? {};
+                      final addresses = (userData['mailingAddresses'] as List<dynamic>?)?.cast<String>() ?? [];
+                      final billingAddress = (userData['billingAddress'] as String?) ?? '';
                       
-                      if (addresses.length > 1 && context.mounted) {
-                        // Show address selection bottom sheet
-                        final selectedIdx = await showModalBottomSheet<int>(
+                      if (context.mounted) {
+                        // Show address selection bottom sheet (always show to allow "Same as Billing")
+                        final result = await showModalBottomSheet<Map<String, dynamic>>(
                           context: context,
                           backgroundColor: Colors.white,
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -293,6 +296,21 @@ class CartScreen extends ConsumerWidget {
                                   ),
                                   const Text('Select Shipping Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 16),
+                                  // Same as Billing Address option
+                                  if (billingAddress.isNotEmpty)
+                                    Card(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      color: const Color(0xFFF0FFF4),
+                                      child: ListTile(
+                                        leading: const Icon(Icons.location_city, color: Colors.green),
+                                        title: Text(billingAddress, style: const TextStyle(fontSize: 14)),
+                                        subtitle: const Text('Same as Billing Address', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                                        trailing: const Icon(Icons.chevron_right),
+                                        onTap: () => Navigator.pop(ctx, {'useBilling': true}),
+                                      ),
+                                    ),
+                                  // Shipping addresses
                                   ...List.generate(addresses.length, (i) {
                                     return Card(
                                       margin: const EdgeInsets.only(bottom: 8),
@@ -300,9 +318,9 @@ class CartScreen extends ConsumerWidget {
                                       child: ListTile(
                                         leading: const Icon(Icons.local_shipping_outlined),
                                         title: Text(addresses[i], style: const TextStyle(fontSize: 14)),
-                                        subtitle: i == 0 ? const Text('Default', style: TextStyle(color: Colors.green, fontSize: 12)) : null,
+                                        subtitle: i == 0 ? const Text('Default Shipping', style: TextStyle(color: Colors.blue, fontSize: 12)) : null,
                                         trailing: const Icon(Icons.chevron_right),
-                                        onTap: () => Navigator.pop(ctx, i),
+                                        onTap: () => Navigator.pop(ctx, {'index': i}),
                                       ),
                                     );
                                   }),
@@ -313,8 +331,12 @@ class CartScreen extends ConsumerWidget {
                           },
                         );
                         
-                        if (selectedIdx == null) return; // User dismissed
-                        selectedAddressIndex = selectedIdx;
+                        if (result == null) return; // User dismissed
+                        if (result['useBilling'] == true) {
+                          useBillingAsShipping = true;
+                        } else {
+                          selectedAddressIndex = result['index'] ?? 0;
+                        }
                       }
                     }
 
@@ -351,6 +373,7 @@ class CartScreen extends ConsumerWidget {
                       await callable.call({
                         'items': itemsData,
                         'selectedAddressIndex': selectedAddressIndex,
+                        'useBillingAsShipping': useBillingAsShipping,
                       });
                       
                       cartNotifier.clear();

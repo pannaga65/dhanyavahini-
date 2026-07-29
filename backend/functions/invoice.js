@@ -35,7 +35,7 @@ exports.downloadInvoice = onRequest(async (req, res) => {
     // Fetch customer data as fallback (to fix missing GST/address from older orders)
     let customerData = {};
     if (order.customerId) {
-      const custSnap = await db.collection("customers").doc(order.customerId).get();
+      const custSnap = await db.collection("users").doc(order.customerId).get();
       if (custSnap.exists) customerData = custSnap.data();
     }
     
@@ -68,26 +68,31 @@ exports.downloadInvoice = onRequest(async (req, res) => {
       <meta charset="UTF-8">
       <title>Invoice - ${order.invoiceNo}</title>
       <style>
+        * { box-sizing: border-box; }
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Segoe UI', Arial, sans-serif;
           margin: 0;
-          padding: 20px;
+          padding: 15mm;
           color: #000;
-          font-size: 12px;
+          font-size: 11px;
+          line-height: 1.4;
+          background: #fff;
         }
         .container {
           width: 100%;
-          max-width: 794px;
+          max-width: 190mm;
           margin: 0 auto;
-          border: 1px solid #000;
+          border: 2px solid #000;
           background-color: #fff;
         }
         .header-title {
           text-align: center;
-          font-size: 18px;
+          font-size: 16px;
           font-weight: bold;
-          border-bottom: 1px solid #000;
-          padding: 8px;
+          border-bottom: 2px solid #000;
+          padding: 6px;
+          letter-spacing: 2px;
+          text-transform: uppercase;
         }
         .row {
           display: flex;
@@ -96,113 +101,131 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         .col-left {
           width: 50%;
           border-right: 1px solid #000;
-          padding: 10px;
+          padding: 10px 12px;
         }
         .col-right {
           width: 50%;
-          padding: 10px;
+          padding: 10px 12px;
         }
         .grid-2 {
           display: flex;
-          justify-content: space-between;
-          margin-bottom: 5px;
+          gap: 10px;
+          margin-bottom: 6px;
         }
-        .bold {
-          font-weight: bold;
-        }
-        h2, h3, p {
-          margin: 0 0 5px 0;
-        }
+        .grid-2 > div { flex: 1; }
+        .bold { font-weight: bold; }
+        .label { font-size: 9px; color: #333; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        h2 { margin: 0 0 6px 0; font-size: 15px; }
+        h3 { margin: 0 0 4px 0; font-size: 13px; }
+        p { margin: 0 0 3px 0; }
         table {
           width: 100%;
           border-collapse: collapse;
         }
         th, td {
           border: 1px solid #000;
-          padding: 8px;
+          padding: 6px 8px;
           text-align: left;
+          font-size: 11px;
         }
         th {
-          background-color: #f9f9f9;
+          background-color: #f5f5f5;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
         }
-        .text-right {
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .company-logo {
+          max-height: 60px;
+          max-width: 160px;
+          margin-bottom: 8px;
+          display: block;
+        }
+        .footer-row {
+          display: flex;
+          border-top: 1px solid #000;
+          min-height: 80px;
+        }
+        .footer-left {
+          width: 55%;
+          border-right: 1px solid #000;
+          padding: 10px 12px;
+        }
+        .footer-right {
+          width: 45%;
+          padding: 10px 12px;
           text-align: right;
-        }
-        .text-center {
-          text-align: center;
-        }
-        .no-border-top {
-          border-top: none;
-        }
-        .no-border-bottom {
-          border-bottom: none;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
         }
         @media print {
-          body, html { margin: 0; padding: 0; max-width: 100%; background-color: #fff; }
-          .container { border: 1px solid #000; width: 100%; max-width: 100%; box-shadow: none; }
+          body, html { margin: 0; padding: 10mm; background-color: #fff; }
+          .container { border: 2px solid #000; width: 100%; max-width: 100%; box-shadow: none; }
         }
       </style>
     </head>
     <body>
       <div class="container" id="invoice-content">
-        <div class="header-title">BILL OF SUPPLY</div>
+        <div class="header-title">Bill of Supply</div>
         
         <div class="row">
           <div class="col-left">
-            ${profile.logoUrl ? `<div style="margin-bottom: 15px;"><img src="${profile.logoUrl}" style="max-height: 80px; max-width: 200px;"/></div>` : ''}
+            ${profile.logoUrl ? `<img src="${profile.logoUrl}" crossorigin="anonymous" class="company-logo" alt="Company Logo" onerror="this.style.display='none'"/>` : ''}
             <h2>${profile.companyName || 'YOUR COMPANY NAME'}</h2>
             <p>${profile.addressLine1 || ''}</p>
             <p>${profile.addressLine2 || ''}</p>
-            <p>${profile.city || ''}, ${profile.state || ''} - ${profile.pincode || ''}</p>
-            <p>Email: ${profile.email || ''}</p>
-            <p>Phone: ${profile.phone || ''}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${profile.gstin || ''}</p>
-            <p><span class="bold">UDYAM Reg No:</span> ${profile.udyam || ''}</p>
+            <p>${[profile.city, profile.state].filter(Boolean).join(', ')}${profile.pincode ? ' - ' + profile.pincode : ''}</p>
+            ${profile.email ? `<p>Email: ${profile.email}</p>` : ''}
+            ${profile.phone ? `<p>Phone: ${profile.phone}</p>` : ''}
+            <p><span class="bold">GSTIN/UIN:</span> ${profile.gstin || 'N/A'}</p>
+            ${profile.udyam ? `<p><span class="bold">UDYAM:</span> ${profile.udyam}</p>` : ''}
           </div>
           <div class="col-right">
             <div class="grid-2">
-              <div><span class="bold">Invoice No.</span><br/>${order.invoiceNo || ''}</div>
-              <div><span class="bold">Dated</span><br/>${invoiceDateStr}</div>
+              <div><div class="label">Invoice No.</div>${order.invoiceNo || ''}</div>
+              <div><div class="label">Dated</div>${invoiceDateStr}</div>
             </div>
             <div class="grid-2">
-              <div><span class="bold">Mode/Terms of Payment</span><br/>${dispatch.paymentTerms || '-'}</div>
-              <div><span class="bold">Dispatched through</span><br/>${dispatch.dispatchedThrough || '-'}</div>
+              <div><div class="label">Payment Terms</div>${dispatch.paymentTerms || '-'}</div>
+              <div><div class="label">Dispatched Through</div>${dispatch.dispatchedThrough || '-'}</div>
             </div>
             <div class="grid-2">
-              <div><span class="bold">Destination</span><br/>${dispatch.destination || '-'}</div>
-              <div><span class="bold">Motor Vehicle No.</span><br/>${dispatch.motorVehicleNo || '-'}</div>
+              <div><div class="label">Destination</div>${dispatch.destination || '-'}</div>
+              <div><div class="label">Vehicle No.</div>${dispatch.motorVehicleNo || '-'}</div>
             </div>
             <div class="grid-2" style="margin-bottom:0;">
-              <div><span class="bold">Bill of Lading/LR-RR No.</span><br/>${dispatch.lrNumber || '-'}</div>
+              <div><div class="label">LR-RR No.</div>${dispatch.lrNumber || '-'}</div>
             </div>
           </div>
         </div>
 
         <div class="row">
           <div class="col-left">
-            <p class="bold">Buyer (Bill to)</p>
+            <div class="label" style="margin-bottom:4px;">Buyer (Bill to)</div>
             <h3>${resolvedCustomerName}</h3>
             <p>${resolvedBillingAddr}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${resolvedGst}</p>
+            <p style="margin-top:4px;"><span class="bold">GSTIN/UIN:</span> ${resolvedGst}</p>
           </div>
           <div class="col-right">
-            <p class="bold">Consignee (Ship to)</p>
+            <div class="label" style="margin-bottom:4px;">Consignee (Ship to)</div>
             <h3>${resolvedCustomerName}</h3>
             <p>${resolvedShippingAddr}</p>
-            <p><span class="bold">GSTIN/UIN:</span> ${resolvedGst}</p>
+            <p style="margin-top:4px;"><span class="bold">GSTIN/UIN:</span> ${resolvedGst}</p>
           </div>
         </div>
 
         <table>
           <thead>
             <tr>
-              <th class="text-center" style="width:5%;">Sl No.</th>
+              <th class="text-center" style="width:5%;">Sl</th>
               <th style="width:35%;">Description of Goods</th>
-              <th style="width:15%;">HSN/SAC</th>
-              <th class="text-center" style="width:10%;">Quantity</th>
+              <th style="width:12%;">HSN/SAC</th>
+              <th class="text-center" style="width:10%;">Qty (Kg)</th>
               <th class="text-right" style="width:15%;">Rate</th>
               <th class="text-center" style="width:5%;">Per</th>
-              <th class="text-right" style="width:15%;">Amount</th>
+              <th class="text-right" style="width:18%;">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -218,31 +241,30 @@ exports.downloadInvoice = onRequest(async (req, res) => {
               </tr>
             `).join('')}
             <tr>
-              <td colspan="6" class="text-right bold">Subtotal</td>
-              <td class="text-right">${formatCurrency(order.subtotal || 0)}</td>
+              <td colspan="6" class="text-right bold" style="border-bottom:none;">Subtotal</td>
+              <td class="text-right" style="border-bottom:none;">${formatCurrency(order.subtotal || 0)}</td>
             </tr>
             <tr>
-              <td colspan="6" class="text-right bold">Total GST</td>
-              <td class="text-right">${formatCurrency(order.gstAmount || 0)}</td>
+              <td colspan="6" class="text-right bold" style="border-top:none;border-bottom:none;">GST</td>
+              <td class="text-right" style="border-top:none;border-bottom:none;">${formatCurrency(order.gstAmount || 0)}</td>
             </tr>
             <tr>
-              <td colspan="6" class="text-right bold">Total Amount</td>
-              <td class="text-right bold">${formatCurrency(order.totalAmount || 0)}</td>
+              <td colspan="6" class="text-right bold" style="border-top:none;font-size:13px;">Total</td>
+              <td class="text-right bold" style="border-top:none;font-size:13px;">${formatCurrency(order.totalAmount || 0)}</td>
             </tr>
           </tbody>
         </table>
 
-        <div class="row" style="border-bottom:none;">
-          <div class="col-left" style="border-right: none;">
-            <p class="bold">Company's Bank Details</p>
+        <div class="footer-row">
+          <div class="footer-left">
+            <div class="label" style="margin-bottom:6px;">Company's Bank Details</div>
             <p>Bank Name: <span class="bold">${profile.bankName || ''}</span></p>
             <p>A/c No: <span class="bold">${profile.accountNumber || ''}</span></p>
-            <p>Branch & IFSC Code: <span class="bold">${profile.branch || ''} ${profile.ifscCode || ''}</span></p>
+            <p>Branch & IFSC: <span class="bold">${profile.branch || ''}${profile.ifscCode ? ' / ' + profile.ifscCode : ''}</span></p>
           </div>
-          <div class="col-right" style="text-align:right;">
+          <div class="footer-right">
             <p class="bold">for ${profile.companyName || 'YOUR COMPANY NAME'}</p>
-            <br/><br/><br/>
-            <p>Authorised Signatory</p>
+            <p style="margin-top:30px;">Authorised Signatory</p>
           </div>
         </div>
 
@@ -250,15 +272,31 @@ exports.downloadInvoice = onRequest(async (req, res) => {
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       <script>
         window.onload = function() {
-          var element = document.getElementById('invoice-content');
-          var opt = {
-            margin:       0,
-            filename:     'Invoice_${order.invoiceNo || orderId}.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-          };
-          html2pdf().set(opt).from(element).save();
+          // Wait for images to load before generating PDF
+          var imgs = document.querySelectorAll('img');
+          var loaded = 0;
+          var total = imgs.length;
+          function tryGenerate() {
+            var element = document.getElementById('invoice-content');
+            var opt = {
+              margin: [5, 0, 5, 0],
+              filename: 'Invoice_${order.invoiceNo || orderId}.pdf',
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+          }
+          if (total === 0) { tryGenerate(); return; }
+          imgs.forEach(function(img) {
+            if (img.complete) { loaded++; if (loaded >= total) tryGenerate(); }
+            else {
+              img.onload = function() { loaded++; if (loaded >= total) tryGenerate(); };
+              img.onerror = function() { loaded++; if (loaded >= total) tryGenerate(); };
+            }
+          });
+          // Fallback: generate after 3 seconds even if images fail
+          setTimeout(tryGenerate, 3000);
         }
       </script>
     </body>

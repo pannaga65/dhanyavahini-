@@ -131,12 +131,18 @@ exports.placeSecureOrder = onCall(async (request) => {
       const gstAmount = Math.round(totalGstAmount * 100) / 100;
       const totalAmount = Math.round((subtotal + gstAmount) * 100) / 100;
 
-      // 3f. Resolve shipping address using selectedAddressIndex
-      const selectedAddressIndex = (typeof request.data.selectedAddressIndex === 'number') ? request.data.selectedAddressIndex : 0;
-      const mailingAddresses = userData.mailingAddresses || [];
-      const selectedShippingAddress = (mailingAddresses.length > selectedAddressIndex) 
-        ? mailingAddresses[selectedAddressIndex] 
-        : (mailingAddresses.length > 0 ? mailingAddresses[0] : "");
+      // 3f. Resolve shipping address using selectedAddressIndex or billing address
+      const useBillingAsShipping = request.data.useBillingAsShipping === true;
+      let selectedShippingAddress;
+      if (useBillingAsShipping) {
+        selectedShippingAddress = userData.billingAddress || "";
+      } else {
+        const selectedAddressIndex = (typeof request.data.selectedAddressIndex === 'number') ? request.data.selectedAddressIndex : 0;
+        const mailingAddresses = userData.mailingAddresses || [];
+        selectedShippingAddress = (mailingAddresses.length > selectedAddressIndex) 
+          ? mailingAddresses[selectedAddressIndex] 
+          : (mailingAddresses.length > 0 ? mailingAddresses[0] : "");
+      }
 
       // 3g. WRITE: Create the order document
       const orderRef = db.collection("orders").doc();

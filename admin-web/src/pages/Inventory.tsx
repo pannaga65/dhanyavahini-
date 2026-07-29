@@ -278,7 +278,7 @@ export default function Inventory() {
 
         return true;
       });
-  }, [ledger, searchQuery, godownFilter, stockFilter]);
+  }, [ledger, searchQuery, godownFilter, stockFilter, productFilter]);
 
   return (
     <Box>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, InputAdornment, FormControl, Select, MenuItem, Chip, InputLabel } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, InputAdornment, FormControl, Select, MenuItem } from '@mui/material';
 import { collection, getDocs, getFirestore, updateDoc, doc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -21,7 +21,6 @@ export default function Farmers() {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [loanFilter, setLoanFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ACTIVE');
 
   const [formData, setFormData] = useState({
     farmerId: '', name: '', aadharNumber: '', phoneNumber: '', altPhoneNumber: '',
@@ -87,8 +86,7 @@ export default function Farmers() {
   const handleSave = async () => {
     if (!formData.name.trim()) return showMessage('Name is required.', 'error');
     if (!formData.phoneNumber.trim()) return showMessage('Primary Mobile Number is required.', 'error');
-    if (!formData.aadharNumber.trim()) return showMessage('Aadhar Number is required.', 'error');
-    if (!/^\d{12}$/.test(formData.aadharNumber.trim())) return showMessage('Aadhar Number must be exactly 12 digits.', 'error');
+    if (formData.aadharNumber.trim() && !/^\d{12}$/.test(formData.aadharNumber.trim())) return showMessage('Aadhar Number must be exactly 12 digits.', 'error');
     if (!/^\d{10}$/.test(formData.phoneNumber.trim())) return showMessage('Primary Mobile Number must be exactly 10 digits.', 'error');
     if (formData.altPhoneNumber.trim() && !/^\d{10}$/.test(formData.altPhoneNumber.trim())) return showMessage('Alternative Mobile Number must be exactly 10 digits.', 'error');
     if (formData.accountNumber.trim() && !/^\d{9,18}$/.test(formData.accountNumber.trim())) return showMessage('Account Number must be between 9 and 18 digits.', 'error');
@@ -144,9 +142,6 @@ export default function Farmers() {
   const filteredFarmers = useMemo(() => {
     let result = farmers;
     
-    // Status Filter
-    if (statusFilter === 'ACTIVE') result = result.filter(f => f.isActive !== false);
-    if (statusFilter === 'INACTIVE') result = result.filter(f => f.isActive === false);
 
     // Loan Filter
     if (loanFilter === 'HAS_LOAN') {
@@ -166,7 +161,7 @@ export default function Farmers() {
       );
     }
     return result;
-  }, [farmers, searchQuery, loanFilter, statusFilter, farmerBalances]);
+  }, [farmers, searchQuery, loanFilter, farmerBalances]);
 
   return (
     <Box>
@@ -219,13 +214,6 @@ export default function Farmers() {
             <MenuItem value="NO_LOAN">No Active Loans</MenuItem>
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ borderRadius: 2 }}>
-            <MenuItem value="ALL">All Status</MenuItem>
-            <MenuItem value="ACTIVE">Active Profiles</MenuItem>
-            <MenuItem value="INACTIVE">Inactive Profiles</MenuItem>
-          </Select>
-        </FormControl>
       </Box>
 
       <TableContainer sx={{ width: '100%', overflowX: 'auto', backgroundColor: '#FFF', borderRadius: 3, border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
@@ -243,11 +231,10 @@ export default function Farmers() {
             {filteredFarmers.map((row) => {
               const balance = farmerBalances[row.id] || 0;
               return (
-              <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#F8FAFC' }, transition: 'all 0.2s', opacity: row.isActive === false ? 0.6 : 1 }}>
+              <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#F8FAFC' }, transition: 'all 0.2s' }}>
                 <TableCell sx={{ borderBottom: '1px solid #F1F5F9' }}>
                   <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>{row.name}</Typography>
                   {row.farmerId && <Typography sx={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>ID: {row.farmerId}</Typography>}
-                  {row.isActive === false && <Chip size="small" label="INACTIVE" sx={{ mt: 0.5, height: 20, fontSize: '0.65rem', fontWeight: 700, backgroundColor: '#FEE2E2', color: '#DC2626' }} />}
                 </TableCell>
                 <TableCell sx={{ borderBottom: '1px solid #F1F5F9' }}>
                   <Typography sx={{ color: '#334155', fontWeight: 500, fontSize: '0.9rem' }}>{row.phoneNumber}</Typography>
@@ -320,13 +307,12 @@ export default function Farmers() {
               />
             </Box>
             <TextField
-              label="Aadhar Number"
+              label="Aadhar Number (Optional)"
               fullWidth
-              required
               slotProps={{ htmlInput: { maxLength: 12 } } as any}
               value={formData.aadharNumber}
               onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value.replace(/\D/g, '') })}
-              helperText="Must be exactly 12 digits"
+              helperText="Must be exactly 12 digits if provided"
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -393,21 +379,7 @@ export default function Farmers() {
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
             
-            {editingId && (
-              <FormControl fullWidth sx={{ mt: 1 }}>
-                <InputLabel>Account Status</InputLabel>
-                <Select
-                  value={formData.isActive ? 'ACTIVE' : 'INACTIVE'}
-                  label="Account Status"
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'ACTIVE' })}
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem value="ACTIVE">Active (Can procure/loan)</MenuItem>
-                  <MenuItem value="INACTIVE">Inactive (Disabled)</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-
+            
           </Box>
         </Box>
         <DialogActions sx={{ p: 3, pt: 0 }}>

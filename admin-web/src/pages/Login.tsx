@@ -68,23 +68,25 @@ export default function Login() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #F8F9FC 0%, #EEF2FF 50%, #F0FDF4 100%)',
+        background: 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)',
+        px: 2,
       }}
     >
       <Box
         sx={{
-          width: 420,
+          width: '100%',
+          maxWidth: 420,
           backgroundColor: '#FFF',
           borderRadius: 4,
           border: '1px solid #E2E8F0',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-          p: 5,
+          boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)',
+          p: { xs: 3, sm: 5 },
         }}
       >
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <Box sx={{ width: 44, height: 44, borderRadius: 2.5, backgroundColor: '#EBF5EB', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <img src="/logo.png" alt="Logo" style={{ width: 34, height: 34, objectFit: 'contain' }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/LOGO.png" alt="Logo" style={{ width: 48, height: 48, objectFit: 'contain' }} />
           </Box>
           <Box>
             <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: 0.5, color: '#1B2A4A', lineHeight: 1 }}>
@@ -155,8 +157,8 @@ export default function Login() {
               mt: 1, 
               fontSize: '0.9rem', 
               letterSpacing: 0.5,
-              backgroundColor: '#2E7D32',
-              '&:hover': { backgroundColor: '#1B5E20' },
+              backgroundColor: '#0F172A',
+              '&:hover': { backgroundColor: '#1E293B' },
             }}
           >
             {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign In'}

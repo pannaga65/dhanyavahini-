@@ -67,10 +67,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final firmController = TextEditingController(text: userData?['tradeName']);
     final phoneController = TextEditingController(text: userData?['phoneNumber']);
     final gstController = TextEditingController(text: userData?['gstNumber']);
+    final panController = TextEditingController(text: userData?['panNumber']);
     final addressController = TextEditingController(text: userData?['billingAddress']);
+    
+    // Support multiple shipping addresses
     final shippingList = userData?['mailingAddresses'] as List<dynamic>?;
-    final initialShipping = (shippingList != null && shippingList.isNotEmpty) ? shippingList.first.toString() : '';
-    final shippingAddressController = TextEditingController(text: initialShipping);
+    List<TextEditingController> shippingControllers = [];
+    if (shippingList != null && shippingList.isNotEmpty) {
+      for (final addr in shippingList) {
+        shippingControllers.add(TextEditingController(text: addr.toString()));
+      }
+    } else {
+      shippingControllers.add(TextEditingController());
+    }
     bool saving = false;
 
     showModalBottomSheet(
@@ -137,6 +146,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
+                      controller: panController,
+                      decoration: InputDecoration(
+                        labelText: 'PAN Number',
+                        prefixIcon: const Icon(Icons.credit_card_outlined),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
                       controller: addressController,
                       decoration: InputDecoration(
                         labelText: 'Billing Address (Registered)',
@@ -146,14 +164,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       maxLines: 2,
                     ),
                     const SizedBox(height: 14),
-                    TextFormField(
-                      controller: shippingAddressController,
-                      decoration: InputDecoration(
-                        labelText: 'Shipping Address (Consignee)',
-                        prefixIcon: const Icon(Icons.local_shipping_outlined),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    // Multiple Shipping Addresses
+                    const Text('Shipping Addresses', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    ...List.generate(shippingControllers.length, (index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: shippingControllers[index],
+                                decoration: InputDecoration(
+                                  labelText: 'Shipping Address ${index + 1}',
+                                  prefixIcon: const Icon(Icons.local_shipping_outlined),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                maxLines: 2,
+                              ),
+                            ),
+                            if (shippingControllers.length > 1)
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                onPressed: () {
+                                  setModalState(() {
+                                    shippingControllers[index].dispose();
+                                    shippingControllers.removeAt(index);
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                      );
+                    }),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          setModalState(() {
+                            shippingControllers.add(TextEditingController());
+                          });
+                        },
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Add Another Shipping Address'),
                       ),
-                      maxLines: 2,
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -168,13 +223,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           if (formKey.currentState!.validate()) {
                             setModalState(() => saving = true);
                             try {
+                              final mailingAddresses = shippingControllers
+                                  .map((c) => c.text.trim())
+                                  .where((t) => t.isNotEmpty)
+                                  .toList();
                               await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
                                 'displayName': nameController.text,
                                 'tradeName': firmController.text,
                                 'phoneNumber': phoneController.text,
                                 'gstNumber': gstController.text,
+                                'panNumber': panController.text,
                                 'billingAddress': addressController.text,
-                                'mailingAddresses': [shippingAddressController.text],
+                                'mailingAddresses': mailingAddresses,
                               }, SetOptions(merge: true));
                               await _fetchUserData();
                               if (mounted) {
@@ -312,15 +372,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(),
                     _buildDetailRow(Icons.receipt, 'GST Number', userData?['gstNumber'] ?? 'Not set'),
                     const Divider(),
+                    _buildDetailRow(Icons.credit_card, 'PAN Number', userData?['panNumber'] ?? 'Not set'),
+                    const Divider(),
                     _buildDetailRow(Icons.phone, 'Phone', userData?['phoneNumber'] ?? 'Not set'),
                     const Divider(),
                     _buildDetailRow(Icons.location_city, 'Billing Address', userData?['billingAddress'] ?? 'Not set'),
                     const Divider(),
-                    _buildDetailRow(Icons.local_shipping, 'Shipping Address', (() {
+                    // Show all shipping addresses
+                    ...(() {
                       final list = userData?['mailingAddresses'] as List<dynamic>?;
-                      final addr = (list != null && list.isNotEmpty) ? list.first.toString() : '';
-                      return addr.isNotEmpty ? addr : 'Not set';
-                    })()),
+                      if (list == null || list.isEmpty) {
+                        return [_buildDetailRow(Icons.local_shipping, 'Shipping Address', 'Not set')];
+                      }
+                      return List<Widget>.generate(list.length, (i) {
+                        final label = list.length == 1 ? 'Shipping Address' : 'Shipping Address ${i + 1}';
+                        if (i > 0) {
+                          return Column(children: [
+                            const Divider(),
+                            _buildDetailRow(Icons.local_shipping, label, list[i].toString()),
+                          ]);
+                        }
+                        return _buildDetailRow(Icons.local_shipping, label, list[i].toString());
+                      });
+                    })(),
                   ],
                 ),
               ),

@@ -264,6 +264,62 @@ class CartScreen extends ConsumerWidget {
                     
                     if (confirm != true) return;
                     
+                    // Fetch user's shipping addresses
+                    final user = FirebaseAuth.instance.currentUser;
+                    int selectedAddressIndex = 0;
+                    if (user != null) {
+                      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+                      final addresses = (userDoc.data()?['mailingAddresses'] as List<dynamic>?)?.cast<String>() ?? [];
+                      
+                      if (addresses.length > 1 && context.mounted) {
+                        // Show address selection bottom sheet
+                        final selectedIdx = await showModalBottomSheet<int>(
+                          context: context,
+                          backgroundColor: Colors.white,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                          builder: (ctx) {
+                            return Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Center(
+                                    child: Container(
+                                      width: 40, height: 4,
+                                      margin: const EdgeInsets.only(bottom: 16),
+                                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                                    ),
+                                  ),
+                                  const Text('Select Shipping Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 16),
+                                  ...List.generate(addresses.length, (i) {
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      child: ListTile(
+                                        leading: const Icon(Icons.local_shipping_outlined),
+                                        title: Text(addresses[i], style: const TextStyle(fontSize: 14)),
+                                        subtitle: i == 0 ? const Text('Default', style: TextStyle(color: Colors.green, fontSize: 12)) : null,
+                                        trailing: const Icon(Icons.chevron_right),
+                                        onTap: () => Navigator.pop(ctx, i),
+                                      ),
+                                    );
+                                  }),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                        
+                        if (selectedIdx == null) return; // User dismissed
+                        selectedAddressIndex = selectedIdx;
+                      }
+                    }
+
+                    if (!context.mounted) return;
+                    
                     // Show a non-dismissible loading dialog while the Cloud Function runs
                     showDialog(
                       context: context,
@@ -294,6 +350,7 @@ class CartScreen extends ConsumerWidget {
                       final callable = functions.httpsCallable('placeSecureOrder');
                       await callable.call({
                         'items': itemsData,
+                        'selectedAddressIndex': selectedAddressIndex,
                       });
                       
                       cartNotifier.clear();

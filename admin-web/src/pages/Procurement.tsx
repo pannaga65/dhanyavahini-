@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent, Checkbox, FormControlLabel } from '@mui/material';
-import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, where, increment, setDoc } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, where, setDoc } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -288,10 +288,6 @@ export default function Procurement() {
       try {
         const existingBill = settlements.find(s => s.id === id);
         if (existingBill && existingBill.godownId) {
-          // Revert Inventory Stock
-          await setDoc(doc(db, 'inventory', existingBill.productId), {
-            availableStockKg: increment(-Number(existingBill.grossWeight))
-          }, { merge: true });
           // Delete Ledger Entry
           await deleteDoc(doc(db, 'inventory_ledger', id));
         }
@@ -388,9 +384,6 @@ export default function Procurement() {
         // --- INVENTORY SYNC FOR EDIT ---
         // Reverse old inventory impact if applicable
         if (existingBill.godownId) {
-          await setDoc(doc(db, 'inventory', existingBill.productId), {
-            availableStockKg: increment(-Number(existingBill.grossWeight))
-          }, { merge: true });
           if (!billData.godownId) {
             await deleteDoc(doc(db, 'inventory_ledger', editingBillId));
           }
@@ -398,9 +391,6 @@ export default function Procurement() {
         // Apply new inventory impact if applicable
         if (billData.godownId) {
           const selectedGodown = godowns.find(g => g.id === billData.godownId);
-          await setDoc(doc(db, 'inventory', billData.productId), {
-            availableStockKg: increment(Number(billData.grossWeight))
-          }, { merge: true });
           await setDoc(doc(db, 'inventory_ledger', editingBillId), {
             godownId: billData.godownId,
             godownName: selectedGodown?.name || 'Unknown Godown',
@@ -413,10 +403,9 @@ export default function Procurement() {
             lotNo: '',
             weight: Number(billData.grossWeight),
             totalBags: Number(billData.totalBags),
-            liftedBags: 0,
-            balanceBags: Number(billData.totalBags),
             createdAt: serverTimestamp(),
-            linkedProcurement: true
+            linkedProcurement: true,
+            type: 'IN'
           });
         }
         // ---------------------------------
@@ -517,9 +506,6 @@ export default function Procurement() {
         // --- INVENTORY SYNC FOR NEW BILL ---
         if (billData.godownId) {
           const selectedGodown = godowns.find(g => g.id === billData.godownId);
-          await setDoc(doc(db, 'inventory', billData.productId), {
-            availableStockKg: increment(Number(billData.grossWeight))
-          }, { merge: true });
           await setDoc(doc(db, 'inventory_ledger', newBillRef.id), {
             godownId: billData.godownId,
             godownName: selectedGodown?.name || 'Unknown Godown',
@@ -532,10 +518,9 @@ export default function Procurement() {
             lotNo: '',
             weight: Number(billData.grossWeight),
             totalBags: Number(billData.totalBags),
-            liftedBags: 0,
-            balanceBags: Number(billData.totalBags),
             createdAt: serverTimestamp(),
-            linkedProcurement: true
+            linkedProcurement: true,
+            type: 'IN'
           });
         }
         // ------------------------------------

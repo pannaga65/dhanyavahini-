@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton } from '@mui/material';
-import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import EditIcon from '@mui/icons-material/Edit';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Collapse } from '@mui/material';
+import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, setDoc, increment } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
@@ -15,10 +17,12 @@ export default function Inventory() {
   const [godowns, setGodowns] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [farmers, setFarmers] = useState<any[]>([]);
+  
   const [open, setOpen] = useState(false);
+  const [openTransfer, setOpenTransfer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     godownId: '',
@@ -30,7 +34,16 @@ export default function Inventory() {
     lotNo: '',
     weight: '',
     totalBags: '',
-    liftedBags: '0',
+  });
+
+  const [transferData, setTransferData] = useState({
+    godownId: '',
+    productId: '',
+    groupName: '',
+    date: new Date().toISOString().split('T')[0],
+    weight: '',
+    totalBags: '',
+    notes: '',
   });
 
   useEffect(() => {
@@ -64,41 +77,36 @@ export default function Inventory() {
     }
   };
 
-  const handleOpen = (item: any = null) => {
-    if (item) {
-      setEditingId(item.id);
-      setFormData({
-        godownId: item.godownId || '',
-        date: item.date || new Date().toISOString().split('T')[0],
-        productId: item.productId || '',
-        farmerId: item.farmerId || '',
-        otherFarmerName: item.farmerId === 'OTHER' ? item.farmerName : '',
-        slipNo: item.slipNo || '',
-        lotNo: item.lotNo || '',
-        weight: item.weight?.toString() || '',
-        totalBags: item.totalBags?.toString() || '',
-        liftedBags: item.liftedBags?.toString() || '0'
-      });
-    } else {
-      setEditingId(null);
-      setFormData({
-        godownId: '',
-        date: new Date().toISOString().split('T')[0],
-        productId: '',
-        farmerId: '',
-        otherFarmerName: '',
-        slipNo: '',
-        lotNo: '',
-        weight: '',
-        totalBags: '',
-        liftedBags: '0'
-      });
-    }
+  const handleOpen = () => {
+    setFormData({
+      godownId: '',
+      date: new Date().toISOString().split('T')[0],
+      productId: '',
+      farmerId: '',
+      otherFarmerName: '',
+      slipNo: '',
+      lotNo: '',
+      weight: '',
+      totalBags: '',
+    });
     setOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    showConfirm("Are you sure you want to delete this inventory record?", async () => {
+  const handleOpenTransfer = (group: any) => {
+    setTransferData({
+      godownId: group.godownId,
+      productId: group.productId,
+      groupName: `${group.godownName} - ${group.productName}`,
+      date: new Date().toISOString().split('T')[0],
+      weight: '',
+      totalBags: '',
+      notes: '',
+    });
+    setOpenTransfer(true);
+  };
+
+  const handleDelete = async (id: string, itemType: string) => {
+    showConfirm(`Are you sure you want to delete this ${itemType} entry?`, async () => {
       try {
         await deleteDoc(doc(db, 'inventory_ledger', id));
         fetchData();
@@ -130,11 +138,8 @@ export default function Inventory() {
         finalFarmerName = selectedFarmer?.name || 'Unknown Farmer';
       }
 
-      const totalBags = Number(formData.totalBags);
-      const liftedBags = Number(formData.liftedBags) || 0;
-      const balanceBags = totalBags - liftedBags;
-
       const payload = {
+        type: 'IN', // Manual Add is always IN
         godownId: formData.godownId,
         godownName: selectedGodown?.name || 'Unknown Godown',
         date: formData.date,
@@ -145,18 +150,12 @@ export default function Inventory() {
         slipNo: formData.slipNo.trim(),
         lotNo: formData.lotNo.trim(),
         weight: formData.weight ? Number(formData.weight) : 0,
-        totalBags: totalBags,
-        liftedBags: liftedBags,
-        balanceBags: balanceBags,
+        totalBags: Number(formData.totalBags),
+        createdAt: serverTimestamp()
       };
 
-      if (editingId) {
-        await updateDoc(doc(db, 'inventory_ledger', editingId), payload);
-        showMessage("Inventory updated successfully", "success");
-      } else {
-        await addDoc(collection(db, 'inventory_ledger'), { ...payload, createdAt: serverTimestamp() });
-        showMessage("Inventory added successfully", "success");
-      }
+      await addDoc(collection(db, 'inventory_ledger'), payload);
+      showMessage("Inventory IN added successfully", "success");
       setOpen(false);
       fetchData();
     } catch (error: any) {
@@ -167,16 +166,96 @@ export default function Inventory() {
     }
   };
 
-  const filteredLedger = useMemo(() => {
-    if (!searchQuery.trim()) return ledger;
+  const handleTransfer = async () => {
+    if (!transferData.weight || isNaN(Number(transferData.weight)) || Number(transferData.weight) <= 0) return showMessage('Enter valid Weight.', 'error');
+    if (!transferData.totalBags || isNaN(Number(transferData.totalBags)) || Number(transferData.totalBags) <= 0) return showMessage('Enter valid Bags.', 'error');
+
+    setLoading(true);
+    try {
+      const selectedGodown = godowns.find(g => g.id === transferData.godownId);
+      const selectedProduct = products.find(p => p.id === transferData.productId);
+
+      const payload = {
+        type: 'OUT', // Transfer is OUT of Godown
+        godownId: transferData.godownId,
+        godownName: selectedGodown?.name || 'Unknown Godown',
+        date: transferData.date,
+        productId: transferData.productId,
+        productName: selectedProduct?.name || 'Unknown Item',
+        farmerId: 'INTERNAL',
+        farmerName: 'B2B Catalog Transfer',
+        slipNo: `TRANSFER-${Math.floor(Math.random()*10000)}`,
+        lotNo: '',
+        weight: Number(transferData.weight),
+        totalBags: Number(transferData.totalBags),
+        notes: transferData.notes.trim(),
+        createdAt: serverTimestamp()
+      };
+
+      // 1. Add OUT ledger entry
+      await addDoc(collection(db, 'inventory_ledger'), payload);
+      
+      // 2. Increment Product Stock (Visible to B2B)
+      await setDoc(doc(db, 'inventory', transferData.productId), {
+        availableStockKg: increment(Number(transferData.weight))
+      }, { merge: true });
+
+      showMessage("Successfully transferred to B2B Catalog!", "success");
+      setOpenTransfer(false);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error transferring inventory:', error);
+      showMessage('Error transferring inventory: ' + error.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const groupedLedger = useMemo(() => {
+    const groups: { [key: string]: any } = {};
     const lowerQuery = searchQuery.toLowerCase();
-    return ledger.filter(item =>
-      (item.farmerName || '').toLowerCase().includes(lowerQuery) ||
-      (item.productName || '').toLowerCase().includes(lowerQuery) ||
-      (item.godownName || '').toLowerCase().includes(lowerQuery) ||
-      (item.slipNo || '').toLowerCase().includes(lowerQuery) ||
-      (item.lotNo || '').toLowerCase().includes(lowerQuery)
-    );
+
+    ledger.forEach(item => {
+      const isOut = item.type === 'OUT';
+      
+      const key = `${item.godownId}_${item.productId}`;
+      
+      if (!groups[key]) {
+        groups[key] = {
+          id: key,
+          godownId: item.godownId,
+          godownName: item.godownName,
+          productId: item.productId,
+          productName: item.productName,
+          totalWeightIn: 0,
+          totalWeightOut: 0,
+          totalBagsIn: 0,
+          totalBagsOut: 0,
+          history: []
+        };
+      }
+      
+      if (isOut) {
+        groups[key].totalWeightOut += Number(item.weight) || 0;
+        groups[key].totalBagsOut += Number(item.totalBags) || 0;
+      } else {
+        groups[key].totalWeightIn += Number(item.weight) || 0;
+        groups[key].totalBagsIn += Number(item.totalBags) || 0;
+      }
+      groups[key].history.push(item);
+    });
+
+    return Object.values(groups)
+      .map(g => ({
+        ...g,
+        balanceWeight: g.totalWeightIn - g.totalWeightOut,
+        balanceBags: g.totalBagsIn - g.totalBagsOut
+      }))
+      .filter(g => {
+        if (!searchQuery.trim()) return true;
+        return (g.godownName || '').toLowerCase().includes(lowerQuery) ||
+               (g.productName || '').toLowerCase().includes(lowerQuery);
+      });
   }, [ledger, searchQuery]);
 
   return (
@@ -184,10 +263,10 @@ export default function Inventory() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
         <Box>
           <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 3 }}>
-            INVENTORY LEDGER
+            GODOWN INVENTORY
           </Typography>
           <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mt: 0.5 }}>
-            MANAGE WAREHOUSE STOCK AND LOTS
+            AGGREGATED RAW STOCK & B2B TRANSFERS
           </Typography>
         </Box>
       </Box>
@@ -195,7 +274,7 @@ export default function Inventory() {
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <TextField
-          placeholder="Search by Farmer, Item, Slip, Lot..."
+          placeholder="Search Godown, Item..."
           variant="outlined"
           size="small"
           value={searchQuery}
@@ -211,58 +290,119 @@ export default function Inventory() {
             }
           } as any}
         />
-        <Button variant="contained" onClick={() => handleOpen()} sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}>
-          + ADD INVENTORY
+        <Button variant="contained" onClick={handleOpen} sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}>
+          + MANUAL INTAKE (IN)
         </Button>
       </Box>
 
-      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
-        <Table size="small">
+      <TableContainer sx={{ width: '100%', overflowX: 'auto', backgroundColor: '#FFF', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+        <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#F5F5F5' }}>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>DATE</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>GODOWN</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>ITEM</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>FARMER</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>SLIP NO</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>LOT NO</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>WEIGHT</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem' }}>TOTAL BAGS</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#1976d2' }}>LIFTED</TableCell>
-              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#d32f2f' }}>BALANCE</TableCell>
-              <TableCell align="right" sx={{  fontWeight: 900, fontSize: '0.75rem' , whiteSpace: 'nowrap' }}>ACTIONS</TableCell>
+            <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
+              <TableCell sx={{ width: 40 }}></TableCell>
+              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#475569' }}>GODOWN</TableCell>
+              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#475569' }}>ITEM</TableCell>
+              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#059669' }}>TOTAL IN</TableCell>
+              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#DC2626' }}>TOTAL OUT</TableCell>
+              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#1E293B' }}>BALANCE WEIGHT</TableCell>
+              <TableCell sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#1E293B' }}>BALANCE BAGS</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 900, fontSize: '0.75rem', color: '#475569' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredLedger.map((row) => (
-              <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem' }}>
-                  {new Date(row.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
-                </TableCell>
-                <TableCell sx={{ fontSize: '0.8rem' }}>{row.godownName}</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem' }}>{row.productName}</TableCell>
-                <TableCell sx={{ fontSize: '0.8rem' }}>{row.farmerName}</TableCell>
-                <TableCell sx={{ fontSize: '0.8rem' }}>{row.slipNo || '-'}</TableCell>
-                <TableCell sx={{ fontSize: '0.8rem' }}>{row.lotNo || '-'}</TableCell>
-                <TableCell sx={{ fontSize: '0.8rem' }}>{row.weight ? `${row.weight}` : '-'}</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem' }}>{row.totalBags}</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: '#1976d2', fontSize: '0.85rem' }}>{row.liftedBags}</TableCell>
-                <TableCell sx={{ fontWeight: 900, color: row.balanceBags === 0 ? 'green' : '#d32f2f', fontSize: '0.9rem' }}>
-                  {row.balanceBags}
-                </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <IconButton onClick={() => handleOpen(row)} size="small" sx={{ mr: 0.5 }}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: 'red' }}>
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
+            {groupedLedger.map((group) => (
+              <React.Fragment key={group.id}>
+                <TableRow sx={{ '&:hover': { backgroundColor: '#F1F5F9' }, transition: '0.2s', borderBottom: '2px solid #E2E8F0' }}>
+                  <TableCell>
+                    <IconButton size="small" onClick={() => setExpandedGroup(expandedGroup === group.id ? null : group.id)}>
+                      {expandedGroup === group.id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                    </IconButton>
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: '#334155' }}>{group.godownName}</TableCell>
+                  <TableCell sx={{ fontWeight: 800, color: '#0F172A', fontSize: '1rem' }}>{group.productName}</TableCell>
+                  <TableCell sx={{ color: '#059669', fontWeight: 600 }}>{group.totalWeightIn.toFixed(1)} kg ({group.totalBagsIn} bags)</TableCell>
+                  <TableCell sx={{ color: '#DC2626', fontWeight: 600 }}>{group.totalWeightOut.toFixed(1)} kg ({group.totalBagsOut} bags)</TableCell>
+                  <TableCell sx={{ fontWeight: 900, fontSize: '1.1rem', color: group.balanceWeight <= 0 ? '#DC2626' : '#1E293B' }}>
+                    {group.balanceWeight.toFixed(1)} kg
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 900, fontSize: '1.1rem', color: group.balanceBags <= 0 ? '#DC2626' : '#1E293B' }}>
+                    {group.balanceBags}
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button 
+                      variant="contained" 
+                      size="small" 
+                      startIcon={<SwapHorizIcon />}
+                      onClick={() => handleOpenTransfer(group)}
+                      sx={{ backgroundColor: '#0284C7', color: '#FFF', fontWeight: 700, borderRadius: 1 }}
+                    >
+                      TRANSFER TO B2B
+                    </Button>
+                  </TableCell>
+                </TableRow>
+                
+                {/* Expandable History Drawer */}
+                <TableRow>
+                  <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                    <Collapse in={expandedGroup === group.id} timeout="auto" unmountOnExit>
+                      <Box sx={{ margin: 2, p: 2, backgroundColor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                        <Typography sx={{ fontWeight: 800, mb: 1, color: '#475569', fontSize: '0.85rem' }}>HISTORY & CONTRIBUTORS</Typography>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>TYPE</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>DATE</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>FARMER / EVENT</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>SLIP NO</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>WEIGHT</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}>BAGS</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontSize: '0.7rem' }}></TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {group.history.map((h: any) => {
+                              const isOut = h.type === 'OUT';
+                              return (
+                                <TableRow key={h.id}>
+                                  <TableCell>
+                                    <Box sx={{ 
+                                      display: 'inline-block', px: 1, py: 0.2, borderRadius: 1, fontSize: '0.7rem', fontWeight: 800,
+                                      backgroundColor: isOut ? '#FEE2E2' : '#D1FAE5',
+                                      color: isOut ? '#DC2626' : '#059669'
+                                    }}>
+                                      {isOut ? 'OUT' : 'IN'}
+                                    </Box>
+                                  </TableCell>
+                                  <TableCell>{new Date(h.date).toLocaleDateString('en-IN')}</TableCell>
+                                  <TableCell sx={{ fontWeight: 600 }}>{h.farmerName}</TableCell>
+                                  <TableCell sx={{ fontSize: '0.8rem' }}>{h.slipNo || '-'}</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, color: isOut ? '#DC2626' : '#059669' }}>
+                                    {isOut ? '-' : '+'}{h.weight} kg
+                                  </TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>
+                                    {isOut ? '-' : '+'}{h.totalBags}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {!h.linkedProcurement && (
+                                      <IconButton onClick={() => handleDelete(h.id, isOut ? 'Transfer OUT' : 'Manual IN')} size="small" sx={{ color: '#EF4444' }}>
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
+                      </Box>
+                    </Collapse>
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
             ))}
-            {filteredLedger.length === 0 && (
+            {groupedLedger.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 8, color: '#94A3B8', fontWeight: 600, letterSpacing: 1 }}>
                   NO INVENTORY FOUND
                 </TableCell>
               </TableRow>
@@ -271,10 +411,11 @@ export default function Inventory() {
         </Table>
       </TableContainer>
 
+      {/* Manual IN Dialog */}
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>
         <Box sx={{ p: 3 }}>
           <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 3 }}>
-            {editingId ? 'EDIT INVENTORY / UPDATE LIFTED BAGS' : 'ADD INVENTORY'}
+            ADD MANUAL INVENTORY (IN)
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -302,20 +443,18 @@ export default function Inventory() {
               />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl fullWidth required>
-                <InputLabel>Item / Crop</InputLabel>
-                <Select
-                  value={formData.productId}
-                  label="Item / Crop"
-                  onChange={(e) => setFormData({ ...formData, productId: e.target.value as string })}
-                >
-                  {products.map(p => (
-                    <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+            <FormControl fullWidth required>
+              <InputLabel>Item / Crop</InputLabel>
+              <Select
+                value={formData.productId}
+                label="Item / Crop"
+                onChange={(e) => setFormData({ ...formData, productId: e.target.value as string })}
+              >
+                {products.map(p => (
+                  <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <Autocomplete
               fullWidth
@@ -338,13 +477,13 @@ export default function Inventory() {
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                label="Slip No"
+                label="Slip No (Optional)"
                 fullWidth
                 value={formData.slipNo}
                 onChange={(e) => setFormData({ ...formData, slipNo: e.target.value })}
               />
               <TextField
-                label="Lot No"
+                label="Lot No (Optional)"
                 fullWidth
                 value={formData.lotNo}
                 onChange={(e) => setFormData({ ...formData, lotNo: e.target.value })}
@@ -353,10 +492,10 @@ export default function Inventory() {
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                label="Weight"
+                label="Weight (kg)"
                 fullWidth
+                required
                 type="number"
-                placeholder="e.g. 1000"
                 value={formData.weight}
                 onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
               />
@@ -369,26 +508,70 @@ export default function Inventory() {
                 onChange={(e) => setFormData({ ...formData, totalBags: e.target.value })}
               />
             </Box>
-
-            <Box sx={{ p: 2, backgroundColor: '#F0F8FF', borderRadius: 1, border: '1px solid #90CAF9' }}>
-              <Typography sx={{ fontWeight: 800, mb: 2, fontSize: '0.8rem', color: '#1565C0' }}>UPDATE LIFTS</Typography>
-              <TextField
-                label="Lifted Bags (Removed/Sold)"
-                fullWidth
-                type="number"
-                value={formData.liftedBags}
-                onChange={(e) => setFormData({ ...formData, liftedBags: e.target.value })}
-              />
-              <Typography sx={{ mt: 1, fontSize: '0.75rem', color: '#666' }}>
-                Balance Bags will automatically update to: <strong>{(Number(formData.totalBags) || 0) - (Number(formData.liftedBags) || 0)}</strong>
-              </Typography>
-            </Box>
           </Box>
         </Box>
         <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
           <Button onClick={() => setOpen(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
           <Button variant="contained" onClick={handleSave} disabled={loading} sx={{ backgroundColor: '#1B2A4A', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : 'SAVE INVENTORY'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
+      {/* Transfer to B2B Catalog Dialog */}
+      <Dialog open={openTransfer} onClose={() => !loading && setOpenTransfer(false)} maxWidth="sm" fullWidth>
+        <Box sx={{ p: 3 }}>
+          <Typography sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '1rem', mb: 1, color: '#0284C7' }}>
+            TRANSFER TO B2B CATALOG
+          </Typography>
+          <Typography sx={{ color: '#475569', fontSize: '0.85rem', mb: 3 }}>
+            Transferring stock for <strong>{transferData.groupName}</strong>. This will reduce Godown balance and increase live Product stock.
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <TextField
+              label="Date"
+              type="date"
+              fullWidth
+              required
+              slotProps={{ inputLabel: { shrink: true } }}
+              value={transferData.date}
+              onChange={(e) => setTransferData({ ...transferData, date: e.target.value })}
+            />
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Transfer Weight (kg)"
+                fullWidth
+                required
+                type="number"
+                value={transferData.weight}
+                onChange={(e) => setTransferData({ ...transferData, weight: e.target.value })}
+              />
+              <TextField
+                label="Transfer Bags"
+                fullWidth
+                required
+                type="number"
+                value={transferData.totalBags}
+                onChange={(e) => setTransferData({ ...transferData, totalBags: e.target.value })}
+              />
+            </Box>
+            
+            <TextField
+              label="Notes (Optional)"
+              fullWidth
+              multiline
+              rows={2}
+              value={transferData.notes}
+              onChange={(e) => setTransferData({ ...transferData, notes: e.target.value })}
+            />
+          </Box>
+        </Box>
+        <DialogActions sx={{ borderTop: '1px solid #E2E8F0', p: 2 }}>
+          <Button onClick={() => setOpenTransfer(false)} disabled={loading} sx={{ fontWeight: 700, color: '#000' }}>CANCEL</Button>
+          <Button variant="contained" onClick={handleTransfer} disabled={loading} sx={{ backgroundColor: '#0284C7', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'CONFIRM TRANSFER'}
           </Button>
         </DialogActions>
       </Dialog>

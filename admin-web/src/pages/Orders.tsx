@@ -6,6 +6,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import app from '../firebase';
 import { getFirestore, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { useUI } from '../context/UIContext';
@@ -51,6 +52,7 @@ export default function Orders() {
   const [editLoading, setEditLoading] = useState(false);
   const [editStatus, setEditStatus] = useState('');
   const [editPaymentStatus, setEditPaymentStatus] = useState('');
+  const [editShippingAddress, setEditShippingAddress] = useState('');
   const [editTotal, setEditTotal] = useState('');
 
   // Dispatch Edit State
@@ -154,6 +156,7 @@ export default function Orders() {
     setEditingId(order.id);
     setEditStatus(order.status || 'Confirmed');
     setEditPaymentStatus(order.paymentStatus || 'Pending');
+    setEditShippingAddress(order.shippingAddress || order.billingAddress || '');
     setEditTotal(order.totalAmount?.toString() || '');
   };
 
@@ -163,16 +166,17 @@ export default function Orders() {
 
     // Optimistic update
     const previousOrders = [...orders];
-    setOrders(orders.map(o => o.id === editingId ? { ...o, status: editStatus, paymentStatus: editPaymentStatus } : o));
+    setOrders(orders.map(o => o.id === editingId ? { ...o, status: editStatus, paymentStatus: editPaymentStatus, shippingAddress: editShippingAddress } : o));
     const targetId = editingId;
     setEditingId(null); // Close instantly
 
     try {
       const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
       await updateOrderStatusFn({ orderId: targetId, newStatus: editStatus });
-      // Update payment status separately (direct update is fine for this non-financial field)
+      // Update payment status and shipping address separately
       await updateDoc(doc(db, 'orders', targetId), {
         paymentStatus: editPaymentStatus,
+        shippingAddress: editShippingAddress,
         updatedAt: new Date()
       });
       showMessage("Order updated", "success");
@@ -439,7 +443,7 @@ export default function Orders() {
                         rel="noreferrer"
                         style={{ color: '#0055CC', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
-                        📍 View on Google Maps
+                        <LocationOnIcon fontSize="small" /> View on Google Maps
                       </a>
                       {selectedOrder.location.address && (
                          <Typography sx={{ fontSize: '0.8rem', color: '#666', mt: 0.5 }}>
@@ -603,6 +607,15 @@ export default function Orders() {
                 <MenuItem value="Done">Done</MenuItem>
               </Select>
             </FormControl>
+            <TextField 
+              label="Shipping Address" 
+              multiline 
+              rows={3}
+              fullWidth 
+              value={editShippingAddress} 
+              onChange={(e) => setEditShippingAddress(e.target.value)}
+              helperText="The address where the order will be delivered"
+            />
             <TextField label="Total Amount (₹)" type="number" fullWidth value={editTotal} disabled
               slotProps={{ input: { readOnly: true } }}
               helperText="Amount is calculated server-side and cannot be manually edited"

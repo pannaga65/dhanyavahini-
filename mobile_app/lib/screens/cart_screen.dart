@@ -9,6 +9,20 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 import '../providers/cart_provider.dart';
 
+class SelectedAddressIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  void set(int value) => state = value;
+}
+final selectedAddressIndexProvider = NotifierProvider<SelectedAddressIndexNotifier, int>(SelectedAddressIndexNotifier.new);
+
+class UseBillingAsShippingNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void set(bool value) => state = value;
+}
+final useBillingAsShippingProvider = NotifierProvider<UseBillingAsShippingNotifier, bool>(UseBillingAsShippingNotifier.new);
+
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
 
@@ -278,82 +292,9 @@ class CartScreen extends ConsumerWidget {
                     
                     if (confirm != true) return;
                     
-                    // Fetch user's shipping addresses
-                    final user = FirebaseAuth.instance.currentUser;
-                    int selectedAddressIndex = 0;
-                    bool useBillingAsShipping = false;
-                    if (user != null) {
-                      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-                      final userData = userDoc.data() ?? {};
-                      final addresses = (userData['mailingAddresses'] as List<dynamic>?)?.cast<String>() ?? [];
-                      final billingAddress = (userData['billingAddress'] as String?) ?? '';
-                      
-                      if (context.mounted) {
-                        // Show address selection bottom sheet (always show to allow "Same as Billing")
-                        final result = await showModalBottomSheet<Map<String, dynamic>>(
-                          context: context,
-                          backgroundColor: Colors.white,
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-                          builder: (ctx) {
-                            return Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Center(
-                                    child: Container(
-                                      width: 40, height: 4,
-                                      margin: const EdgeInsets.only(bottom: 16),
-                                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-                                    ),
-                                  ),
-                                  const Text('Select Shipping Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 16),
-                                  // Same as Billing Address option
-                                  if (billingAddress.isNotEmpty)
-                                    Card(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      color: const Color(0xFFF0FFF4),
-                                      child: ListTile(
-                                        leading: const Icon(Icons.location_city, color: Colors.green),
-                                        title: Text(billingAddress, style: const TextStyle(fontSize: 14)),
-                                        subtitle: const Text('Same as Billing Address', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
-                                        trailing: const Icon(Icons.chevron_right),
-                                        onTap: () => Navigator.pop(ctx, {'useBilling': true}),
-                                      ),
-                                    ),
-                                  // Shipping addresses
-                                  ...List.generate(addresses.length, (i) {
-                                    return Card(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      child: ListTile(
-                                        leading: const Icon(Icons.local_shipping_outlined),
-                                        title: Text(addresses[i], style: const TextStyle(fontSize: 14)),
-                                        subtitle: i == 0 ? const Text('Default Shipping', style: TextStyle(color: Colors.blue, fontSize: 12)) : null,
-                                        trailing: const Icon(Icons.chevron_right),
-                                        onTap: () => Navigator.pop(ctx, {'index': i}),
-                                      ),
-                                    );
-                                  }),
-                                  const SizedBox(height: 8),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                        
-                        if (result == null) return; // User dismissed
-                        if (result['useBilling'] == true) {
-                          useBillingAsShipping = true;
-                        } else {
-                          selectedAddressIndex = result['index'] ?? 0;
-                        }
-                      }
-                    }
-
+                    final selectedAddressIndex = ref.read(selectedAddressIndexProvider);
+                    final useBillingAsShipping = ref.read(useBillingAsShippingProvider);
+                    
                     if (!context.mounted) return;
                     
                     // Show a non-dismissible loading dialog while the Cloud Function runs
@@ -423,41 +364,55 @@ class CartScreen extends ConsumerWidget {
   }
 }
 
-class _DeliveryAddressCard extends StatelessWidget {
+class _DeliveryAddressCard extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const SizedBox.shrink();
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
       builder: (context, snapshot) {
-        String? shippingAddress;
+        String? displayAddress;
+        
+        final selectedIndex = ref.watch(selectedAddressIndexProvider);
+        final useBilling = ref.watch(useBillingAsShippingProvider);
+        
+        Map<String, dynamic>? userData;
         if (snapshot.hasData && snapshot.data!.exists) {
-          final data = snapshot.data!.data() as Map<String, dynamic>?;
-          final mailingList = data?['mailingAddresses'] as List<dynamic>?;
-          if (mailingList != null && mailingList.isNotEmpty && mailingList.first.toString().trim().isNotEmpty) {
-            shippingAddress = mailingList.first.toString();
+          userData = snapshot.data!.data() as Map<String, dynamic>?;
+          
+          if (useBilling) {
+            displayAddress = userData?['billingAddress'] as String?;
+          } else {
+            final mailingList = userData?['mailingAddresses'] as List<dynamic>?;
+            if (mailingList != null && mailingList.length > selectedIndex) {
+              displayAddress = mailingList[selectedIndex].toString();
+            } else if (mailingList != null && mailingList.isNotEmpty) {
+              displayAddress = mailingList.first.toString();
+            }
           }
-          // Fallback to billing address
-          shippingAddress ??= (data?['billingAddress'] as String?)?.isNotEmpty == true ? data!['billingAddress'] : null;
+          
+          if (displayAddress == null || displayAddress.trim().isEmpty) {
+             displayAddress = userData?['billingAddress'] as String?;
+          }
         }
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: shippingAddress != null ? Colors.white : const Color(0xFFFFF3E0),
+            color: displayAddress != null ? Colors.white : const Color(0xFFFFF3E0),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: shippingAddress != null ? AppTheme.primaryAction.withValues(alpha: 0.3) : Colors.orange.shade300,
+              color: displayAddress != null ? AppTheme.primaryAction.withValues(alpha: 0.3) : Colors.orange.shade300,
             ),
           ),
           child: Row(
             children: [
               Icon(
-                shippingAddress != null ? Icons.local_shipping : Icons.warning_amber_rounded,
-                color: shippingAddress != null ? AppTheme.primaryAction : Colors.orange.shade700,
+                displayAddress != null ? Icons.local_shipping : Icons.warning_amber_rounded,
+                color: displayAddress != null ? AppTheme.primaryAction : Colors.orange.shade700,
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -466,20 +421,20 @@ class _DeliveryAddressCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      shippingAddress != null ? 'Deliver to' : 'No shipping address',
+                      displayAddress != null ? 'Deliver to' : 'No shipping address',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: shippingAddress != null ? AppTheme.textLight : Colors.orange.shade800,
+                        color: displayAddress != null ? AppTheme.textLight : Colors.orange.shade800,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      shippingAddress ?? 'Please add a shipping address in your Profile before placing an order.',
+                      displayAddress ?? 'Please add a shipping address in your Profile before placing an order.',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: shippingAddress != null ? AppTheme.textDark : Colors.orange.shade900,
+                        color: displayAddress != null ? AppTheme.textDark : Colors.orange.shade900,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -489,7 +444,84 @@ class _DeliveryAddressCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               TextButton(
-                onPressed: () => context.push('/profile'),
+                onPressed: () async {
+                  if (userData == null) return;
+                  final addresses = (userData['mailingAddresses'] as List<dynamic>?)?.cast<String>() ?? [];
+                  final billingAddress = (userData['billingAddress'] as String?) ?? '';
+                  
+                  final result = await showModalBottomSheet<Map<String, dynamic>>(
+                    context: context,
+                    backgroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                    builder: (ctx) {
+                      return Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 40, height: 4,
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                              ),
+                            ),
+                            const Text('Select Shipping Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 16),
+                            if (billingAddress.isNotEmpty)
+                              Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                color: const Color(0xFFF0FFF4),
+                                child: ListTile(
+                                  leading: const Icon(Icons.location_city, color: Colors.green),
+                                  title: Text(billingAddress, style: const TextStyle(fontSize: 14)),
+                                  subtitle: const Text('Same as Billing Address', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => Navigator.pop(ctx, {'useBilling': true}),
+                                ),
+                              ),
+                            ...List.generate(addresses.length, (i) {
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                child: ListTile(
+                                  leading: const Icon(Icons.local_shipping_outlined),
+                                  title: Text(addresses[i], style: const TextStyle(fontSize: 14)),
+                                  subtitle: i == 0 ? const Text('Default Shipping', style: TextStyle(color: Colors.blue, fontSize: 12)) : null,
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => Navigator.pop(ctx, {'index': i}),
+                                ),
+                              );
+                            }),
+                            const SizedBox(height: 8),
+                            // Button to go to profile if they want to add a completely new address
+                            Center(
+                              child: TextButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  context.push('/profile');
+                                },
+                                icon: const Icon(Icons.add),
+                                label: const Text('Add New Address in Profile'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                  
+                  if (result != null) {
+                    if (result['useBilling'] == true) {
+                      ref.read(useBillingAsShippingProvider.notifier).set(true);
+                    } else {
+                      ref.read(useBillingAsShippingProvider.notifier).set(false);
+                      ref.read(selectedAddressIndexProvider.notifier).set(result['index'] ?? 0);
+                    }
+                  }
+                },
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryAction,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

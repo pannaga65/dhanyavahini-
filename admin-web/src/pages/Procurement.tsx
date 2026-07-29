@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent, Checkbox, FormControlLabel } from '@mui/material';
-import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, where } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, where, increment, setDoc } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -29,6 +29,7 @@ export default function Procurement() {
   const [farmers, setFarmers] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [godowns, setGodowns] = useState<any[]>([]);
   
   // Dialog States
   const [openNewBill, setOpenNewBill] = useState(false);
@@ -62,6 +63,9 @@ export default function Procurement() {
     paymentMode: 'Cash',
     referenceNumber: '',
     notes: '',
+    // Inventory Routing
+    godownId: '',
+    totalBags: '',
     // For legacy edits
     details: '',
     totalAmount: ''
@@ -82,6 +86,7 @@ export default function Procurement() {
     fetchFarmers();
     fetchCategoriesAndProducts();
     fetchActiveLoans();
+    fetchGodowns();
   }, []);
 
   const fetchSettlements = async () => {
@@ -141,6 +146,17 @@ export default function Procurement() {
       setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) {
       console.error('Error fetching catalogs', e);
+    }
+  };
+
+  const fetchGodowns = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'godowns'));
+      const activeGodowns = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((g: any) => g.isActive !== false);
+      activeGodowns.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+      setGodowns(activeGodowns);
+    } catch (e) {
+      console.error('Error fetching godowns', e);
     }
   };
 
@@ -216,6 +232,8 @@ export default function Procurement() {
       paymentMode: 'Bank Transfer',
       referenceNumber: '',
       notes: '',
+      godownId: '',
+      totalBags: '',
       details: '',
       totalAmount: '',
       initialAdvanceNotes: ''
@@ -240,6 +258,8 @@ export default function Procurement() {
       paymentMode: 'Bank Transfer',
       referenceNumber: '',
       notes: row.notes || '',
+      godownId: row.godownId || '',
+      totalBags: row.totalBags ? row.totalBags.toString() : '',
       details: row.details || '',
       totalAmount: row.totalAmount.toString(),
       initialAdvanceNotes: ''
@@ -266,6 +286,15 @@ export default function Procurement() {
   const handleDelete = async (id: string) => {
     showConfirm("Are you sure you want to delete this order and its payments? This action cannot be undone.", async () => {
       try {
+        const existingBill = settlements.find(s => s.id === id);
+        if (existingBill && existingBill.godownId) {
+          // Revert Inventory Stock
+          await setDoc(doc(db, 'inventory', existingBill.productId), {
+            availableStockKg: increment(-Number(existingBill.grossWeight))
+          }, { merge: true });
+          // Delete Ledger Entry
+          await deleteDoc(doc(db, 'inventory_ledger', id));
+        }
         await deleteDoc(doc(db, 'farmer_settlements', id));
         fetchSettlements();
         showMessage("Order deleted", "success");
@@ -350,9 +379,48 @@ export default function Procurement() {
           updatePayload.wastagePercent = Number(billData.wastagePercent);
           updatePayload.netWeight = netWeightCalculated;
           updatePayload.ratePerKg = Number(billData.ratePerKg);
+          updatePayload.godownId = billData.godownId || '';
+          updatePayload.totalBags = Number(billData.totalBags) || 0;
         }
 
         await updateDoc(doc(db, 'farmer_settlements', editingBillId), updatePayload);
+
+        // --- INVENTORY SYNC FOR EDIT ---
+        // Reverse old inventory impact if applicable
+        if (existingBill.godownId) {
+          await setDoc(doc(db, 'inventory', existingBill.productId), {
+            availableStockKg: increment(-Number(existingBill.grossWeight))
+          }, { merge: true });
+          if (!billData.godownId) {
+            await deleteDoc(doc(db, 'inventory_ledger', editingBillId));
+          }
+        }
+        // Apply new inventory impact if applicable
+        if (billData.godownId) {
+          const selectedGodown = godowns.find(g => g.id === billData.godownId);
+          await setDoc(doc(db, 'inventory', billData.productId), {
+            availableStockKg: increment(Number(billData.grossWeight))
+          }, { merge: true });
+          await setDoc(doc(db, 'inventory_ledger', editingBillId), {
+            godownId: billData.godownId,
+            godownName: selectedGodown?.name || 'Unknown Godown',
+            date: billData.date,
+            productId: billData.productId,
+            productName: productName,
+            farmerId: billData.farmerId,
+            farmerName: finalFarmerName,
+            slipNo: existingBill.orderId ? `Proc-Order #${existingBill.orderId}` : `Proc-${editingBillId.substring(0,6).toUpperCase()}`,
+            lotNo: '',
+            weight: Number(billData.grossWeight),
+            totalBags: Number(billData.totalBags),
+            liftedBags: 0,
+            balanceBags: Number(billData.totalBags),
+            createdAt: serverTimestamp(),
+            linkedProcurement: true
+          });
+        }
+        // ---------------------------------
+
         showMessage("Bill updated successfully", "success");
       } else {
         const advance = Number(billData.initialAdvance) || 0;
@@ -385,6 +453,8 @@ export default function Procurement() {
           balance: balance,
           status: balance <= 0 ? 'Fully Paid' : 'Pending',
           payments: [],
+          godownId: billData.godownId || '',
+          totalBags: Number(billData.totalBags) || 0,
           createdAt: serverTimestamp(),
         };
         if (advance > 0) {
@@ -442,7 +512,34 @@ export default function Procurement() {
 
           payload.payments.push(newPaymentObj);
         }
-        await addDoc(collection(db, 'farmer_settlements'), payload);
+        const newBillRef = await addDoc(collection(db, 'farmer_settlements'), payload);
+        
+        // --- INVENTORY SYNC FOR NEW BILL ---
+        if (billData.godownId) {
+          const selectedGodown = godowns.find(g => g.id === billData.godownId);
+          await setDoc(doc(db, 'inventory', billData.productId), {
+            availableStockKg: increment(Number(billData.grossWeight))
+          }, { merge: true });
+          await setDoc(doc(db, 'inventory_ledger', newBillRef.id), {
+            godownId: billData.godownId,
+            godownName: selectedGodown?.name || 'Unknown Godown',
+            date: billData.date,
+            productId: billData.productId,
+            productName: productName,
+            farmerId: billData.farmerId,
+            farmerName: finalFarmerName,
+            slipNo: `Proc-Order #${nextOrderId}`,
+            lotNo: '',
+            weight: Number(billData.grossWeight),
+            totalBags: Number(billData.totalBags),
+            liftedBags: 0,
+            balanceBags: Number(billData.totalBags),
+            createdAt: serverTimestamp(),
+            linkedProcurement: true
+          });
+        }
+        // ------------------------------------
+
         showMessage("New order recorded successfully", "success");
         
         if (!selectedFarmerIdForPopup && billData.farmerId !== 'OTHER') {
@@ -932,6 +1029,37 @@ export default function Procurement() {
                     value={totalAmountCalculated.toFixed(2)}
                     sx={{ backgroundColor: '#E8F5E9', '& .MuiInputBase-input': { fontWeight: 900, color: 'green' } }}
                   />
+                </Box>
+
+                {/* Inventory Routing (Internal) */}
+                <Box sx={{ p: 2, mt: 1, backgroundColor: '#F8FAFC', borderRadius: 1, border: '1px solid #E2E8F0' }}>
+                  <Typography sx={{ fontWeight: 800, mb: 2, fontSize: '0.85rem', color: '#1E293B' }}>INVENTORY ROUTING (INTERNAL)</Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <FormControl fullWidth>
+                      <InputLabel>Route to Godown (Optional)</InputLabel>
+                      <Select
+                        value={billData.godownId}
+                        label="Route to Godown (Optional)"
+                        onChange={(e) => setBillData({ ...billData, godownId: e.target.value as string })}
+                      >
+                        <MenuItem value=""><em>None (Do not route)</em></MenuItem>
+                        {godowns.map(g => (
+                          <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    {billData.godownId && (
+                      <TextField
+                        label="Total Bags"
+                        fullWidth
+                        required
+                        type="number"
+                        value={billData.totalBags}
+                        onChange={(e) => setBillData({ ...billData, totalBags: e.target.value })}
+                        helperText="Required for Godown"
+                      />
+                    )}
+                  </Box>
                 </Box>
               </>
             ) : (

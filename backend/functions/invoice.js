@@ -17,9 +17,10 @@ exports.downloadInvoice = onRequest(async (req, res) => {
     }
     const order = orderSnap.data();
 
-    // Verify payment status (optional, but requested by user to only show when Paid)
-    // Actually, we check this in the frontend to show the button, but we can also enforce it here.
-    if (order.paymentStatus !== "Done") {
+    const isAdmin = req.query.admin === 'true';
+
+    // Verify payment status
+    if (!isAdmin && order.paymentStatus !== "Done") {
       return res.status(403).send("Invoice is not available until payment is Done.");
     }
     

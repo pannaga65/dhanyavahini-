@@ -336,7 +336,7 @@ export default function Orders() {
                     />
                   </TableCell>
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    {row.paymentStatus === 'Done' && row.invoiceNo && (
+                    {row.invoiceNo && (
                       <Button 
                         variant="contained" 
                         size="small" 
@@ -344,8 +344,8 @@ export default function Orders() {
                           const isLocal = window.location.hostname === 'localhost';
                           const projectId = app.options.projectId;
                           const url = isLocal 
-                            ? `http://127.0.0.1:5001/${projectId}/us-central1/downloadInvoice?orderId=${row.id}`
-                            : `https://us-central1-${projectId}.cloudfunctions.net/downloadInvoice?orderId=${row.id}`;
+                            ? `http://127.0.0.1:5001/${projectId}/us-central1/downloadInvoice?orderId=${row.id}&admin=true`
+                            : `https://us-central1-${projectId}.cloudfunctions.net/downloadInvoice?orderId=${row.id}&admin=true`;
                           window.open(url, '_blank');
                         }} 
                         sx={{ mr: 1, fontSize: '0.7rem' }}
@@ -524,8 +524,8 @@ export default function Orders() {
                   const isLocal = window.location.hostname === 'localhost';
                   const projectId = app.options.projectId;
                   const url = isLocal 
-                    ? `http://127.0.0.1:5001/${projectId}/us-central1/downloadInvoice?orderId=${selectedOrder.id}`
-                    : `https://us-central1-${projectId}.cloudfunctions.net/downloadInvoice?orderId=${selectedOrder.id}`;
+                    ? `http://127.0.0.1:5001/${projectId}/us-central1/downloadInvoice?orderId=${selectedOrder.id}&admin=true`
+                    : `https://us-central1-${projectId}.cloudfunctions.net/downloadInvoice?orderId=${selectedOrder.id}&admin=true`;
                   window.open(url, '_blank');
                 }}
                 sx={{ fontWeight: 700, backgroundColor: '#1B2A4A', color: '#FFF' }}

@@ -64,9 +64,10 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         }
         .container {
           width: 100%;
-          max-width: 800px;
+          max-width: 794px;
           margin: 0 auto;
           border: 1px solid #000;
+          background-color: #fff;
         }
         .header-title {
           text-align: center;
@@ -124,17 +125,18 @@ exports.downloadInvoice = onRequest(async (req, res) => {
           border-bottom: none;
         }
         @media print {
-          body { padding: 0; }
-          .container { border: 1px solid #000; }
+          body, html { margin: 0; padding: 0; max-width: 100%; background-color: #fff; }
+          .container { border: 1px solid #000; width: 100%; max-width: 100%; box-shadow: none; }
         }
       </style>
     </head>
     <body>
-      <div class="container">
+      <div class="container" id="invoice-content">
         <div class="header-title">BILL OF SUPPLY</div>
         
         <div class="row">
           <div class="col-left">
+            ${profile.logoUrl ? `<div style="margin-bottom: 15px;"><img src="${profile.logoUrl}" style="max-height: 80px; max-width: 200px;"/></div>` : ''}
             <h2>${profile.companyName || 'YOUR COMPANY NAME'}</h2>
             <p>${profile.addressLine1 || ''}</p>
             <p>${profile.addressLine2 || ''}</p>
@@ -150,31 +152,15 @@ exports.downloadInvoice = onRequest(async (req, res) => {
               <div><span class="bold">Dated</span><br/>${invoiceDateStr}</div>
             </div>
             <div class="grid-2">
-              <div><span class="bold">Delivery Note</span><br/>${dispatch.deliveryNote || '-'}</div>
               <div><span class="bold">Mode/Terms of Payment</span><br/>${dispatch.paymentTerms || '-'}</div>
-            </div>
-            <div class="grid-2">
-              <div><span class="bold">Reference No. & Date.</span><br/>${dispatch.referenceNo || '-'}</div>
-              <div><span class="bold">Other References</span><br/>-</div>
-            </div>
-            <div class="grid-2">
-              <div><span class="bold">Buyer's Order No.</span><br/>${dispatch.buyerOrderNo || '-'}</div>
-              <div><span class="bold">Dated</span><br/>-</div>
-            </div>
-            <div class="grid-2">
-              <div><span class="bold">Dispatch Doc No.</span><br/>${dispatch.dispatchDocNo || '-'}</div>
-              <div><span class="bold">Delivery Note Date</span><br/>-</div>
-            </div>
-            <div class="grid-2">
               <div><span class="bold">Dispatched through</span><br/>${dispatch.dispatchedThrough || '-'}</div>
-              <div><span class="bold">Destination</span><br/>${dispatch.destination || '-'}</div>
             </div>
             <div class="grid-2">
-              <div><span class="bold">Bill of Lading/LR-RR No.</span><br/>${dispatch.lrNumber || '-'}</div>
+              <div><span class="bold">Destination</span><br/>${dispatch.destination || '-'}</div>
               <div><span class="bold">Motor Vehicle No.</span><br/>${dispatch.motorVehicleNo || '-'}</div>
             </div>
             <div class="grid-2" style="margin-bottom:0;">
-              <div><span class="bold">Terms of Delivery</span><br/>${dispatch.termsOfDelivery || '-'}</div>
+              <div><span class="bold">Bill of Lading/LR-RR No.</span><br/>${dispatch.lrNumber || '-'}</div>
             </div>
           </div>
         </div>
@@ -248,10 +234,18 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         </div>
 
       </div>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       <script>
-        // Auto-print when opened
         window.onload = function() {
-          window.print();
+          var element = document.getElementById('invoice-content');
+          var opt = {
+            margin:       0,
+            filename:     'Invoice_${order.invoiceNo || orderId}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+          };
+          html2pdf().set(opt).from(element).save();
         }
       </script>
     </body>

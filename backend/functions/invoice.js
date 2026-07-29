@@ -269,6 +269,7 @@ exports.downloadInvoice = onRequest(async (req, res) => {
         </div>
 
       </div>
+      ${req.query.noJs === 'true' ? '' : `
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       <script>
         window.onload = function() {
@@ -298,7 +299,7 @@ exports.downloadInvoice = onRequest(async (req, res) => {
           // Fallback: generate after 3 seconds even if images fail
           setTimeout(tryGenerate, 3000);
         }
-      </script>
+      </script>`}
     </body>
     </html>
     `;

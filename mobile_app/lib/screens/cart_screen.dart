@@ -139,8 +139,11 @@ class CartScreen extends ConsumerWidget {
                                     const SizedBox(height: 4),
                                     Text('${currencyFormat.format(item.price)} / Kg', 
                                       style: const TextStyle(color: AppTheme.textLight, fontSize: 13)),
+                                    if (item.gstPercentage > 0)
+                                      Text('+ ${item.gstPercentage}% GST (${currencyFormat.format(lineTotal * (item.gstPercentage/100))})', 
+                                        style: const TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.w600)),
                                     const SizedBox(height: 8),
-                                    Text('Total: ${currencyFormat.format(lineTotal)}', 
+                                    Text('Total: ${currencyFormat.format(lineTotal + (lineTotal * (item.gstPercentage/100)))}', 
                                       style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.primaryAction, fontSize: 14)),
                                   ],
                                 ),
@@ -201,10 +204,16 @@ class CartScreen extends ConsumerWidget {
               ],
             ),
       bottomNavigationBar: cartItems.isEmpty ? null : Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 32),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: AppTheme.modernShadow,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -10),
+            )
+          ],
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: SafeArea(
@@ -214,33 +223,38 @@ class CartScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Subtotal', style: TextStyle(color: AppTheme.textLight)),
-                  Text(currencyFormat.format(cartNotifier.subtotal), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const Text('Subtotal', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.w500)),
+                  Text(currencyFormat.format(cartNotifier.subtotal), style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark)),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total GST', style: TextStyle(color: AppTheme.textLight)),
-                  Text(currencyFormat.format(gstAmount), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const Text('Taxes (GST)', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.w500)),
+                  Text(currencyFormat.format(gstAmount), style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark)),
                 ],
               ),
-              const Divider(height: 32),
+              const SizedBox(height: 16),
+              Container(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(currencyFormat.format(totalAmount), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryAction)),
+                  const Text('Total to Pay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.textDark)),
+                  Text(currencyFormat.format(totalAmount), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.primaryAction)),
                 ],
               ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryAction,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shadowColor: AppTheme.primaryAction.withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: () async {

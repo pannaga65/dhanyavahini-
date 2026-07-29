@@ -349,7 +349,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Business Details
+              const SizedBox(height: 24),
+
+              // Contact Details
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -362,20 +364,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.business, color: AppTheme.primaryAction, size: 20),
+                        Icon(Icons.contact_phone, color: AppTheme.primaryAction, size: 20),
                         const SizedBox(width: 8),
-                        const Text('Business Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const Text('Contact Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildDetailRow(Icons.store, 'Firm Name', userData?['tradeName'] ?? 'Not set'),
+                    _buildDetailRow(Icons.person, 'Contact Name', userData?['displayName'] ?? 'Not set'),
+                    const Divider(),
+                    _buildDetailRow(Icons.phone, 'Phone Number', userData?['phoneNumber'] ?? 'Not set'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Tax Information
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: AppTheme.modernShadow,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.account_balance, color: AppTheme.primaryAction, size: 20),
+                        const SizedBox(width: 8),
+                        const Text('Tax Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow(Icons.store, 'Firm / Trade Name', userData?['tradeName'] ?? 'Not set'),
                     const Divider(),
                     _buildDetailRow(Icons.receipt, 'GST Number', userData?['gstNumber'] ?? 'Not set'),
                     const Divider(),
                     _buildDetailRow(Icons.credit_card, 'PAN Number', userData?['panNumber'] ?? 'Not set'),
-                    const Divider(),
-                    _buildDetailRow(Icons.phone, 'Phone', userData?['phoneNumber'] ?? 'Not set'),
-                    const Divider(),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Addresses
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: AppTheme.modernShadow,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: AppTheme.primaryAction, size: 20),
+                        const SizedBox(width: 8),
+                        const Text('Addresses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     _buildDetailRow(Icons.location_city, 'Billing Address', userData?['billingAddress'] ?? 'Not set'),
                     const Divider(),
                     // Show all shipping addresses

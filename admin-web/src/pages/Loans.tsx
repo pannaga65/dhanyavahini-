@@ -39,6 +39,10 @@ export default function Loans() {
 
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Filters
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('ALL');
 
   const [loanData, setLoanData] = useState({
     farmerId: '',
@@ -138,13 +142,47 @@ export default function Loans() {
   }, [loansList]);
 
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return farmerGroups;
-    const lowerQuery = searchQuery.toLowerCase();
-    return farmerGroups.filter(g =>
-      g.farmerName.toLowerCase().includes(lowerQuery) ||
-      g.loans.some(l => (l.notes || '').toLowerCase().includes(lowerQuery))
-    );
-  }, [farmerGroups, searchQuery]);
+    let result = farmerGroups;
+
+    // Status Filter
+    if (statusFilter === 'ACTIVE') result = result.filter(g => g.status === 'Active');
+    if (statusFilter === 'CLEARED') result = result.filter(g => g.status === 'Recovered');
+
+    // Date Filter
+    if (dateFilter !== 'ALL') {
+      const today = new Date();
+      result = result.filter(g => {
+        // Find if they have any loan matching the date filter
+        return g.loans.some(l => {
+          if (!l.date) return false;
+          const lDate = new Date(l.date);
+          if (dateFilter === 'TODAY') {
+            return lDate.toDateString() === today.toDateString();
+          }
+          if (dateFilter === 'THIS_WEEK') {
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            return lDate >= startOfWeek;
+          }
+          if (dateFilter === 'THIS_MONTH') {
+            return lDate.getMonth() === today.getMonth() && lDate.getFullYear() === today.getFullYear();
+          }
+          return true;
+        });
+      });
+    }
+
+    // Search Query
+    if (searchQuery.trim()) {
+      const lowerQuery = searchQuery.toLowerCase();
+      result = result.filter(g =>
+        g.farmerName.toLowerCase().includes(lowerQuery) ||
+        g.loans.some(l => (l.notes || '').toLowerCase().includes(lowerQuery))
+      );
+    }
+    
+    return result;
+  }, [farmerGroups, searchQuery, statusFilter, dateFilter]);
 
   const selectedFarmerGroup = useMemo(() => {
     if (!selectedFarmerIdForPopup) return null;
@@ -364,13 +402,33 @@ export default function Loans() {
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon />
+                  <SearchIcon sx={{ color: '#94A3B8' }} />
                 </InputAdornment>
               ),
             }
           } as any}
         />
-        <Button variant="contained" onClick={() => handleOpenNewLoan()} sx={{ fontWeight: 700 }}>
+        
+        {/* Unified Filter Bar additions */}
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ borderRadius: 2 }}>
+              <MenuItem value="ALL">All Status</MenuItem>
+              <MenuItem value="ACTIVE">Active (Unpaid)</MenuItem>
+              <MenuItem value="CLEARED">Cleared (Paid)</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
+            <Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} sx={{ borderRadius: 2 }}>
+              <MenuItem value="ALL">All Time</MenuItem>
+              <MenuItem value="TODAY">Today</MenuItem>
+              <MenuItem value="THIS_WEEK">This Week</MenuItem>
+              <MenuItem value="THIS_MONTH">This Month</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Button variant="contained" onClick={() => handleOpenNewLoan()} sx={{ fontWeight: 700, backgroundColor: '#0F172A', color: '#FFF', borderRadius: 2, px: 3 }}>
           + ISSUE LOAN
         </Button>
       </Box>

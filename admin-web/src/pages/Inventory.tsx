@@ -24,6 +24,10 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
+  // Filters
+  const [stockFilter, setStockFilter] = useState('ALL');
+  const [godownFilter, setGodownFilter] = useState('ALL');
+
   const [formData, setFormData] = useState({
     godownId: '',
     date: new Date().toISOString().split('T')[0],
@@ -254,11 +258,23 @@ export default function Inventory() {
         balanceBags: g.totalBagsIn - g.totalBagsOut
       }))
       .filter(g => {
-        if (!searchQuery.trim()) return true;
-        return (g.godownName || '').toLowerCase().includes(lowerQuery) ||
-               (g.productName || '').toLowerCase().includes(lowerQuery);
+        // Search Filter
+        if (searchQuery.trim()) {
+          const match = (g.godownName || '').toLowerCase().includes(lowerQuery) ||
+                        (g.productName || '').toLowerCase().includes(lowerQuery);
+          if (!match) return false;
+        }
+
+        // Godown Filter
+        if (godownFilter !== 'ALL' && g.godownId !== godownFilter) return false;
+
+        // Stock Filter
+        if (stockFilter === 'IN_STOCK' && g.balanceWeight <= 0) return false;
+        if (stockFilter === 'EMPTY' && g.balanceWeight > 0) return false;
+
+        return true;
       });
-  }, [ledger, searchQuery]);
+  }, [ledger, searchQuery, godownFilter, stockFilter]);
 
   return (
     <Box>
@@ -286,6 +302,24 @@ export default function Inventory() {
               }
             } as any}
           />
+          
+          <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
+            <Select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} sx={{ borderRadius: 2 }}>
+              <MenuItem value="ALL">All Stock Levels</MenuItem>
+              <MenuItem value="IN_STOCK">In Stock (&gt; 0)</MenuItem>
+              <MenuItem value="EMPTY">Out of Stock</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
+            <Select value={godownFilter} onChange={(e) => setGodownFilter(e.target.value)} sx={{ borderRadius: 2 }}>
+              <MenuItem value="ALL">All Godowns</MenuItem>
+              {godowns.map(g => (
+                <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           <Button 
             variant="contained" 
             onClick={handleOpen} 

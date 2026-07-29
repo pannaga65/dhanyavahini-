@@ -48,6 +48,10 @@ export default function Procurement() {
 
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Filters
+  const [dateFilter, setDateFilter] = useState('ALL');
+  const [productFilter, setProductFilter] = useState('ALL');
 
   const [billData, setBillData] = useState({
     farmerId: '',
@@ -164,7 +168,34 @@ export default function Procurement() {
   const farmerGroups: FarmerGroup[] = useMemo(() => {
     const groupMap = new Map<string, FarmerGroup>();
 
-    for (const s of settlements) {
+    // Apply Filters before grouping
+    let filteredSettlements = settlements;
+
+    if (dateFilter !== 'ALL') {
+      const today = new Date();
+      filteredSettlements = filteredSettlements.filter(s => {
+        if (!s.date) return false;
+        const sDate = new Date(s.date);
+        if (dateFilter === 'TODAY') {
+          return sDate.toDateString() === today.toDateString();
+        }
+        if (dateFilter === 'THIS_WEEK') {
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - today.getDay());
+          return sDate >= startOfWeek;
+        }
+        if (dateFilter === 'THIS_MONTH') {
+          return sDate.getMonth() === today.getMonth() && sDate.getFullYear() === today.getFullYear();
+        }
+        return true;
+      });
+    }
+
+    if (productFilter !== 'ALL') {
+      filteredSettlements = filteredSettlements.filter(s => s.productId === productFilter);
+    }
+
+    for (const s of filteredSettlements) {
       const key = s.farmerId || s.farmerName;
       if (!groupMap.has(key)) {
         groupMap.set(key, {
@@ -665,13 +696,34 @@ export default function Procurement() {
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon />
+                  <SearchIcon sx={{ color: '#94A3B8' }} />
                 </InputAdornment>
               ),
             }
           } as any}
         />
-        <Button variant="contained" onClick={() => handleOpenNewBill()} sx={{ fontWeight: 700 }}>
+        
+        {/* Unified Filter Bar additions */}
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
+            <Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} sx={{ borderRadius: 2 }}>
+              <MenuItem value="ALL">All Time</MenuItem>
+              <MenuItem value="TODAY">Today</MenuItem>
+              <MenuItem value="THIS_WEEK">This Week</MenuItem>
+              <MenuItem value="THIS_MONTH">This Month</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 150, backgroundColor: '#FFF' }}>
+            <Select value={productFilter} onChange={(e) => setProductFilter(e.target.value)} sx={{ borderRadius: 2 }}>
+              <MenuItem value="ALL">All Crops</MenuItem>
+              {products.map(p => (
+                <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Button variant="contained" onClick={() => handleOpenNewBill()} sx={{ fontWeight: 700, backgroundColor: '#0F172A', color: '#FFF', borderRadius: 2, px: 3 }}>
           + NEW ORDER
         </Button>
       </Box>

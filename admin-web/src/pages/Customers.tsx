@@ -160,6 +160,7 @@ export default function Customers() {
         <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
+              <TableCell sx={{ fontWeight: 900 }}>CUSTOMER ID</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>TRADE NAME</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>CUSTOMER NAME</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>EMAIL</TableCell>
@@ -171,6 +172,7 @@ export default function Customers() {
           <TableBody>
             {customers.map((row) => (
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
+                <TableCell sx={{ fontWeight: 800, color: '#1B2A4A' }}>{row.customerId || 'DV-LEGACY'}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>{row.tradeName}</TableCell>
                 <TableCell>{row.displayName}</TableCell>
                 <TableCell>{row.email}</TableCell>

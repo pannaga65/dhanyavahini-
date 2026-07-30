@@ -337,6 +337,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(userData?['displayName'] ?? 'User Name', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                           const SizedBox(height: 4),
                           Text(userData?['email'] ?? user?.email ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
+                          if (userData?['customerId'] != null && userData!['customerId'].toString().isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+                              child: Text(userData!['customerId'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
+                            ),
+                          ],
                         ],
                       ),
                     ),

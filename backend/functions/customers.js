@@ -1,4 +1,5 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const nodemailer = require("nodemailer");
@@ -113,5 +114,32 @@ exports.createCustomer = onCall(async (request) => {
       throw new HttpsError("already-exists", "A user with this email already exists.");
     }
     throw new HttpsError("internal", "Failed to create customer. Please try again.");
+  }
+});
+
+exports.onCustomerCreated = onDocumentCreated("users/{userId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const data = snapshot.data();
+  // Only assign ID if they are a customer and do not already have one
+  if (data.role === "customer" && !data.customerId) {
+    const userRef = snapshot.ref;
+    
+    await db.runTransaction(async (transaction) => {
+      const counterRef = db.collection("settings").doc("customerCounter");
+      const counterSnap = await transaction.get(counterRef);
+      
+      let nextSeq = 1;
+      if (counterSnap.exists) {
+        nextSeq = (counterSnap.data().seq || 0) + 1;
+      }
+      
+      transaction.set(counterRef, { seq: nextSeq }, { merge: true });
+      
+      const customerId = `DV-${nextSeq.toString().padStart(5, "0")}`;
+      
+      transaction.update(userRef, { customerId: customerId });
+    });
   }
 });

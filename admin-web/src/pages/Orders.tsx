@@ -54,6 +54,9 @@ export default function Orders() {
   const [editPaymentStatus, setEditPaymentStatus] = useState('');
   const [editShippingAddress, setEditShippingAddress] = useState('');
   const [editTotal, setEditTotal] = useState('');
+  const [editItems, setEditItems] = useState<any[]>([]);
+  const [editSubtotal, setEditSubtotal] = useState<number>(0);
+  const [editGstAmount, setEditGstAmount] = useState<number>(0);
 
   // Dispatch Edit State
   const [editDispatchOrder, setEditDispatchOrder] = useState<Order | null>(null);
@@ -158,6 +161,9 @@ export default function Orders() {
     setEditPaymentStatus(order.paymentStatus || 'Pending');
     setEditShippingAddress(order.shippingAddress || order.billingAddress || '');
     setEditTotal(order.totalAmount?.toString() || '');
+    setEditItems(order.items ? JSON.parse(JSON.stringify(order.items)) : []);
+    setEditSubtotal(order.subtotal || 0);
+    setEditGstAmount(order.gstAmount || 0);
   };
 
   const handleSaveEdit = async () => {
@@ -166,17 +172,30 @@ export default function Orders() {
 
     // Optimistic update
     const previousOrders = [...orders];
-    setOrders(orders.map(o => o.id === editingId ? { ...o, status: editStatus, paymentStatus: editPaymentStatus, shippingAddress: editShippingAddress } : o));
+    setOrders(orders.map(o => o.id === editingId ? { 
+      ...o, 
+      status: editStatus, 
+      paymentStatus: editPaymentStatus, 
+      shippingAddress: editShippingAddress,
+      items: editItems,
+      subtotal: editSubtotal,
+      gstAmount: editGstAmount,
+      totalAmount: Number(editTotal)
+    } : o));
     const targetId = editingId;
     setEditingId(null); // Close instantly
 
     try {
       const updateOrderStatusFn = httpsCallable(functions, 'updateOrderStatus');
       await updateOrderStatusFn({ orderId: targetId, newStatus: editStatus });
-      // Update payment status and shipping address separately
+      // Update payment status, shipping address, and item weights
       await updateDoc(doc(db, 'orders', targetId), {
         paymentStatus: editPaymentStatus,
         shippingAddress: editShippingAddress,
+        items: editItems,
+        subtotal: editSubtotal,
+        gstAmount: editGstAmount,
+        totalAmount: Number(editTotal),
         updatedAt: new Date()
       });
       showMessage("Order updated", "success");
@@ -616,6 +635,42 @@ export default function Orders() {
               onChange={(e) => setEditShippingAddress(e.target.value)}
               helperText="The address where the order will be delivered"
             />
+            {editItems.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#94A3B8', mb: 1, letterSpacing: 1 }}>
+                  ADJUST DISPATCH WEIGHTS (KG)
+                </Typography>
+                {editItems.map((item, idx) => (
+                  <Box key={idx} sx={{ display: 'flex', gap: 2, mb: 1.5, alignItems: 'center', backgroundColor: '#F8FAFC', p: 1.5, borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                    <Typography sx={{ flex: 1, fontWeight: 700, fontSize: '0.85rem' }}>{item.name}</Typography>
+                    <TextField 
+                      label="Qty (Kg)" 
+                      type="number" 
+                      size="small"
+                      value={item.quantityKg} 
+                      onChange={(e) => {
+                        const newItems = [...editItems];
+                        const qty = Number(e.target.value) || 0;
+                        newItems[idx].quantityKg = qty;
+                        newItems[idx].lineTotal = Number((qty * newItems[idx].basePriceKg).toFixed(2));
+                        newItems[idx].lineGst = Number((newItems[idx].lineTotal * (newItems[idx].gstPercentage / 100)).toFixed(2));
+                        setEditItems(newItems);
+                        
+                        const newSub = newItems.reduce((acc, curr) => acc + curr.lineTotal, 0);
+                        const newGst = newItems.reduce((acc, curr) => acc + curr.lineGst, 0);
+                        setEditSubtotal(Number(newSub.toFixed(2)));
+                        setEditGstAmount(Number(newGst.toFixed(2)));
+                        setEditTotal((Math.round((newSub + newGst) * 100) / 100).toString());
+                      }} 
+                      sx={{ width: 100, backgroundColor: '#FFF' }}
+                    />
+                    <Typography sx={{ width: 80, textAlign: 'right', fontWeight: 800, color: '#0055CC' }}>
+                      ₹{item.lineTotal?.toLocaleString()}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
             <TextField label="Total Amount (₹)" type="number" fullWidth value={editTotal} disabled
               slotProps={{ input: { readOnly: true } }}
               helperText="Amount is calculated server-side and cannot be manually edited"

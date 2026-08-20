@@ -176,7 +176,7 @@ function App() {
       {/* Logo */}
       <Box sx={{ px: 2.5, pt: 3, pb: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={adminProfile.logoUrl || "/LOGO.png"} alt="Logo" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <img src={adminProfile.logoUrl || "/logo.png"} alt="Logo" style={{ width: 32, height: 32, objectFit: 'contain' }} />
         </Box>
         <Box>
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', letterSpacing: 0.5, lineHeight: 1, color: '#1A1A2E' }}>

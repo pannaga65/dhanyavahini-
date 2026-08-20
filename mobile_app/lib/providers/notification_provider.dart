@@ -83,7 +83,7 @@ const AndroidNotificationChannel _channel = AndroidNotificationChannel(
 
 /// Initialize local notifications and create the Android channel
 Future<void> initLocalNotifications() async {
-  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
   const iosSettings = DarwinInitializationSettings(
     requestAlertPermission: true,
     requestBadgePermission: true,
@@ -118,7 +118,7 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
         channelDescription: _channel.description,
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
+        icon: '@drawable/ic_notification',
         playSound: true,
       ),
       iOS: const DarwinNotificationDetails(

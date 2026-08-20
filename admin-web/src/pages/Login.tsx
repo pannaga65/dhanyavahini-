@@ -86,7 +86,7 @@ export default function Login() {
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/LOGO.png" alt="Logo" style={{ width: 48, height: 48, objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Logo" style={{ width: 48, height: 48, objectFit: 'contain' }} />
           </Box>
           <Box>
             <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: 0.5, color: '#1B2A4A', lineHeight: 1 }}>

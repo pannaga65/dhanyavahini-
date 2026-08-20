@@ -219,7 +219,7 @@ export default function Categories() {
             {categories.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>No categories found.</Typography>
+                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>{!navigator.onLine ? "NO INTERNET CONNECTION" : "No categories found."}</Typography>
                   <Button variant="outlined" onClick={handleOpenNew} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
                     Create First Category
                   </Button>

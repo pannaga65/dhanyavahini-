@@ -95,13 +95,8 @@ export default function Procurement() {
 
   const fetchSettlements = async () => {
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
-      
       const q = query(
         collection(db, 'farmer_settlements'), 
-        where('date', '>=', dateStr),
         orderBy('date', 'desc')
       );
       const querySnapshot = await getDocs(q);
@@ -784,7 +779,7 @@ export default function Procurement() {
             {filteredGroups.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
-                  NO PROCUREMENT RECORDS FOUND
+                  {!navigator.onLine ? "NO INTERNET CONNECTION" : "NO PROCUREMENT RECORDS FOUND"}
                 </TableCell>
               </TableRow>
             )}

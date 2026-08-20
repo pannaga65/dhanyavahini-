@@ -220,7 +220,7 @@ export default function Godowns() {
             {godowns.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>No godowns found.</Typography>
+                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>{!navigator.onLine ? "NO INTERNET CONNECTION" : "No godowns found."}</Typography>
                   <Button variant="outlined" onClick={() => handleOpen()} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
                     Create First Godown
                   </Button>

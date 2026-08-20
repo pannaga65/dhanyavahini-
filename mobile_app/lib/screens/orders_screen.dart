@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
+import 'package:flutter_html_to_pdf_plus/flutter_html_to_pdf_plus.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
@@ -407,9 +407,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                                 final targetFileName = 'Invoice_${doc.id}';
                                                 
                                                 final generatedPdfFile = await FlutterHtmlToPdf.convertFromHtmlContent(
-                                                  response.body,
-                                                  targetPath,
-                                                  targetFileName,
+                                                  content: response.body,
+                                                  configuration: PrintPdfConfiguration(
+                                                    targetDirectory: targetPath,
+                                                    targetName: targetFileName,
+                                                    printSize: PrintSize.A4,
+                                                    printOrientation: PrintOrientation.Portrait,
+                                                  ),
                                                 );
                                                 
                                                 await OpenFilex.open(generatedPdfFile.path);

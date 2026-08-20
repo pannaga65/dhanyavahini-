@@ -395,7 +395,7 @@ export default function Orders() {
             {filteredOrders.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
-                  NO ORDERS FOUND MATCHING FILTERS
+                  {!navigator.onLine ? "NO INTERNET CONNECTION" : "NO ORDERS FOUND MATCHING FILTERS"}
                 </TableCell>
               </TableRow>
             )}

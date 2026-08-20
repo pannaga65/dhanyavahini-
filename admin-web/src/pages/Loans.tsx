@@ -519,7 +519,7 @@ export default function Loans() {
             {filteredGroups.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#999', fontWeight: 600, letterSpacing: 1 }}>
-                  NO LOANS FOUND
+                  {!navigator.onLine ? "NO INTERNET CONNECTION" : "NO LOANS FOUND"}
                 </TableCell>
               </TableRow>
             )}

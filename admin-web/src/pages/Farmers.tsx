@@ -274,7 +274,7 @@ export default function Farmers() {
             {filteredFarmers.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 8, color: '#94A3B8', fontWeight: 500, fontSize: '0.9rem' }}>
-                  No farmers found matching filters.
+                  {!navigator.onLine ? "NO INTERNET CONNECTION" : "No farmers found matching filters."}
                 </TableCell>
               </TableRow>
             )}

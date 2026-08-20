@@ -254,7 +254,7 @@ export default function Banners() {
             {banners.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
-                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>No banners found.</Typography>
+                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>{!navigator.onLine ? "NO INTERNET CONNECTION" : "No banners found."}</Typography>
                   <Button variant="outlined" onClick={handleOpenNew} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
                     Create First Banner
                   </Button>

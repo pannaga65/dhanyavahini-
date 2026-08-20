@@ -356,7 +356,7 @@ export default function Products() {
             {products.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
-                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>No products found in the catalog.</Typography>
+                  <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>{!navigator.onLine ? "NO INTERNET CONNECTION" : "No products found in the catalog."}</Typography>
                   <Button variant="outlined" onClick={handleOpenNew} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
                     Create First Product
                   </Button>

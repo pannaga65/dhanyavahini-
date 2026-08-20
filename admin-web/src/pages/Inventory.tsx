@@ -471,7 +471,7 @@ export default function Inventory() {
             {groupedLedger.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 8, color: '#94A3B8', fontWeight: 500, fontSize: '0.9rem' }}>
-                  No inventory found. Add manual intake to get started.
+                  {!navigator.onLine ? "NO INTERNET CONNECTION" : "No inventory found. Add manual intake to get started."}
                 </TableCell>
               </TableRow>
             )}

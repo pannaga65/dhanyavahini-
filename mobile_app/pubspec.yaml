@@ -55,8 +55,8 @@ dependencies:
   flutter_inappwebview: ^6.1.5
   path_provider: ^2.1.6
   open_filex: ^4.7.0
-  flutter_html_to_pdf: ^0.7.0
   http: ^1.6.0
+  flutter_html_to_pdf_plus: ^0.4.0
 
 dev_dependencies:
   flutter_test:

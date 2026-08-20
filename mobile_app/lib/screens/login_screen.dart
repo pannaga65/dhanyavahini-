@@ -109,21 +109,21 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (mounted) {
-        Navigator.pop(context); // hide loading
+        Navigator.of(context, rootNavigator: true).pop(); // hide loading
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result.data['message'] ?? 'Password reset email sent! Check your inbox.'), backgroundColor: AppTheme.primaryAction),
         );
       }
     } on FirebaseFunctionsException catch (e) {
       if (mounted) {
-        Navigator.pop(context); // hide loading
+        Navigator.of(context, rootNavigator: true).pop(); // hide loading
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message ?? 'Failed to send reset email'), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // hide loading
+        Navigator.of(context, rootNavigator: true).pop(); // hide loading
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('An error occurred: $e'), backgroundColor: Colors.red),
         );

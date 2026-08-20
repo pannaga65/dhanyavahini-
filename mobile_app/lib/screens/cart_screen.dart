@@ -309,7 +309,7 @@ class CartScreen extends ConsumerWidget {
                       
                       cartNotifier.clear();
                       if (context.mounted) {
-                        Navigator.pop(context); // Close the loading dialog
+                        Navigator.of(context, rootNavigator: true).pop(); // Close the loading dialog
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: const Text('Inquiry Submitted Successfully! We will get back to you.'),
                           backgroundColor: AppTheme.primaryAction,
@@ -319,12 +319,12 @@ class CartScreen extends ConsumerWidget {
                       }
                     } on FirebaseFunctionsException catch (e) {
                       if (context.mounted) {
-                        Navigator.pop(context); // Close the loading dialog
+                        Navigator.of(context, rootNavigator: true).pop(); // Close the loading dialog
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order: ${e.message}')));
                       }
                     } catch (e) {
                       if (context.mounted) {
-                        Navigator.pop(context); // Close the loading dialog
+                        Navigator.of(context, rootNavigator: true).pop(); // Close the loading dialog
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order: $e')));
                       }
                     }

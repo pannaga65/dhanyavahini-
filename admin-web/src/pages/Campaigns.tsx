@@ -126,7 +126,7 @@ export default function Campaigns() {
               <TableRow key={row.id} sx={{ '&:hover': { backgroundColor: '#F1F5F9' } }}>
                 <TableCell>
                   <Typography sx={{ fontWeight: 700, color: '#1E293B' }}>{row.title}</Typography>
-                  <Typography sx={{ fontSize: '0.8rem', color: '#64748B', maxWidth: 300, noWrap: true }}>{row.body}</Typography>
+                  <Typography noWrap sx={{ fontSize: '0.8rem', color: '#64748B', maxWidth: 300 }}>{row.body}</Typography>
                 </TableCell>
                 <TableCell>
                   <Chip size="small" label={getTypeLabel(row.type)} color={getTypeColor(row.type)} sx={{ fontWeight: 600 }} />

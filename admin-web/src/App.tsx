@@ -43,9 +43,9 @@ const NAV_ITEMS = [
   { text: 'Customers', path: '/customers', icon: <PeopleOutlinedIcon sx={{ fontSize: 20 }} /> },
   { text: 'Farmers', path: '/farmers', icon: <AgricultureOutlinedIcon sx={{ fontSize: 20 }} /> },
   { text: 'Procurement', path: '/procurement', icon: <ReceiptLongOutlinedIcon sx={{ fontSize: 20 }} /> },
-  { text: 'Campaigns', path: '/campaigns', icon: <NotificationsIcon sx={{ fontSize: 20 }} /> },
   { text: 'Loans', path: '/loans', icon: <AccountBalanceOutlinedIcon sx={{ fontSize: 20 }} /> },
   { text: 'Inventory', path: '/inventory', icon: <Inventory2OutlinedIcon sx={{ fontSize: 20 }} /> },
+  { text: 'Campaigns', path: '/campaigns', icon: <NotificationsIcon sx={{ fontSize: 20 }} /> },
   { text: 'Settings', path: '/settings', icon: <SettingsOutlinedIcon sx={{ fontSize: 20 }} /> },
 ];
 

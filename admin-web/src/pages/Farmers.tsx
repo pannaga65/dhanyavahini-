@@ -132,7 +132,7 @@ export default function Farmers() {
     loans.forEach(loan => {
       if (loan.farmerId) {
         const amt = Number(loan.amount) || 0;
-        const recovered = Number(loan.recoveredAmount) || 0;
+        const recovered = Number(loan.amountRecovered) || 0;
         balances[loan.farmerId] = (balances[loan.farmerId] || 0) + (amt - recovered);
       }
     });

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Chip, IconButton } from '@mui/material';
-import { collection, getDocs, query, where, getFirestore, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, getFirestore, updateDoc, doc, limit, startAfter } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -18,6 +18,11 @@ export default function Customers() {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
+  // Pagination
+  const [lastDoc, setLastDoc] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
   const [formData, setFormData] = useState({ 
     customerId: '', email: '', displayName: '', tradeName: '', gstNumber: '', 
     panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''],
@@ -26,13 +31,41 @@ export default function Customers() {
 
   useEffect(() => { fetchCustomers(); }, []);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
     try {
-      const q = query(collection(db, 'users'), where('role', '==', 'customer'));
+      let q = query(
+        collection(db, 'users'), 
+        where('role', '==', 'customer'), 
+        limit(50)
+      );
+      
+      if (isLoadMore && lastDoc) {
+        q = query(q, startAfter(lastDoc));
+      }
+
       const querySnapshot = await getDocs(q);
-      setCustomers(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      if (data.length < 50) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+      
+      if (querySnapshot.docs.length > 0) {
+        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]);
+      }
+
+      if (isLoadMore) {
+        setCustomers(prev => [...prev, ...data]);
+      } else {
+        setCustomers(data);
+      }
     } catch (e) {
       console.log('Error fetching customers', e);
+    } finally {
+      if (isLoadMore) setLoadingMore(false);
     }
   };
 
@@ -217,6 +250,19 @@ export default function Customers() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {hasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => fetchCustomers(true)} 
+            disabled={loadingMore}
+            sx={{ fontWeight: 600, px: 4, py: 1, borderRadius: 2 }}
+          >
+            {loadingMore ? <CircularProgress size={20} /> : 'Load More Customers'}
+          </Button>
+        </Box>
+      )}
 
       {/* Add/Edit Customer Dialog */}
       <Dialog open={open} onClose={() => !loading && setOpen(false)} maxWidth="sm" fullWidth>

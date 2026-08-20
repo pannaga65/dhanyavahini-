@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, MenuItem, Select, FormControl, InputLabel, InputAdornment, Autocomplete, IconButton, Chip, Collapse, DialogTitle, DialogContent, Checkbox, FormControlLabel } from '@mui/material';
-import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, setDoc } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, arrayUnion, setDoc, limit, startAfter } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -27,6 +27,11 @@ export default function Procurement() {
   const { showConfirm, showMessage } = useUI();
   const [settlements, setSettlements] = useState<any[]>([]);
   const [farmers, setFarmers] = useState<any[]>([]);
+  
+  // Pagination
+  const [lastDoc, setLastDoc] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [godowns, setGodowns] = useState<any[]>([]);
@@ -93,16 +98,41 @@ export default function Procurement() {
     fetchGodowns();
   }, []);
 
-  const fetchSettlements = async () => {
+  const fetchSettlements = async (isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
     try {
-      const q = query(
+      let q = query(
         collection(db, 'farmer_settlements'), 
-        orderBy('date', 'desc')
+        orderBy('date', 'desc'),
+        limit(50)
       );
+      
+      if (isLoadMore && lastDoc) {
+        q = query(q, startAfter(lastDoc));
+      }
+      
       const querySnapshot = await getDocs(q);
-      setSettlements(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      const data = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      if (data.length < 50) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+      
+      if (querySnapshot.docs.length > 0) {
+        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]);
+      }
+
+      if (isLoadMore) {
+        setSettlements(prev => [...prev, ...data]);
+      } else {
+        setSettlements(data);
+      }
     } catch (e) {
       console.error('Error fetching settlements', e);
+    } finally {
+      if (isLoadMore) setLoadingMore(false);
     }
   };
 
@@ -787,6 +817,18 @@ export default function Procurement() {
         </Table>
       </TableContainer>
 
+      {hasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => fetchSettlements(true)} 
+            disabled={loadingMore}
+            sx={{ fontWeight: 600, px: 4, py: 1, borderRadius: 2 }}
+          >
+            {loadingMore ? <CircularProgress size={20} /> : 'Load More Bills'}
+          </Button>
+        </Box>
+      )}
 
       {/* ── POP-UP: FARMER DETAILS & ORDERS ── */}
       <Dialog

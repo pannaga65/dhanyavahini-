@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Chip, Dialog, DialogActions, IconButton, TextField, CircularProgress, Select, MenuItem, FormControl, InputLabel, Divider, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { collection, getDocs, doc, updateDoc, query, where, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, Timestamp, limit, startAfter, orderBy } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -62,26 +62,54 @@ export default function Orders() {
   const [editDispatchOrder, setEditDispatchOrder] = useState<Order | null>(null);
   const [dispatchLoading, setDispatchLoading] = useState(false);
 
+  // Pagination
+  const [lastDoc, setLastDoc] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   useEffect(() => { fetchOrders(); }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
     try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const q = query(
+      let q = query(
         collection(db, 'orders'), 
-        where('createdAt', '>=', Timestamp.fromDate(thirtyDaysAgo))
+        where('createdAt', '>=', Timestamp.fromDate(thirtyDaysAgo)),
+        orderBy('createdAt', 'desc'),
+        limit(50)
       );
       
+      if (isLoadMore && lastDoc) {
+        q = query(q, startAfter(lastDoc));
+      }
+      
       const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.docs.length < 50) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+      
+      if (querySnapshot.docs.length > 0) {
+        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]);
+      }
+
       let data = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[];
-      // Filter out Inquiries, we only want Approved orders here
       data = data.filter(o => o.status !== 'Inquiry');
 
-      setOrders(data);
+      if (isLoadMore) {
+        setOrders(prev => [...prev, ...data]);
+      } else {
+        setOrders(data);
+      }
     } catch (e) {
       console.log('Error fetching orders', e);
+    } finally {
+      if (isLoadMore) setLoadingMore(false);
     }
   };
 
@@ -402,6 +430,19 @@ export default function Orders() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {hasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => fetchOrders(true)} 
+            disabled={loadingMore}
+            sx={{ fontWeight: 600, px: 4, py: 1, borderRadius: 2 }}
+          >
+            {loadingMore ? <CircularProgress size={20} /> : 'Load More Orders'}
+          </Button>
+        </Box>
+      )}
 
       {/* Order Detail & Action Dialog (The "Dispatch Ticket") */}
       <Dialog open={!!selectedOrder} onClose={() => setSelectedOrder(null)} maxWidth="lg" fullWidth>

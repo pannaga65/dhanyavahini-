@@ -121,7 +121,7 @@ export default function Dashboard({ userEmail }: DashboardProps) {
   useEffect(() => {
     (async () => {
       try {
-        const [o, p, c, i, a, camp] = await Promise.all([
+        const results = await Promise.allSettled([
           getCountFromServer(collection(db, 'orders')),
           getCountFromServer(collection(db, 'products')),
           getCountFromServer(collection(db, 'users')),
@@ -129,13 +129,16 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           getCountFromServer(collection(db, 'farmer_settlements')),
           getCountFromServer(query(collection(db, 'campaigns'), where('isActive', '==', true))),
         ]);
+        
+        const getCount = (res: PromiseSettledResult<any>) => res.status === 'fulfilled' ? res.value.data().count : 0;
+
         setStats({
-          orders: o.data().count,
-          products: p.data().count,
-          customers: c.data().count,
-          inquiries: i.data().count,
-          procurement: a.data().count,
-          campaigns: camp.data().count,
+          orders: getCount(results[0]),
+          products: getCount(results[1]),
+          customers: getCount(results[2]),
+          inquiries: getCount(results[3]),
+          procurement: getCount(results[4]),
+          campaigns: getCount(results[5]),
         });
       } catch (e) {
         console.error('Error fetching live dashboard stats:', e);

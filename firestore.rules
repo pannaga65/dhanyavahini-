@@ -24,8 +24,8 @@ service cloud.firestore {
     // ─── 2. Users / Customers ───
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId); // Allow users to create their initial profile
-      allow update: if isAdmin() || (isOwner(userId) && (request.resource.data.role == resource.data.role || !('role' in request.resource.data)));
+      allow create: if isOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role != 'admin');
+      allow update: if isAdmin() || (isOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role));
       allow delete: if false; // Soft deletes only (isActive: false)
     }
 
@@ -105,6 +105,12 @@ service cloud.firestore {
       allow read, update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAdmin() || false; // Usually created by Cloud Functions
       allow delete: if false;
+    }
+
+    // ─── 13. Campaigns ───
+    match /campaigns/{campaignId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

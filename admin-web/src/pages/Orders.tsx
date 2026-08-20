@@ -3,6 +3,7 @@ import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, Tab
 import SearchIcon from '@mui/icons-material/Search';
 import { collection, getDocs, doc, updateDoc, query, where, Timestamp, limit, startAfter, orderBy } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import * as XLSX from 'xlsx';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
@@ -294,12 +295,46 @@ export default function Orders() {
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      if (filteredOrders.length === 0) {
+        showMessage("No orders to export", "info");
+        return;
+      }
+      
+      const exportData = filteredOrders.map(o => ({
+        "Order ID": o.orderNo || o.id,
+        "Date": o.createdAt?.toDate?.()?.toLocaleDateString() || "",
+        "Customer Name": o.customerName || '',
+        "Subtotal (₹)": o.subtotal || 0,
+        "GST Amount (₹)": o.gstAmount || 0,
+        "Total Amount (₹)": o.totalAmount || 0,
+        "Delivery Status": o.status || '',
+        "Payment Status": o.paymentStatus || 'Pending',
+        "Shipping Address": o.shippingAddress || o.billingAddress || ''
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+      XLSX.writeFile(workbook, `Orders_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showMessage("Excel downloaded successfully", "success");
+    } catch (e: any) {
+      showMessage("Export failed: " + e.message, "error");
+    }
+  };
+
   return (
     <Box>
       {/* Page Header */}
-      <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 0.5, mb: 1, color: '#1A1A2E' }}>
-        Orders & Payments
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+        <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.2rem' }, letterSpacing: 0.5, color: '#1A1A2E' }}>
+          Orders
+        </Typography>
+        <Button variant="outlined" onClick={handleExportExcel} sx={{ fontWeight: 700 }}>
+          DOWNLOAD EXCEL
+        </Button>
+      </Box>
       <Typography sx={{ fontWeight: 500, color: '#94A3B8', letterSpacing: 0.3, fontSize: '0.9rem', mb: 3 }}>
         Manage dispatches and finances
       </Typography>

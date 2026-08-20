@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, InputAdornment, FormControl, Select, MenuItem } from '@mui/material';
 import { collection, getDocs, getFirestore, updateDoc, doc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import * as XLSX from 'xlsx';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
@@ -163,6 +164,36 @@ export default function Farmers() {
     return result;
   }, [farmers, searchQuery, loanFilter, farmerBalances]);
 
+  const handleExportExcel = () => {
+    try {
+      if (filteredFarmers.length === 0) {
+        showMessage("No farmers to export", "info");
+        return;
+      }
+      
+      const exportData = filteredFarmers.map(f => ({
+        "Farmer ID": f.farmerId || '',
+        "Name": f.name || '',
+        "Primary Mobile": f.phoneNumber || '',
+        "Alt Mobile": f.altPhoneNumber || '',
+        "Aadhar Number": f.aadharNumber || '',
+        "Bank Name": f.bankName || '',
+        "Account Number": f.accountNumber || '',
+        "IFSC Code": f.ifscCode || '',
+        "Address": f.address || '',
+        "Loan Balance (₹)": farmerBalances[f.id] || 0
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Farmers");
+      XLSX.writeFile(workbook, `Farmers_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showMessage("Excel downloaded successfully", "success");
+    } catch (e: any) {
+      showMessage("Export failed: " + e.message, "error");
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
@@ -171,21 +202,26 @@ export default function Farmers() {
             Farmers
           </Typography>
         </Box>
-        <Button 
-          variant="contained" 
-          onClick={handleOpenNew} 
-          sx={{ 
-            fontWeight: 700, 
-            backgroundColor: '#0F172A', 
-            color: '#FFF', 
-            borderRadius: 2,
-            px: 3,
-            boxShadow: 'none',
-            '&:hover': { backgroundColor: '#334155', boxShadow: 'none' }
-          }}
-        >
-          + Add Farmer
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button variant="outlined" onClick={handleExportExcel} sx={{ fontWeight: 700, borderRadius: 2 }}>
+            DOWNLOAD EXCEL
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleOpenNew} 
+            sx={{ 
+              fontWeight: 700, 
+              backgroundColor: '#0F172A', 
+              color: '#FFF', 
+              borderRadius: 2,
+              px: 3,
+              boxShadow: 'none',
+              '&:hover': { backgroundColor: '#334155', boxShadow: 'none' }
+            }}
+          >
+            + Add Farmer
+          </Button>
+        </Box>
       </Box>
 
       {/* Unified Filter Bar */}

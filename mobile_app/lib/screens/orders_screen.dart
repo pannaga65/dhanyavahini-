@@ -208,48 +208,61 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                             crossAxisAlignment: CrossAxisAlignment.center,
                                             children: [
                                               Container(
-                                                width: 8, height: 8,
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: statusColor, 
-                                                  shape: BoxShape.circle,
-                                                  boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.4), blurRadius: 6)]
+                                                  color: statusColor.withValues(alpha: 0.1),
+                                                  borderRadius: BorderRadius.circular(20),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 8, height: 8,
+                                                      decoration: BoxDecoration(
+                                                        color: statusColor, 
+                                                        shape: BoxShape.circle,
+                                                        boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.4), blurRadius: 6)]
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 0.5)),
+                                                  ],
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
-                                              Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
                                             ],
                                           ),
-                                          const SizedBox(height: 6),
-                                          Text('Order Placed on $dateStr', style: const TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.w500)),
+                                          const SizedBox(height: 12),
+                                          Text('Placed on $dateStr', style: const TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.w600)),
                                           const SizedBox(height: 16),
+                                          
                                           // Show compact items preview
                                           if (!isExpanded)
                                             ...items.take(2).map((item) {
                                               return Padding(
-                                                padding: const EdgeInsets.only(bottom: 4),
+                                                padding: const EdgeInsets.only(bottom: 8),
                                                 child: Row(
                                                   children: [
-                                                    if (item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty)
-                                                      Container(
-                                                        width: 24, height: 24,
-                                                        margin: const EdgeInsets.only(right: 8),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.grey.shade100,
-                                                          borderRadius: BorderRadius.circular(4),
-                                                          image: DecorationImage(image: CachedNetworkImageProvider(item['imageUrl']), fit: BoxFit.cover)
-                                                        ),
-                                                      )
-                                                    else
-                                                      Container(
-                                                        width: 24, height: 24,
-                                                        margin: const EdgeInsets.only(right: 8),
-                                                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
-                                                        child: const Icon(Icons.inventory_2, size: 14, color: Colors.grey),
+                                                    Container(
+                                                      width: 32, height: 32,
+                                                      margin: const EdgeInsets.only(right: 12),
+                                                      decoration: BoxDecoration(
+                                                        color: AppTheme.background,
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        border: Border.all(color: Colors.grey.shade200),
+                                                        image: item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty
+                                                          ? DecorationImage(image: CachedNetworkImageProvider(item['imageUrl']), fit: BoxFit.cover)
+                                                          : null,
                                                       ),
+                                                      child: item['imageUrl'] == null || item['imageUrl'].toString().isEmpty
+                                                          ? const Icon(Icons.shopping_bag_outlined, size: 16, color: Colors.grey)
+                                                          : null,
+                                                    ),
                                                     Expanded(
-                                                      child: Text('${item['quantityKg'] ?? item['quantity']}Kg × ${item['name']}', 
-                                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                                                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text('${item['name']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.textDark), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                          Text('${item['quantityKg'] ?? item['quantity']} Kg', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryAction)),
+                                                        ],
                                                       ),
                                                     ),
                                                   ],
@@ -258,8 +271,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                             }),
                                           if (!isExpanded && items.length > 2)
                                             Padding(
-                                              padding: const EdgeInsets.only(left: 32, top: 4),
-                                              child: Text('+ ${items.length - 2} more items', style: const TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.w600)),
+                                              padding: const EdgeInsets.only(left: 44, top: 2),
+                                              child: Text('+ ${items.length - 2} more items', style: const TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.w700)),
                                             ),
                                         ],
                                       ),
@@ -267,20 +280,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
-                                          Text('${items.length} Items', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.textDark)),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade50,
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: Colors.grey.shade200)
+                                            ),
+                                            child: Text('${items.length} Items', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.textDark)),
+                                          ),
                                           const SizedBox(height: 16),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                             decoration: BoxDecoration(
-                                              color: isExpanded ? AppTheme.primaryAction.withValues(alpha: 0.1) : Colors.grey.shade100,
+                                              color: isExpanded ? AppTheme.primaryAction : Colors.grey.shade100,
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Text(isExpanded ? 'Hide' : 'Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isExpanded ? AppTheme.primaryAction : AppTheme.textLight)),
+                                                Text(isExpanded ? 'Hide' : 'Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isExpanded ? Colors.white : AppTheme.textDark)),
                                                 const SizedBox(width: 4),
-                                                Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 16, color: isExpanded ? AppTheme.primaryAction : AppTheme.textLight),
+                                                Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: isExpanded ? Colors.white : AppTheme.textDark),
                                               ],
                                             ),
                                           ),

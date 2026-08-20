@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, Chip, IconButton } from '@mui/material';
 import { collection, getDocs, query, where, getFirestore, updateDoc, doc, limit, startAfter } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import * as XLSX from 'xlsx';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -174,6 +175,35 @@ export default function Customers() {
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      if (customers.length === 0) {
+        showMessage("No customers to export", "info");
+        return;
+      }
+      
+      const exportData = customers.map(c => ({
+        "Customer ID": c.customerId || 'DV-LEGACY',
+        "Trade Name": c.tradeName || '',
+        "Customer Name": c.displayName || '',
+        "Email": c.email || '',
+        "Phone Number": c.phoneNumber || '',
+        "GST Number": c.gstNumber || '',
+        "PAN Number": c.panNumber || '',
+        "Billing Address": c.billingAddress || '',
+        "Status": c.isActive !== false ? 'ACTIVE' : 'INACTIVE'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+      XLSX.writeFile(workbook, `Customers_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showMessage("Excel downloaded successfully", "success");
+    } catch (e: any) {
+      showMessage("Export failed: " + e.message, "error");
+    }
+  };
+
   return (
     <Box>
       {/* Page Header */}
@@ -189,7 +219,10 @@ export default function Customers() {
       </Box>
       <Box sx={{ borderBottom: '1px solid #E2E8F0', mb: 3, mt: 2 }} />
       
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, gap: 2 }}>
+        <Button variant="outlined" onClick={handleExportExcel} sx={{ fontWeight: 700 }}>
+          DOWNLOAD EXCEL
+        </Button>
         <Button variant="contained" onClick={handleOpenNew} sx={{ fontWeight: 700 }}>
           + ADD CUSTOMER
         </Button>

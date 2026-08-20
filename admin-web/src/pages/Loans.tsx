@@ -7,6 +7,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
+import * as XLSX from 'xlsx';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
 
@@ -381,6 +382,39 @@ export default function Loans() {
     }
   }, [selectedFarmerGroup, selectedFarmerIdForPopup]);
 
+  const handleExportExcel = () => {
+    try {
+      let allLoans: any[] = [];
+      filteredGroups.forEach(g => {
+        g.loans.forEach((l: any) => {
+          allLoans.push({
+            "Loan ID": l.id,
+            "Date": l.date || '',
+            "Farmer Name": g.farmerName,
+            "Principal Amount (₹)": l.amount || 0,
+            "Amount Recovered (₹)": l.amountRecovered || 0,
+            "Balance Due (₹)": l.balance || 0,
+            "Status": l.status || '',
+            "Notes": l.notes || ''
+          });
+        });
+      });
+
+      if (allLoans.length === 0) {
+        showMessage("No loans to export", "info");
+        return;
+      }
+      
+      const worksheet = XLSX.utils.json_to_sheet(allLoans);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Loans");
+      XLSX.writeFile(workbook, `Loans_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showMessage("Excel downloaded successfully", "success");
+    } catch (e: any) {
+      showMessage("Export failed: " + e.message, "error");
+    }
+  };
+
 
   return (
     <Box>
@@ -458,9 +492,14 @@ export default function Loans() {
           )}
         </Box>
 
-        <Button variant="contained" onClick={() => handleOpenNewLoan()} sx={{ fontWeight: 700, backgroundColor: '#0F172A', color: '#FFF', borderRadius: 2, px: 3 }}>
-          + ISSUE LOAN
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button variant="outlined" onClick={handleExportExcel} sx={{ fontWeight: 700, borderRadius: 2 }}>
+            DOWNLOAD EXCEL
+          </Button>
+          <Button variant="contained" onClick={() => handleOpenNewLoan()} sx={{ fontWeight: 700, backgroundColor: '#0F172A', color: '#FFF', borderRadius: 2, px: 3 }}>
+            + ISSUE LOAN
+          </Button>
+        </Box>
       </Box>
 
       {/* ── MAIN VIEW: FARMERS LIST ── */}

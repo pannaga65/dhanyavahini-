@@ -120,5 +120,3 @@ exports.createCustomer = onCall(async (request) => {
     throw new HttpsError("internal", "Failed to create customer. Please try again.");
   }
 });
-
-});

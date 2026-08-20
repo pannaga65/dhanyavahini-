@@ -21,14 +21,21 @@ class NotificationModel {
 
   factory NotificationModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    DateTime parsedDate;
+    final raw = data['createdAt'];
+    if (raw is Timestamp) {
+      parsedDate = raw.toDate();
+    } else if (raw is String) {
+      parsedDate = DateTime.tryParse(raw) ?? DateTime.now();
+    } else {
+      parsedDate = DateTime.now();
+    }
     return NotificationModel(
       id: doc.id,
       title: data['title'] ?? 'Notification',
       body: data['body'] ?? '',
       isRead: data['isRead'] ?? false,
-      createdAt: data['createdAt'] != null 
-          ? DateTime.parse(data['createdAt']) 
-          : DateTime.now(),
+      createdAt: parsedDate,
     );
   }
 }

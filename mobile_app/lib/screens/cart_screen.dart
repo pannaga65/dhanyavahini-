@@ -38,7 +38,7 @@ class CartScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Shopping Cart'),
+        title: const Text('Inquiry Cart'),
       ),
       body: cartItems.isEmpty
           ? Center(
@@ -151,14 +151,8 @@ class CartScreen extends ConsumerWidget {
                                   children: [
                                     Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                     const SizedBox(height: 4),
-                                    Text('${currencyFormat.format(item.price)} / Kg', 
+                                    Text('Quantity: ${item.quantity} Kg', 
                                       style: const TextStyle(color: AppTheme.textLight, fontSize: 13)),
-                                    if (item.gstPercentage > 0)
-                                      Text('+ ${item.gstPercentage}% GST (${currencyFormat.format(lineTotal * (item.gstPercentage/100))})', 
-                                        style: const TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 8),
-                                    Text('Total: ${currencyFormat.format(lineTotal + (lineTotal * (item.gstPercentage/100)))}', 
-                                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.primaryAction, fontSize: 14)),
                                   ],
                                 ),
                               ),
@@ -237,26 +231,8 @@ class CartScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Subtotal', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.w500)),
-                  Text(currencyFormat.format(cartNotifier.subtotal), style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Taxes (GST)', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.w500)),
-                  Text(currencyFormat.format(gstAmount), style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Total to Pay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.textDark)),
-                  Text(currencyFormat.format(totalAmount), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.primaryAction)),
+                  Text('${cartItems.length} items', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.textDark)),
+                  Text('${cartItems.fold<int>(0, (sum, item) => sum + item.quantity)} Kg total', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primaryAction)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -277,14 +253,14 @@ class CartScreen extends ConsumerWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Place Order?'),
-                        content: Text('Are you sure you want to place this order for ${currencyFormat.format(totalAmount)}?'),
+                        title: const Text('Submit Inquiry?'),
+                        content: Text('Submit an inquiry for ${cartItems.length} items (${cartItems.fold<int>(0, (sum, item) => sum + item.quantity)} Kg total)? Our team will get back to you with the best prices.'),
                         actions: [
                           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryAction),
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text('CONFIRM', style: TextStyle(color: Colors.white)),
+                            child: const Text('SUBMIT', style: TextStyle(color: Colors.white)),
                           ),
                         ],
                       ),
@@ -335,7 +311,7 @@ class CartScreen extends ConsumerWidget {
                       if (context.mounted) {
                         Navigator.pop(context); // Close the loading dialog
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text('Order Placed Successfully!'),
+                          content: const Text('Inquiry Submitted Successfully! We will get back to you.'),
                           backgroundColor: AppTheme.primaryAction,
                           behavior: SnackBarBehavior.floating,
                         ));
@@ -353,7 +329,7 @@ class CartScreen extends ConsumerWidget {
                       }
                     }
                   },
-                  child: const Text('Place Order', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: const Text('Submit Inquiry', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],

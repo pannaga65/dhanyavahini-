@@ -127,9 +127,9 @@ class CategoryScreen extends ConsumerWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    '₹${product.basePriceKg.toStringAsFixed(0)}/kg', 
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryAction, fontSize: 14),
+                                  const Text(
+                                    'Request Quote', 
+                                    style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 12),
                                   ),
                                   GestureDetector(
                                     onTap: () {

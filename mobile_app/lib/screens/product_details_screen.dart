@@ -106,7 +106,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                 const SizedBox(height: 8),
                 Text(product.category, style: const TextStyle(color: AppTheme.primaryAction, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
-                Text('₹${product.basePriceKg} / Kg', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24)),
+                Text('Price available on inquiry', style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 16)),
                 const SizedBox(height: 24),
                 Text('Specifications', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
@@ -194,8 +194,8 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                             product.availableStockKg <= 0
                                 ? 'Out of Stock'
                                 : _justAdded
-                                    ? '✓ Added to Cart'
-                                    : 'Add to Cart',
+                                    ? '✓ Added to Inquiry'
+                                    : 'Add to Inquiry',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(

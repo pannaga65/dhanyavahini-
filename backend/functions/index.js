@@ -12,3 +12,4 @@ Object.assign(exports, require('./notifications'));
 Object.assign(exports, require('./invoice'));
 Object.assign(exports, require('./auth'));
 Object.assign(exports, require('./archiver'));
+Object.assign(exports, require('./campaigns'));

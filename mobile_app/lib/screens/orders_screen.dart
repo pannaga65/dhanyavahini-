@@ -359,7 +359,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
                                                   Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                                  Text('${qty}Kg × ₹$price', style: const TextStyle(color: AppTheme.textLight, fontSize: 12)),
+                                                  Text(
+                                                    status == 'Order Placed'
+                                                        ? '${qty}Kg'
+                                                        : '${qty}Kg × ₹$price',
+                                                    style: const TextStyle(color: AppTheme.textLight, fontSize: 12),
+                                                  ),
                                                 ],
                                               )
                                             ),

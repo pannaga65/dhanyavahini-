@@ -218,7 +218,7 @@ export default function Procurement() {
       return a.farmerName.localeCompare(b.farmerName);
     });
     return groups;
-  }, [settlements]);
+  }, [settlements, dateFilter, productFilter]);
 
   const getFarmerLoanBalance = (farmerId: string) => {
     if (!farmerId || farmerId === 'OTHER') return 0;

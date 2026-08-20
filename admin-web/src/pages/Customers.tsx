@@ -19,7 +19,7 @@ export default function Customers() {
   const [editingId, setEditingId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({ 
-    email: '', displayName: '', tradeName: '', gstNumber: '', 
+    customerId: '', email: '', displayName: '', tradeName: '', gstNumber: '', 
     panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''],
     lastKnownLocation: null as any
   });
@@ -39,7 +39,7 @@ export default function Customers() {
   const handleOpenNew = () => {
     setEditingId(null);
     setFormData({ 
-      email: '', displayName: '', tradeName: '', gstNumber: '', 
+      customerId: '', email: '', displayName: '', tradeName: '', gstNumber: '', 
       panNumber: '', phoneNumber: '', billingAddress: '', mailingAddresses: [''],
       lastKnownLocation: null
     });
@@ -49,6 +49,7 @@ export default function Customers() {
   const handleOpenEdit = (customer: any) => {
     setEditingId(customer.id);
     setFormData({ 
+      customerId: customer.customerId || '',
       email: customer.email || '', 
       displayName: customer.displayName || '', 
       tradeName: customer.tradeName || '', 
@@ -87,6 +88,10 @@ export default function Customers() {
   };
 
   const handleSave = async () => {
+    if (!formData.customerId.trim()) {
+      showMessage('Please enter a Customer ID.', 'error');
+      return;
+    }
     // Client-side validation
     if (!editingId) {
       const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -108,6 +113,7 @@ export default function Customers() {
       if (editingId) {
         // Edit existing customer profile
         await updateDoc(doc(db, 'users', editingId), {
+          customerId: formData.customerId.trim(),
           displayName: formData.displayName,
           tradeName: formData.tradeName,
           gstNumber: formData.gstNumber,
@@ -219,6 +225,7 @@ export default function Customers() {
             {editingId ? 'EDIT CUSTOMER' : 'ADD NEW CUSTOMER'}
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <TextField label="Customer ID" fullWidth required value={formData.customerId} onChange={(e) => setFormData({ ...formData, customerId: e.target.value })} />
             <TextField label="Trade Name (Business)" fullWidth value={formData.tradeName} onChange={(e) => setFormData({ ...formData, tradeName: e.target.value })} />
             <TextField label="Customer Name" fullWidth value={formData.displayName} onChange={(e) => setFormData({ ...formData, displayName: e.target.value })} />
             <TextField label="Email Address" type="email" fullWidth disabled={!!editingId} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />

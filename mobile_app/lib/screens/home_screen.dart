@@ -12,6 +12,7 @@ import '../providers/banner_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/location_provider.dart';
+import '../providers/campaign_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -196,6 +197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
     final bannersAsync = ref.watch(bannersProvider);
+    final campaignsAsync = ref.watch(campaignsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
     final cartItems = ref.watch(cartProvider);
@@ -471,6 +473,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
+              // 2.5 Live Alerts / Campaigns Ticker
+              SliverToBoxAdapter(
+                child: campaignsAsync.when(
+                  data: (campaigns) {
+                    if (campaigns.isEmpty) return const SizedBox.shrink();
+                    return Container(
+                      height: 50,
+                      margin: const EdgeInsets.only(top: 8, bottom: 8),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: campaigns.length,
+                        itemBuilder: (context, index) {
+                          final c = campaigns[index];
+                          IconData icon = Icons.campaign;
+                          Color color = AppTheme.primaryAction;
+                          if (c.type == 'alert') { icon = Icons.warning_rounded; color = Colors.red; }
+                          if (c.type == 'new_arrival') { icon = Icons.new_releases; color = Colors.green; }
+                          if (c.type == 'price_drop') { icon = Icons.trending_down; color = Colors.blue; }
+                          if (c.type == 'moving_fast') { icon = Icons.local_fire_department; color = Colors.orange; }
+                          
+                          return GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                                builder: (ctx) => Container(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(icon, size: 48, color: color),
+                                      const SizedBox(height: 16),
+                                      Text(c.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textDark), textAlign: TextAlign.center),
+                                      const SizedBox(height: 12),
+                                      Text(c.body, style: const TextStyle(fontSize: 16, color: AppTheme.textLight), textAlign: TextAlign.center),
+                                      if (c.imageUrl.isNotEmpty) ...[
+                                        const SizedBox(height: 16),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: CachedNetworkImage(imageUrl: c.imageUrl, height: 150, width: double.infinity, fit: BoxFit.cover),
+                                        ),
+                                      ],
+                                      const SizedBox(height: 32),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryAction, padding: const EdgeInsets.symmetric(vertical: 16)),
+                                          child: const Text('GOT IT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        )
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(color: color.withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(icon, size: 18, color: color),
+                                  const SizedBox(width: 8),
+                                  Text(c.title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (err, stack) => const SizedBox.shrink(),
+                ),
+              ),
+
               // 3. Dynamic Categories
               SliverToBoxAdapter(
                 child: Padding(
@@ -679,14 +765,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '₹${product.basePriceKg.toStringAsFixed(0)} / kg', 
-                                                style: const TextStyle(fontWeight: FontWeight.w800, color: AppTheme.primaryAction, fontSize: 15),
-                                              ),
-                                            ],
+                                          const Text(
+                                            'Request Quote',
+                                            style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 12),
                                           ),
                                           
                                           // B2B Cart Action
@@ -760,9 +841,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                                     padding: EdgeInsets.zero
                                                   ),
-                                                  child: Text(
-                                                    'ADD (Min ${moq}kg)', 
-                                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)
+                                                  child: const Text(
+                                                    'ADD TO INQUIRY', 
+                                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)
                                                   ),
                                                 ),
                                           )

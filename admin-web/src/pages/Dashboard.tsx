@@ -8,6 +8,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import QuestionAnswerOutlinedIcon from '@mui/icons-material/QuestionAnswerOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const db = getFirestore(app);
@@ -115,17 +116,18 @@ interface DashboardProps {
 
 export default function Dashboard({ userEmail }: DashboardProps) {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0, procurement: 0 });
+  const [stats, setStats] = useState({ orders: 0, products: 0, customers: 0, inquiries: 0, procurement: 0, campaigns: 0 });
 
   useEffect(() => {
     (async () => {
       try {
-        const [o, p, c, i, a] = await Promise.all([
+        const [o, p, c, i, a, camp] = await Promise.all([
           getCountFromServer(collection(db, 'orders')),
           getCountFromServer(collection(db, 'products')),
           getCountFromServer(collection(db, 'users')),
           getCountFromServer(query(collection(db, 'orders'), where('status', '==', 'Inquiry'))),
           getCountFromServer(collection(db, 'farmer_settlements')),
+          getCountFromServer(query(collection(db, 'campaigns'), where('isActive', '==', true))),
         ]);
         setStats({
           orders: o.data().count,
@@ -133,6 +135,7 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           customers: c.data().count,
           inquiries: i.data().count,
           procurement: a.data().count,
+          campaigns: camp.data().count,
         });
       } catch (e) {
         console.error('Error fetching live dashboard stats:', e);
@@ -204,6 +207,15 @@ export default function Dashboard({ userEmail }: DashboardProps) {
           accent="#06B6D4"
           gradient="linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)"
           onClick={() => navigate('/procurement')}
+        />
+        <StatCard
+          title="Campaigns"
+          count={stats.campaigns}
+          subtitle="Active Campaigns →"
+          icon={<CampaignOutlinedIcon sx={{ fontSize: 24 }} />}
+          accent="#EC4899"
+          gradient="linear-gradient(135deg, #EC4899 0%, #BE185D 100%)"
+          onClick={() => navigate('/campaigns')}
         />
       </Box>
     </Box>

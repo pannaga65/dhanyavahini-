@@ -159,9 +159,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: BoxShape.circle,
                       boxShadow: AppTheme.modernShadow,
                     ),
-                    child: Image.asset('assets/logo.png', height: 80),
+                    clipBehavior: Clip.hardEdge,
+                    child: Image.asset(
+                      'assets/logo.png', 
+                      height: 100, 
+                      width: 100, 
+                      fit: BoxFit.contain
+                    ),
                   ),
-                ).animate().fade(duration: 500.ms).scale(curve: Curves.easeOutBack),
+                ).animate().fade(duration: 600.ms).scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
                 
                 const SizedBox(height: 32),
                 

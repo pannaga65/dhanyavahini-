@@ -64,8 +64,10 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
       appBar: AppBar(
         title: const Text('Product Details'),
       ),
-      body: productAsync.when(
-        data: (product) {
+      body: Stack(
+        children: [
+          productAsync.when(
+            data: (product) {
           // Initialize quantity to MOQ once
           if (!isInitialized) {
             quantity = product.moqKg;
@@ -134,13 +136,19 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error loading product: $error')),
+          ),
+          const Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: StickyCartBanner(),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: productAsync.whenOrNull(
-        data: (product) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const StickyCartBanner(),
-            Container(
+        data: (product) => Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -215,9 +223,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 

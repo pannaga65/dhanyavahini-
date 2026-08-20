@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PrintIcon from '@mui/icons-material/Print';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
+import * as XLSX from 'xlsx';
 
 const db = getFirestore(app);
 
@@ -694,6 +695,54 @@ export default function Procurement() {
     }
   }, [selectedFarmerGroup, selectedFarmerIdForPopup]);
 
+  const handleExportExcel = () => {
+    try {
+      const exportData: any[] = [];
+      filteredGroups.forEach(group => {
+        group.orders.forEach((order: any) => {
+          let productName = "N/A";
+          if (order.categoryId) {
+            const cat = categories.find(c => c.id === order.categoryId);
+            productName = cat ? cat.name : "N/A";
+            if (order.productId) {
+               const prod = products.find(p => p.id === order.productId);
+               if (prod) productName += ` - ${prod.name}`;
+            }
+          } else if (order.details) {
+            productName = order.details;
+          }
+
+          exportData.push({
+            "Date": order.date || (order.createdAt && typeof order.createdAt.toDate === 'function' ? order.createdAt.toDate().toLocaleDateString() : ""),
+            "Farmer ID": group.farmerId,
+            "Farmer Name": group.farmerName,
+            "Product": productName,
+            "Gross Weight (Kg)": order.grossWeight || "",
+            "Net Weight (Kg)": order.netWeight || "",
+            "Rate/Kg (₹)": order.ratePerKg || "",
+            "Total Amount (₹)": order.totalAmount || 0,
+            "Total Paid (₹)": order.amountPaid || 0,
+            "Balance (₹)": order.balance || 0,
+            "Godown": order.godownId ? godowns.find(g => g.id === order.godownId)?.name || "" : "",
+            "Payment Status": order.status || "",
+          });
+        });
+      });
+
+      if (exportData.length === 0) {
+         showMessage("No data to export", "info");
+         return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Procurement");
+      XLSX.writeFile(workbook, `Procurement_Data_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showMessage("Excel downloaded successfully", "success");
+    } catch (e: any) {
+      showMessage("Export failed: " + e.message, "error");
+    }
+  };
 
   return (
     <Box>
@@ -748,9 +797,14 @@ export default function Procurement() {
           </FormControl>
         </Box>
 
-        <Button variant="contained" onClick={() => handleOpenNewBill()} sx={{ fontWeight: 700, backgroundColor: '#0F172A', color: '#FFF', borderRadius: 2, px: 3 }}>
-          + NEW ORDER
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button variant="outlined" onClick={handleExportExcel} sx={{ fontWeight: 700, borderRadius: 2, px: 3 }}>
+            DOWNLOAD EXCEL
+          </Button>
+          <Button variant="contained" onClick={() => handleOpenNewBill()} sx={{ fontWeight: 700, backgroundColor: '#0F172A', color: '#FFF', borderRadius: 2, px: 3 }}>
+            + NEW ORDER
+          </Button>
+        </Box>
       </Box>
 
       {/* ── MAIN VIEW: FARMERS LIST ── */}

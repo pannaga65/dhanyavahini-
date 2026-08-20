@@ -18,12 +18,19 @@ class MainScaffold extends StatelessWidget {
     if (location.startsWith('/cart')) currentIndex = 3;
 
     return Scaffold(
-      body: child,
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
+      body: Stack(
         children: [
-          const StickyCartBanner(),
-          Container(
+          child,
+          if (currentIndex == 0)
+            const Positioned(
+              bottom: 0, // It will float just above the bottom nav bar area
+              left: 0,
+              right: 0,
+              child: StickyCartBanner(),
+            ),
+        ],
+      ),
+      bottomNavigationBar: Container(
             decoration: BoxDecoration(
               color: AppTheme.surface,
               boxShadow: [
@@ -49,8 +56,6 @@ class MainScaffold extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
     );
   }
 

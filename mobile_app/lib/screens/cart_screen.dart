@@ -8,20 +8,29 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 import '../providers/cart_provider.dart';
+import '../providers/notification_provider.dart';
 
 class SelectedAddressIndexNotifier extends Notifier<int> {
   @override
   int build() => 0;
   void set(int value) => state = value;
 }
-final selectedAddressIndexProvider = NotifierProvider<SelectedAddressIndexNotifier, int>(SelectedAddressIndexNotifier.new);
+
+final selectedAddressIndexProvider =
+    NotifierProvider<SelectedAddressIndexNotifier, int>(
+      SelectedAddressIndexNotifier.new,
+    );
 
 class UseBillingAsShippingNotifier extends Notifier<bool> {
   @override
   bool build() => false;
   void set(bool value) => state = value;
 }
-final useBillingAsShippingProvider = NotifierProvider<UseBillingAsShippingNotifier, bool>(UseBillingAsShippingNotifier.new);
+
+final useBillingAsShippingProvider =
+    NotifierProvider<UseBillingAsShippingNotifier, bool>(
+      UseBillingAsShippingNotifier.new,
+    );
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -30,32 +39,39 @@ class CartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
-    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
-    
-    final gstAmount = cartNotifier.totalGst;
-    final totalAmount = cartNotifier.total;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Inquiry Cart'),
-      ),
+      appBar: AppBar(title: const Text('Inquiry Cart')),
       body: cartItems.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_cart_outlined, size: 80, color: AppTheme.textLight.withValues(alpha: 0.5)),
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 80,
+                    color: AppTheme.textLight.withValues(alpha: 0.5),
+                  ),
                   const SizedBox(height: 16),
-                  const Text('Your cart is empty', style: TextStyle(color: AppTheme.textLight, fontSize: 18)),
+                  const Text(
+                    'Your cart is empty',
+                    style: TextStyle(color: AppTheme.textLight, fontSize: 18),
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => context.push('/all-products'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryAction,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
-                    child: const Text('Start Shopping', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Start Shopping',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -63,16 +79,27 @@ class CartScreen extends ConsumerWidget {
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${cartItems.length} Items', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        '${cartItems.length} Items',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       TextButton.icon(
                         onPressed: () => context.push('/all-products'),
                         icon: const Icon(Icons.add_shopping_cart, size: 18),
                         label: const Text('Continue Shopping'),
-                        style: TextButton.styleFrom(foregroundColor: AppTheme.primaryAction),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryAction,
+                        ),
                       ),
                     ],
                   ),
@@ -81,12 +108,14 @@ class CartScreen extends ConsumerWidget {
                 _DeliveryAddressCard(),
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     itemCount: cartItems.length,
                     itemBuilder: (context, index) {
                       final item = cartItems[index];
-                      final lineTotal = item.price * item.quantity;
-                      
+
                       return Dismissible(
                         key: Key(item.productId),
                         direction: DismissDirection.endToStart,
@@ -98,7 +127,11 @@ class CartScreen extends ConsumerWidget {
                           ),
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: 24),
-                          child: const Icon(Icons.delete, color: Colors.white, size: 28),
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
                         onDismissed: (_) {
                           cartNotifier.removeItem(item.productId);
@@ -115,11 +148,20 @@ class CartScreen extends ConsumerWidget {
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: AppTheme.modernShadow,
+                            border: Border.all(
+                              color: Colors.grey.withValues(alpha: 0.15),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.02),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,30 +171,51 @@ class CartScreen extends ConsumerWidget {
                                 height: 70,
                                 decoration: BoxDecoration(
                                   color: AppTheme.background,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 clipBehavior: Clip.antiAlias,
                                 child: item.imageUrl.isNotEmpty
                                     ? CachedNetworkImage(
                                         imageUrl: item.imageUrl,
                                         fit: BoxFit.cover,
-                                        placeholder: (context, url) => const Padding(
-                                          padding: EdgeInsets.all(16.0),
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                        errorWidget: (context, url, error) => const Icon(Icons.inventory_2, color: AppTheme.textLight),
+                                        placeholder: (context, url) =>
+                                            const Padding(
+                                              padding: EdgeInsets.all(16.0),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                        errorWidget: (context, url, error) =>
+                                            const Icon(
+                                              Icons.inventory_2,
+                                              color: AppTheme.textLight,
+                                            ),
                                       )
-                                    : const Icon(Icons.inventory_2, color: AppTheme.textLight),
+                                    : const Icon(
+                                        Icons.inventory_2,
+                                        color: AppTheme.textLight,
+                                      ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    Text(
+                                      item.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                     const SizedBox(height: 4),
-                                    Text('Quantity: ${item.quantity} Kg', 
-                                      style: const TextStyle(color: AppTheme.textLight, fontSize: 13)),
+                                    Text(
+                                      'Quantity: ${item.quantity} Kg',
+                                      style: const TextStyle(
+                                        color: AppTheme.textLight,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -162,46 +225,98 @@ class CartScreen extends ConsumerWidget {
                                   IconButton(
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
-                                    icon: const Icon(Icons.close, color: Colors.grey, size: 20),
-                                    onPressed: () => cartNotifier.removeItem(item.productId),
+                                    icon: const Icon(
+                                      Icons.close,
+                                      color: Colors.grey,
+                                      size: 20,
+                                    ),
+                                    onPressed: () =>
+                                        cartNotifier.removeItem(item.productId),
                                   ),
                                   const SizedBox(height: 16),
                                   Container(
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: AppTheme.background,
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 4,
                                     ),
                                     child: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         GestureDetector(
-                                          onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity - item.incrementStepKg),
+                                          onTap: () =>
+                                              cartNotifier.updateQuantity(
+                                                item.productId,
+                                                item.quantity -
+                                                    item.incrementStepKg,
+                                              ),
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: const BorderRadius.horizontal(left: Radius.circular(8))),
-                                            child: const Icon(Icons.remove, size: 14),
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.remove,
+                                              size: 14,
+                                              color: AppTheme.textDark,
+                                            ),
                                           ),
                                         ),
                                         Container(
-                                          constraints: const BoxConstraints(minWidth: 36),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 40,
+                                          ),
                                           alignment: Alignment.center,
-                                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                                          child: Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                          ),
+                                          child: Text(
+                                            '${item.quantity}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13,
+                                              color: AppTheme.textDark,
+                                            ),
+                                          ),
                                         ),
                                         GestureDetector(
-                                          onTap: () => cartNotifier.updateQuantity(item.productId, item.quantity + item.incrementStepKg),
+                                          onTap: () =>
+                                              cartNotifier.updateQuantity(
+                                                item.productId,
+                                                item.quantity +
+                                                    item.incrementStepKg,
+                                              ),
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                            decoration: BoxDecoration(color: AppTheme.primaryAction.withValues(alpha: 0.1), borderRadius: const BorderRadius.horizontal(right: Radius.circular(8))),
-                                            child: const Icon(Icons.add, size: 14, color: AppTheme.primaryAction),
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.add,
+                                              size: 14,
+                                              color: AppTheme.textDark,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  const Text('Kg', style: TextStyle(fontSize: 10, color: AppTheme.textLight, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    'Kg',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppTheme.textLight,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ],
-                              )
+                              ),
                             ],
                           ),
                         ),
@@ -211,131 +326,269 @@ class CartScreen extends ConsumerWidget {
                 ),
               ],
             ),
-      bottomNavigationBar: cartItems.isEmpty ? null : Container(
-        padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 32),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -10),
-            )
-          ],
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('${cartItems.length} items', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppTheme.textDark)),
-                  Text('${cartItems.fold<int>(0, (sum, item) => sum + item.quantity)} Kg total', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.primaryAction)),
-                ],
+      bottomNavigationBar: cartItems.isEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 16,
+                bottom: 32,
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryAction,
-                    foregroundColor: Colors.white,
-                    elevation: 4,
-                    shadowColor: AppTheme.primaryAction.withValues(alpha: 0.4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  onPressed: () async {
-                    if (cartItems.isEmpty) return;
-                    
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Submit Inquiry?'),
-                        content: Text('Submit an inquiry for ${cartItems.length} items (${cartItems.fold<int>(0, (sum, item) => sum + item.quantity)} Kg total)? Our team will get back to you with the best prices.'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryAction),
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('SUBMIT', style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      ),
-                    );
-                    
-                    if (confirm != true) return;
-                    
-                    final selectedAddressIndex = ref.read(selectedAddressIndexProvider);
-                    final useBillingAsShipping = ref.read(useBillingAsShippingProvider);
-                    
-                    if (!context.mounted) return;
-                    
-                    // Show a non-dismissible loading dialog while the Cloud Function runs
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (BuildContext context) {
-                        return const Dialog(
-                          backgroundColor: Colors.transparent,
-                          elevation: 0,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryAction),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${cartItems.length} ITEMS',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textLight,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    );
-                    
-                    try {
-                      final functions = FirebaseFunctions.instance;
-                      
-                      final itemsData = cartItems.map((item) {
-                        return {
-                          'productId': item.productId,
-                          'quantity': item.quantity,
-                        };
-                      }).toList();
-
-                      final callable = functions.httpsCallable('placeSecureOrder');
-                      await callable.call({
-                        'items': itemsData,
-                        'selectedAddressIndex': selectedAddressIndex,
-                        'useBillingAsShipping': useBillingAsShipping,
-                      });
-                      
-                      cartNotifier.clear();
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop(); // Close the loading dialog
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text('Inquiry Submitted Successfully! We will get back to you.'),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${cartItems.fold<int>(0, (sum, item) => sum + item.quantity)} Kg Total Volume',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryAction,
-                          behavior: SnackBarBehavior.floating,
-                        ));
-                        context.go('/orders');
-                      }
-                    } on FirebaseFunctionsException catch (e) {
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop(); // Close the loading dialog
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order: ${e.message}')));
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop(); // Close the loading dialog
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order: $e')));
-                      }
-                    }
-                  },
-                  child: const Text('Submit Inquiry', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          if (cartItems.isEmpty) return;
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              title: const Text('Submit Inquiry?'),
+                              content: Text(
+                                'Send an inquiry for ${cartItems.length} items (${cartItems.fold<int>(0, (sum, item) => sum + item.quantity)} Kg total volume)? Our wholesale team will get back to you with the best personalized pricing for your location.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text(
+                                    'CANCEL',
+                                    style: TextStyle(color: AppTheme.textLight),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryAction,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text(
+                                    'SUBMIT',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm != true) return;
+
+                          // Show full-screen loading overlay
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return const Dialog(
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppTheme.primaryAction,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+
+                          try {
+                            final functions = FirebaseFunctions.instance;
+
+                            final itemsData = cartItems.map((item) {
+                              return {
+                                'productId': item.productId,
+                                'quantity': item.quantity,
+                              };
+                            }).toList();
+
+                            final selectedAddressIndex = ref.read(
+                              selectedAddressIndexProvider,
+                            );
+                            final useBillingAsShipping = ref.read(
+                              useBillingAsShippingProvider,
+                            );
+
+                            final callable = functions.httpsCallable(
+                              'placeSecureOrder',
+                            );
+                            await callable.call({
+                              'items': itemsData,
+                              'selectedAddressIndex': selectedAddressIndex,
+                              'useBillingAsShipping': useBillingAsShipping,
+                            });
+
+                            cartNotifier.clear();
+                            if (context.mounted) {
+                              Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pop(); // Close the loading dialog
+
+                              await showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.check_circle,
+                                    color: AppTheme.primaryAction,
+                                    size: 64,
+                                  ),
+                                  title: const Text(
+                                    'Inquiry Placed!',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  content: const Text(
+                                    'Your request has been sent to our wholesale team. Enable notifications to get instant updates on your inquiry status and pricing.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: AppTheme.textLight),
+                                  ),
+                                  actionsAlignment: MainAxisAlignment.center,
+                                  actions: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppTheme.primaryAction,
+                                        minimumSize: const Size(
+                                          double.infinity,
+                                          48,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        Navigator.pop(
+                                          context,
+                                        ); // Close the dialog
+                                        // Request notification permissions
+                                        requestAndSaveFCMToken();
+                                        context.go('/orders');
+                                      },
+                                      child: const Text(
+                                        'Enable Notifications',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(
+                                          context,
+                                        ); // Close the dialog
+                                        context.go('/orders');
+                                      },
+                                      child: const Text(
+                                        'Not Now',
+                                        style: TextStyle(
+                                          color: AppTheme.textLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          } on FirebaseFunctionsException catch (e) {
+                            if (context.mounted) {
+                              Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pop(); // Close the loading dialog
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to place order: ${e.message}',
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pop(); // Close the loading dialog
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to place order: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text(
+                          'Submit Inquiry',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }
@@ -347,17 +600,20 @@ class _DeliveryAddressCard extends ConsumerWidget {
     if (user == null) return const SizedBox.shrink();
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
       builder: (context, snapshot) {
         String? displayAddress;
-        
+
         final selectedIndex = ref.watch(selectedAddressIndexProvider);
         final useBilling = ref.watch(useBillingAsShippingProvider);
-        
+
         Map<String, dynamic>? userData;
         if (snapshot.hasData && snapshot.data!.exists) {
           userData = snapshot.data!.data() as Map<String, dynamic>?;
-          
+
           if (useBilling) {
             displayAddress = userData?['billingAddress'] as String?;
           } else {
@@ -368,49 +624,83 @@ class _DeliveryAddressCard extends ConsumerWidget {
               displayAddress = mailingList.first.toString();
             }
           }
-          
+
           if (displayAddress == null || displayAddress.trim().isEmpty) {
-             displayAddress = userData?['billingAddress'] as String?;
+            displayAddress = userData?['billingAddress'] as String?;
           }
         }
 
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          padding: const EdgeInsets.all(14),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: displayAddress != null ? Colors.white : const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(12),
+            color: displayAddress != null
+                ? AppTheme.surface
+                : const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: displayAddress != null ? AppTheme.primaryAction.withValues(alpha: 0.3) : Colors.orange.shade300,
+              color: displayAddress != null
+                  ? Colors.grey.withValues(alpha: 0.2)
+                  : Colors.orange.shade300,
             ),
+            boxShadow: [
+              if (displayAddress != null)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+            ],
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                displayAddress != null ? Icons.local_shipping : Icons.warning_amber_rounded,
-                color: displayAddress != null ? AppTheme.primaryAction : Colors.orange.shade700,
-                size: 22,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: displayAddress != null
+                      ? AppTheme.primaryAction.withValues(alpha: 0.1)
+                      : Colors.orange.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  displayAddress != null
+                      ? Icons.location_on_rounded
+                      : Icons.warning_amber_rounded,
+                  color: displayAddress != null
+                      ? AppTheme.primaryAction
+                      : Colors.orange.shade700,
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      displayAddress != null ? 'Deliver to' : 'No shipping address',
+                      displayAddress != null
+                          ? 'Deliver to'
+                          : 'No shipping address',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: displayAddress != null ? AppTheme.textLight : Colors.orange.shade800,
+                        color: displayAddress != null
+                            ? AppTheme.textLight
+                            : Colors.orange.shade800,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      displayAddress ?? 'Please add a shipping address in your Profile before placing an order.',
+                      displayAddress ??
+                          'Please add a shipping address in your Profile before placing an order.',
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: displayAddress != null ? AppTheme.textDark : Colors.orange.shade900,
+                        fontWeight: FontWeight.w600,
+                        color: displayAddress != null
+                            ? AppTheme.textDark
+                            : Colors.orange.shade900,
+                        height: 1.4,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -422,13 +712,21 @@ class _DeliveryAddressCard extends ConsumerWidget {
               TextButton(
                 onPressed: () async {
                   if (userData == null) return;
-                  final addresses = (userData['mailingAddresses'] as List<dynamic>?)?.cast<String>() ?? [];
-                  final billingAddress = (userData['billingAddress'] as String?) ?? '';
-                  
+                  final addresses =
+                      (userData['mailingAddresses'] as List<dynamic>?)
+                          ?.cast<String>() ??
+                      [];
+                  final billingAddress =
+                      (userData['billingAddress'] as String?) ?? '';
+
                   final result = await showModalBottomSheet<Map<String, dynamic>>(
                     context: context,
                     backgroundColor: Colors.white,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                    ),
                     builder: (ctx) {
                       return Padding(
                         padding: const EdgeInsets.all(24),
@@ -438,34 +736,75 @@ class _DeliveryAddressCard extends ConsumerWidget {
                           children: [
                             Center(
                               child: Container(
-                                width: 40, height: 4,
+                                width: 40,
+                                height: 4,
                                 margin: const EdgeInsets.only(bottom: 16),
-                                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
                               ),
                             ),
-                            const Text('Select Shipping Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Select Shipping Address',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 16),
                             if (billingAddress.isNotEmpty)
                               Card(
                                 margin: const EdgeInsets.only(bottom: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 color: const Color(0xFFF0FFF4),
                                 child: ListTile(
-                                  leading: const Icon(Icons.location_city, color: Colors.green),
-                                  title: Text(billingAddress, style: const TextStyle(fontSize: 14)),
-                                  subtitle: const Text('Same as Billing Address', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  leading: const Icon(
+                                    Icons.location_city,
+                                    color: Colors.green,
+                                  ),
+                                  title: Text(
+                                    billingAddress,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  subtitle: const Text(
+                                    'Same as Billing Address',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   trailing: const Icon(Icons.chevron_right),
-                                  onTap: () => Navigator.pop(ctx, {'useBilling': true}),
+                                  onTap: () =>
+                                      Navigator.pop(ctx, {'useBilling': true}),
                                 ),
                               ),
                             ...List.generate(addresses.length, (i) {
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 child: ListTile(
-                                  leading: const Icon(Icons.local_shipping_outlined),
-                                  title: Text(addresses[i], style: const TextStyle(fontSize: 14)),
-                                  subtitle: i == 0 ? const Text('Default Shipping', style: TextStyle(color: Colors.blue, fontSize: 12)) : null,
+                                  leading: const Icon(
+                                    Icons.local_shipping_outlined,
+                                  ),
+                                  title: Text(
+                                    addresses[i],
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  subtitle: i == 0
+                                      ? const Text(
+                                          'Default Shipping',
+                                          style: TextStyle(
+                                            color: Colors.blue,
+                                            fontSize: 12,
+                                          ),
+                                        )
+                                      : null,
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () => Navigator.pop(ctx, {'index': i}),
                                 ),
@@ -488,23 +827,33 @@ class _DeliveryAddressCard extends ConsumerWidget {
                       );
                     },
                   );
-                  
+
                   if (result != null) {
                     if (result['useBilling'] == true) {
                       ref.read(useBillingAsShippingProvider.notifier).set(true);
                     } else {
-                      ref.read(useBillingAsShippingProvider.notifier).set(false);
-                      ref.read(selectedAddressIndexProvider.notifier).set(result['index'] ?? 0);
+                      ref
+                          .read(useBillingAsShippingProvider.notifier)
+                          .set(false);
+                      ref
+                          .read(selectedAddressIndexProvider.notifier)
+                          .set(result['index'] ?? 0);
                     }
                   }
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryAction,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text('Change', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                child: const Text(
+                  'Change',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ),
             ],
           ),

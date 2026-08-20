@@ -16,53 +16,44 @@ class StickyCartBanner extends ConsumerWidget {
     }
 
     final totalItems = cartItems.length;
-    final totalPrice = ref.watch(cartProvider.notifier).subtotal;
 
-    return GestureDetector(
-      onTap: () => context.go('/cart'),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppTheme.primaryAction,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryAction.withValues(alpha: 0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$totalItems Item${totalItems > 1 ? 's' : ''}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+    return Center(
+      child: GestureDetector(
+        onTap: () => context.go('/cart'),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryAction,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryAction.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text(
+                '$totalItems Item${totalItems > 1 ? 's' : ''} in Inquiry',
+                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.white24,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '₹${totalPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const Row(
-              children: [
-                Text(
-                  'View Cart',
-                  style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(width: 8),
-                Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
-              ],
-            )
-          ],
+                child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 10),
+              )
+            ],
+          ),
         ),
       ),
     );

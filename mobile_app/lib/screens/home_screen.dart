@@ -28,161 +28,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkPermissions();
-    });
   }
 
-  Future<void> _checkPermissions() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // First-time location popup (only shows once, then never again)
-    final hasAskedLoc = prefs.getBool('has_asked_location') ?? false;
-    if (!hasAskedLoc && mounted) {
-      await Future.delayed(const Duration(milliseconds: 1500));
-      if (!mounted) return;
-      
-      final reqLoc = await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => _buildLocationPrompt(),
-      );
-      await prefs.setBool('has_asked_location', true);
-
-      if (reqLoc == true) {
-        await requestAndSaveLocation();
-      }
-    }
-
-    // Then check notifications
-    final hasAskedNotif = prefs.getBool('has_asked_notifications') ?? false;
-    if (!hasAskedNotif && mounted) {
-      await Future.delayed(const Duration(milliseconds: 1000));
-      if (!mounted) return;
-      
-      final reqNotif = await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => _buildNotificationPrompt(),
-      );
-      await prefs.setBool('has_asked_notifications', true);
-
-      if (reqNotif == true) {
-        await requestAndSaveFCMToken();
-      }
-    }
-  }
-
-  Widget _buildLocationPrompt() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryAction.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+  void _showLocationBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Select Delivery Location',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textDark),
             ),
-            child: const Icon(Icons.location_on, size: 64, color: AppTheme.primaryAction),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Find Nearby Stock Instantly',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Enable location services to see accurate stock availability and ensure faster wholesale deliveries.',
-            style: TextStyle(fontSize: 15, color: AppTheme.textLight, height: 1.4),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryAction,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
-              ),
-              onPressed: () {
-                Navigator.pop(context, true);
+            const SizedBox(height: 8),
+            const Text(
+              'Choose your location to see accurate stock availability.',
+              style: TextStyle(fontSize: 14, color: AppTheme.textLight),
+            ),
+            const SizedBox(height: 32),
+            InkWell(
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await requestAndSaveLocation();
+                if (result && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Location updated successfully!'),
+                    backgroundColor: AppTheme.primaryAction,
+                  ));
+                } else if (!result && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Could not access location.'),
+                  ));
+                }
               },
-              child: const Text('ALLOW LOCATION', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationPrompt() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryAction.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.notifications_active, size: 64, color: AppTheme.primaryAction),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Stay Updated on Your Orders',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Enable notifications to receive real-time updates on your delivery and fresh arrivals.',
-            style: TextStyle(fontSize: 15, color: AppTheme.textLight, height: 1.4),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryAction,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAction.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.primaryAction.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.my_location, color: AppTheme.primaryAction),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Use Current Location', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryAction, fontSize: 16)),
+                        Text('Enable GPS for faster delivery', style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
+                      ],
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.chevron_right, color: AppTheme.primaryAction),
+                  ],
+                ),
               ),
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: const Text('ALLOW NOTIFICATIONS', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now', style: TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.bold)),
-          ),
-        ],
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                // Future manual address search logic
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Manual search coming soon!')));
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: AppTheme.textLight),
+                    const SizedBox(width: 16),
+                    const Text('Search Delivery Address', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark, fontSize: 16)),
+                    const Spacer(),
+                    const Icon(Icons.chevron_right, color: AppTheme.textLight),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -237,66 +177,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           surfaceTintColor: Colors.transparent,
           toolbarHeight: 70,
           title: InkWell(
-            onTap: () async {
-              final result = await requestAndSaveLocation();
-              if (result && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Location updated successfully!'),
-                  backgroundColor: AppTheme.primaryAction,
-                ));
-              } else if (!result && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Could not access location.'),
-                ));
-              }
-            },
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryAction.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.my_location, color: AppTheme.primaryAction, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Deliver to',
-                            style: TextStyle(
-                              color: AppTheme.textDark,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
+            onTap: () => _showLocationBottomSheet(context),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: AppTheme.primaryAction, size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Deliver to',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textDark,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      locationAsync.when(
-                        data: (loc) => Text(
-                          loc != null && loc.address.isNotEmpty ? loc.address : 'Use my current location',
-                          style: const TextStyle(
-                            color: AppTheme.textLight,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                            const SizedBox(width: 4),
+                            const Icon(Icons.keyboard_arrow_down, size: 16, color: AppTheme.textDark),
+                          ],
                         ),
-                        loading: () => const Text('Locating...', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
-                        error: (_, __) => const Text('Use my current location', style: TextStyle(color: AppTheme.textLight, fontSize: 11)),
-                      ),
-                    ],
+                        locationAsync.when(
+                          data: (loc) => Text(
+                            loc?.address.isNotEmpty == true ? loc!.address : 'Select Location',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textLight,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          loading: () => const Text('Locating...', style: TextStyle(fontSize: 14, color: AppTheme.textLight)),
+                          error: (_, __) => const Text('Select Location', style: TextStyle(fontSize: 14, color: AppTheme.textLight)),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const Icon(Icons.keyboard_arrow_right, color: AppTheme.textDark, size: 20),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [

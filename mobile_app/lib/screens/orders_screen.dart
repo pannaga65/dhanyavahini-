@@ -97,7 +97,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   child: ChoiceChip(
                     label: Text(filter, style: TextStyle(
                       color: isSelected ? Colors.white : AppTheme.textLight,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                     )),
                     selected: isSelected,
                     onSelected: (selected) {
@@ -105,8 +105,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     },
                     selectedColor: AppTheme.primaryAction,
                     backgroundColor: Colors.white,
-                    side: BorderSide(color: isSelected ? AppTheme.primaryAction : Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    showCheckmark: false,
+                    elevation: isSelected ? 4 : 0,
+                    shadowColor: AppTheme.primaryAction.withValues(alpha: 0.3),
+                    side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey.shade200, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
                 );
               }).toList(),
@@ -159,7 +163,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     final status = _normalizeStatus(data['status'] ?? 'Inquiry');
                     final paymentStatus = data['paymentStatus'] ?? 'Pending';
                     final invoiceNo = data['invoiceNo'];
-                    final total = data['totalAmount'] ?? data['total'] ?? 0.0;
+
                     final items = (data['items'] as List<dynamic>?) ?? [];
                     final isExpanded = _expandedOrders.contains(doc.id);
                     
@@ -201,18 +205,23 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Row(
+                                            crossAxisAlignment: CrossAxisAlignment.center,
                                             children: [
                                               Container(
                                                 width: 8, height: 8,
-                                                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                                                decoration: BoxDecoration(
+                                                  color: statusColor, 
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.4), blurRadius: 6)]
+                                                ),
                                               ),
                                               const SizedBox(width: 8),
-                                              Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13)),
-                                              const SizedBox(width: 8),
-                                              Text(dateStr, style: const TextStyle(color: AppTheme.textLight, fontSize: 12)),
+                                              Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
                                             ],
                                           ),
-                                          const SizedBox(height: 12),
+                                          const SizedBox(height: 6),
+                                          Text('Order Placed on $dateStr', style: const TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.w500)),
+                                          const SizedBox(height: 16),
                                           // Show compact items preview
                                           if (!isExpanded)
                                             ...items.take(2).map((item) {
@@ -255,14 +264,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                         ],
                                       ),
                                     ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(currencyFormat.format(total), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                                        const SizedBox(height: 8),
-                                        Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: AppTheme.textLight),
-                                      ],
-                                    ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text('${items.length} Items', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.textDark)),
+                                          const SizedBox(height: 16),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: isExpanded ? AppTheme.primaryAction.withValues(alpha: 0.1) : Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(isExpanded ? 'Hide' : 'Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isExpanded ? AppTheme.primaryAction : AppTheme.textLight)),
+                                                const SizedBox(width: 4),
+                                                Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 16, color: isExpanded ? AppTheme.primaryAction : AppTheme.textLight),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                   ],
                                 ),
                               ),
@@ -329,9 +352,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     children: items.map((item) {
                                       final qty = item['quantityKg'] ?? item['quantity'] ?? 0;
                                       final name = item['name'] ?? 'Unknown Item';
-                                      final price = item['basePriceKg'] ?? item['price'] ?? 0;
-                                      final lineTotal = item['lineTotal'] ?? (qty * price);
-                                      
                                       return Padding(
                                         padding: const EdgeInsets.only(bottom: 12.0),
                                         child: Row(
@@ -360,15 +380,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                                 children: [
                                                   Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                                   Text(
-                                                    status == 'Order Placed'
-                                                        ? '${qty}Kg'
-                                                        : '${qty}Kg × ₹$price',
+                                                    'Quantity: ${qty}Kg',
                                                     style: const TextStyle(color: AppTheme.textLight, fontSize: 12),
                                                   ),
                                                 ],
                                               )
                                             ),
-                                            Text(currencyFormat.format(lineTotal), style: const TextStyle(fontWeight: FontWeight.w700)),
                                           ],
                                         ),
                                       );

@@ -12,6 +12,8 @@ import 'screens/orders_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/privacy_policy_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/category_screen.dart';
@@ -40,16 +42,28 @@ void main() async {
   // Setup foreground FCM listeners
   await setupFCMListeners();
   
+  final prefs = await SharedPreferences.getInstance();
+  hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+
   runApp(const ProviderScope(child: MyApp()));
 }
+
+bool hasSeenOnboarding = false;
 
 final _router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
     final isLoggedIn = FirebaseAuth.instance.currentUser != null;
     final isGoingToLogin = state.uri.toString() == '/login';
+    final isGoingToOnboarding = state.uri.toString() == '/onboarding';
+
     if (!isLoggedIn && !isGoingToLogin) return '/login';
-    if (isLoggedIn && isGoingToLogin) return '/';
+    if (isLoggedIn && isGoingToLogin) {
+      return hasSeenOnboarding ? '/' : '/onboarding';
+    }
+    if (isLoggedIn && !hasSeenOnboarding && !isGoingToOnboarding) {
+      return '/onboarding';
+    }
     return null;
   },
   routes: [
@@ -97,6 +111,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
     ),
   ],
 );

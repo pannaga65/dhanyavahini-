@@ -61,15 +61,17 @@ class NotificationsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: notif.isRead ? Colors.grey.shade100 : AppTheme.primaryAction.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            notif.isRead ? Icons.notifications_none : Icons.notifications_active,
-                            color: notif.isRead ? AppTheme.textLight : AppTheme.primaryAction,
-                            size: 20,
+                          clipBehavior: Clip.hardEdge,
+                          child: Image.asset(
+                            'assets/logo.png',
+                            height: 24,
+                            width: 24,
+                            fit: BoxFit.contain,
                           ),
                         ),
                         const SizedBox(width: 16),

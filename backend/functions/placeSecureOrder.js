@@ -113,12 +113,10 @@ exports.placeSecureOrder = onCall(async (request) => {
           lineGst: lineGst,
         });
 
-        // 3d. WRITE: Deduct stock atomically
-        transaction.update(inventoryRef, {
-          availableStockKg: FieldValue.increment(-requestedKg),
-          allocatedStockKg: FieldValue.increment(requestedKg),
-          lastUpdated: FieldValue.serverTimestamp(),
-        });
+        // NOTE: Stock is NOT deducted here.
+        // Stock deduction happens at dispatch (in Inquiries.tsx handleSaveDispatch)
+        // based on the FINAL dispatched weight confirmed by the admin.
+        // This allows multiple customers to place inquiries for the same product.
       }
 
       // 3e. Calculate totals server-side

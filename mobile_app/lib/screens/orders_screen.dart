@@ -231,11 +231,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                             ],
                                           ),
                                           const SizedBox(height: 12),
-                                          if (data['totalAmount'] != null)
-                                            Text(
-                                              'Total: ${currencyFormat.format(data['totalAmount'])}',
-                                              style: const TextStyle(color: AppTheme.textDark, fontSize: 16, fontWeight: FontWeight.bold),
-                                            ),
+                                          // Only show total amount after dispatch — before that, show per-kg rate
+                                          if (status == 'Dispatched' || status == 'Delivered')
+                                            if (data['totalAmount'] != null)
+                                              Text(
+                                                'Bill: ${currencyFormat.format(data['totalAmount'])}',
+                                                style: const TextStyle(color: AppTheme.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+                                              )
+                                          else
+                                            if (items.isNotEmpty && items.first['basePriceKg'] != null)
+                                              Text(
+                                                '₹${items.first['basePriceKg']}/Kg${items.length > 1 ? " (+ ${items.length - 1} more)" : ""}',
+                                                style: const TextStyle(color: AppTheme.primaryAction, fontSize: 14, fontWeight: FontWeight.bold),
+                                              ),
                                           if (data['adminNotes'] != null && data['adminNotes'].toString().isNotEmpty)
                                             Container(
                                               margin: const EdgeInsets.only(top: 8),
@@ -417,10 +425,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
                                                   Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                                  Text(
-                                                    'Quantity: ${qty}Kg',
-                                                    style: const TextStyle(color: AppTheme.textLight, fontSize: 12),
-                                                  ),
+                                                  // Show Kg only after dispatch (when final weight is confirmed)
+                                                  if (status == 'Dispatched' || status == 'Delivered')
+                                                    Text(
+                                                      'Dispatched: ${qty}Kg',
+                                                      style: const TextStyle(color: AppTheme.textLight, fontSize: 12),
+                                                    )
+                                                  else
+                                                    Text(
+                                                      'Requested: ${qty}Kg',
+                                                      style: const TextStyle(color: AppTheme.textLight, fontSize: 12),
+                                                    ),
+                                                  if (item['basePriceKg'] != null)
+                                                    Text(
+                                                      'Rate: ₹${item['basePriceKg']}/Kg',
+                                                      style: const TextStyle(color: AppTheme.primaryAction, fontSize: 12, fontWeight: FontWeight.bold),
+                                                    ),
+                                                  // Show line total only after dispatch
+                                                  if ((status == 'Dispatched' || status == 'Delivered') && item['lineTotal'] != null)
+                                                    Text(
+                                                      'Amount: ${currencyFormat.format(item['lineTotal'])}',
+                                                      style: const TextStyle(color: AppTheme.textDark, fontSize: 12, fontWeight: FontWeight.w700),
+                                                    ),
                                                 ],
                                               )
                                             ),
@@ -430,65 +456,85 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     }).toList(),
                                   ),
                                 ),
-            
-                                // Footer with actions
+                                      // Footer with actions
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: const BoxDecoration(
                                     border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Order ID: ${doc.id.substring(0, 8).toUpperCase()}', style: const TextStyle(color: AppTheme.textLight, fontSize: 11)),
-                                      if (paymentStatus == 'Done' && invoiceNo != null)
-                                        OutlinedButton.icon(
-                                          icon: const Icon(Icons.download, size: 16),
-                                          label: const Text('Invoice'),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: AppTheme.primaryAction,
-                                            side: const BorderSide(color: AppTheme.primaryAction),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
-                                          ),
-                                          onPressed: () async {
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Downloading invoice...'), duration: Duration(seconds: 2)),
-                                              );
-                                            }
-                                            final projectId = FirebaseFirestore.instance.app.options.projectId;
-                                            final url = Uri.parse('https://us-central1-$projectId.cloudfunctions.net/downloadInvoice?orderId=${doc.id}&noJs=true');
-                                            try {
-                                              final response = await http.get(url);
-                                              if (response.statusCode == 200) {
-                                                final appDocDir = await getApplicationDocumentsDirectory();
-                                                final targetPath = appDocDir.path;
-                                                final targetFileName = 'Invoice_${doc.id}';
-                                                
-                                                final generatedPdfFile = await FlutterHtmlToPdf.convertFromHtmlContent(
-                                                  content: response.body,
-                                                  configuration: PrintPdfConfiguration(
-                                                    targetDirectory: targetPath,
-                                                    targetName: targetFileName,
-                                                    printSize: PrintSize.A4,
-                                                    printOrientation: PrintOrientation.Portrait,
-                                                  ),
-                                                );
-                                                
-                                                await OpenFilex.open(generatedPdfFile.path);
-                                              } else {
-                                                throw Exception('Failed to load invoice HTML');
-                                              }
-                                            } catch (e) {
-                                              if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(content: Text('Could not open invoice: $e')),
-                                                );
-                                              }
-                                            }
-                                          },
-                                        )
+                                      // Show total summary only after dispatch
+                                      if (status == 'Dispatched' || status == 'Delivered') ...[
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Total: ${data['totalQuantity'] ?? items.fold<num>(0, (sum, i) => sum + ((i['quantityKg'] ?? i['quantity'] ?? 0) as num))} Kg',
+                                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textDark),
+                                            ),
+                                            if (data['totalAmount'] != null)
+                                              Text(
+                                                'Bill: ${currencyFormat.format(data['totalAmount'])}',
+                                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppTheme.textDark),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('ID: ${doc.id.substring(0, 8).toUpperCase()}', style: const TextStyle(color: AppTheme.textLight, fontSize: 11)),
+                                          if (paymentStatus == 'Done' && invoiceNo != null)
+                                            OutlinedButton.icon(
+                                              icon: const Icon(Icons.download, size: 16),
+                                              label: const Text('Invoice'),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: AppTheme.primaryAction,
+                                                side: const BorderSide(color: AppTheme.primaryAction),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+                                              ),
+                                              onPressed: () async {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(content: Text('Downloading invoice...'), duration: Duration(seconds: 2)),
+                                                  );
+                                                }
+                                                final projectId = FirebaseFirestore.instance.app.options.projectId;
+                                                final url = Uri.parse('https://us-central1-$projectId.cloudfunctions.net/downloadInvoice?orderId=${doc.id}&noJs=true');
+                                                try {
+                                                  final response = await http.get(url);
+                                                  if (response.statusCode == 200) {
+                                                    final appDocDir = await getApplicationDocumentsDirectory();
+                                                    final targetPath = appDocDir.path;
+                                                    final targetFileName = 'Invoice_${doc.id}';
+                                                    final generatedPdfFile = await FlutterHtmlToPdf.convertFromHtmlContent(
+                                                      content: response.body,
+                                                      configuration: PrintPdfConfiguration(
+                                                        targetDirectory: targetPath,
+                                                        targetName: targetFileName,
+                                                        printSize: PrintSize.A4,
+                                                        printOrientation: PrintOrientation.Portrait,
+                                                      ),
+                                                    );
+                                                    await OpenFilex.open(generatedPdfFile.path);
+                                                  } else {
+                                                    throw Exception('Failed to load invoice HTML');
+                                                  }
+                                                } catch (e) {
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(content: Text('Could not open invoice: $e')),
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                            )
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),

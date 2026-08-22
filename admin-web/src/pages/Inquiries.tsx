@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton } from '@mui/material';
-import { collection, getDocs, query, where, getFirestore, updateDoc, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Button, Dialog, DialogActions, TextField, CircularProgress, IconButton, Grid } from '@mui/material';
+import { collection, getDocs, query, where, getFirestore, updateDoc, doc, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
@@ -22,8 +22,7 @@ export default function Inquiries() {
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Negotiation Form Data
-  const [negotiatedPrice, setNegotiatedPrice] = useState('');
-  const [negotiatedQuantity, setNegotiatedQuantity] = useState('');
+  const [negotiatedItems, setNegotiatedItems] = useState<any[]>([]);
   const [negotiationNotes, setNegotiationNotes] = useState('');
 
   // Dispatch Dialog State
@@ -66,9 +65,7 @@ export default function Inquiries() {
 
   const handleOpenEdit = (inquiry: any) => {
     setEditingId(inquiry.id);
-    setNegotiatedPrice(inquiry.totalAmount?.toString() || '');
-    const calculatedTotalQty = inquiry.totalQuantity || inquiry.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || 0), 0) || 0;
-    setNegotiatedQuantity(calculatedTotalQty.toString() || '');
+    setNegotiatedItems(JSON.parse(JSON.stringify(inquiry.items || [])));
     setNegotiationNotes(inquiry.adminNotes || '');
     setOpen(true);
   };
@@ -135,6 +132,10 @@ export default function Inquiries() {
         // -- READS --
         const counterSnap = await transaction.get(counterRef);
         const orderCounterSnap = await transaction.get(orderCounterRef);
+        const orderSnap = await transaction.get(orderRef);
+        
+        if (!orderSnap.exists()) throw new Error("Order not found");
+        const orderData = orderSnap.data();
 
         let nextSeq = 1;
         if (counterSnap.exists()) {
@@ -148,6 +149,49 @@ export default function Inquiries() {
         }
         const orderNo = `ORD-${nextOrderSeq.toString().padStart(3, '0')}`;
 
+        // Calculate differences and new totals
+        const originalItems = orderData.items || [];
+        const finalItemsData = data.finalItems || originalItems;
+        
+        const invDiffs: any = {};
+        let subtotal = 0;
+        let totalGstAmount = 0;
+        
+        const updatedItems = finalItemsData.map((fItem: any) => {
+           const oItem = originalItems.find((o: any) => o.productId === fItem.productId);
+           const requestedKg = oItem ? (oItem.quantityKg ?? oItem.quantity ?? 0) : 0;
+           const finalKg = fItem.dispatchedKg ?? requestedKg;
+           
+           // Track full finalKg to deduct from inventory at dispatch
+           if (fItem.productId && finalKg > 0) {
+             invDiffs[fItem.productId] = finalKg;
+           }
+           
+           const lineTotal = fItem.basePriceKg * finalKg;
+           const itemGstPercentage = fItem.gstPercentage || 5;
+           const lineGst = lineTotal * (itemGstPercentage / 100);
+           subtotal += lineTotal;
+           totalGstAmount += lineGst;
+           
+           return { ...fItem, quantityKg: finalKg, lineTotal, lineGst };
+        });
+        
+        const gstAmount = Math.round(totalGstAmount * 100) / 100;
+        const totalAmount = Math.round((subtotal + gstAmount) * 100) / 100;
+        const totalQuantity = updatedItems.reduce((sum: number, item: any) => sum + (item.quantityKg || 0), 0);
+
+        // Read inventory docs if needed for diffs
+        const invRefs: any = {};
+        for (const productId of Object.keys(invDiffs)) {
+           const invRef = doc(db, 'inventory', productId);
+           invRefs[productId] = invRef;
+           await transaction.get(invRef);
+        }
+
+        // Clean up data for dispatchDetails
+        const cleanDispatchData = { ...data };
+        delete cleanDispatchData.finalItems;
+
         // -- WRITES --
         transaction.set(counterRef, { seq: nextSeq }, { merge: true });
         transaction.set(orderCounterRef, { seq: nextOrderSeq }, { merge: true });
@@ -158,9 +202,24 @@ export default function Inquiries() {
           orderNo: orderNo,
           invoiceNo,
           invoiceDate: serverTimestamp(),
-          dispatchDetails: data,
+          dispatchDetails: cleanDispatchData,
+          items: updatedItems,
+          subtotal,
+          gstAmount,
+          totalAmount,
+          totalQuantity,
           updatedAt: serverTimestamp()
         });
+
+        // Update inventory — deduct full dispatched quantity (was not pre-deducted at inquiry)
+        for (const productId of Object.keys(invDiffs)) {
+          const finalKg = invDiffs[productId];
+          transaction.update(invRefs[productId], {
+            availableStockKg: increment(-finalKg),
+            allocatedStockKg: increment(finalKg),
+            lastUpdated: serverTimestamp()
+          });
+        }
       });
       showMessage("Order confirmed and Dispatch Details saved!", "success");
     } catch (error) {
@@ -176,9 +235,29 @@ export default function Inquiries() {
     if (!editingId) return;
     setLoading(true);
     try {
+      let subtotal = 0;
+      let totalGstAmount = 0;
+      
+      const updatedItems = negotiatedItems.map(item => {
+        const qty = item.quantityKg || item.quantity || 0;
+        const lineTotal = item.basePriceKg * qty;
+        const itemGstPercentage = item.gstPercentage || 5;
+        const lineGst = lineTotal * (itemGstPercentage / 100);
+        subtotal += lineTotal;
+        totalGstAmount += lineGst;
+        return { ...item, lineTotal, lineGst };
+      });
+      
+      const gstAmount = Math.round(totalGstAmount * 100) / 100;
+      const totalAmount = Math.round((subtotal + gstAmount) * 100) / 100;
+      const totalQuantity = updatedItems.reduce((sum, item) => sum + (item.quantityKg || item.quantity || 0), 0);
+
       await updateDoc(doc(db, 'orders', editingId), {
-        totalAmount: Number(negotiatedPrice),
-        totalQuantity: Number(negotiatedQuantity),
+        items: updatedItems,
+        subtotal,
+        gstAmount,
+        totalAmount,
+        totalQuantity,
         adminNotes: negotiationNotes,
         updatedAt: new Date()
       });
@@ -288,11 +367,40 @@ export default function Inquiries() {
             NEGOTIATE INQUIRY
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField label="Negotiated Total Amount (₹)" type="number" fullWidth value={negotiatedPrice} onChange={(e) => setNegotiatedPrice(e.target.value)} />
-            <TextField label="Negotiated Total Quantity" type="number" fullWidth value={negotiatedQuantity} onChange={(e) => setNegotiatedQuantity(e.target.value)} />
+            {negotiatedItems.map((item, index) => (
+              <Box key={index} sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: 2, backgroundColor: '#F8FAFC' }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 1 }}>{item.name}</Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 6 }}>
+                    <TextField 
+                      label="Price per Kg (₹)" 
+                      type="number" 
+                      size="small"
+                      fullWidth 
+                      value={item.basePriceKg} 
+                      onChange={(e) => {
+                        const newItems = [...negotiatedItems];
+                        newItems[index].basePriceKg = Number(e.target.value);
+                        setNegotiatedItems(newItems);
+                      }} 
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <TextField 
+                      label="Requested Kgs" 
+                      type="number" 
+                      size="small"
+                      fullWidth 
+                      value={item.quantityKg || item.quantity || 0} 
+                      disabled
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            ))}
             <TextField label="Admin Notes (Visible to Customer)" multiline rows={3} fullWidth value={negotiationNotes} onChange={(e) => setNegotiationNotes(e.target.value)} />
             <Typography sx={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
-              Update these values before approving the order if you have negotiated a different rate with the customer.
+              Update the per kg prices if you have negotiated a different rate with the customer. Final quantities will be confirmed at dispatch.
             </Typography>
           </Box>
         </Box>
@@ -317,6 +425,7 @@ export default function Inquiries() {
           mailingAddresses: [inquiries.find(i => i.id === approvingId)?.shippingAddress].filter(Boolean),
           location: inquiries.find(i => i.id === approvingId)?.location
         }}
+        orderItems={inquiries.find(i => i.id === approvingId)?.items}
       />
     </Box>
   );

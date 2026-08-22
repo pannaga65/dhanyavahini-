@@ -8,6 +8,7 @@ export interface DispatchData {
   lrNumber?: string;
   motorVehicleNo?: string;
   shippingAddress?: string;
+  finalItems?: any[];
 }
 
 interface DispatchDialogProps {
@@ -19,10 +20,12 @@ interface DispatchDialogProps {
   initialData?: DispatchData;
   isApprovalMode?: boolean;
   customer?: any;
+  orderItems?: any[];
 }
 
-export default function DispatchDialog({ open, onClose, onSave, onSkip, loading, initialData, isApprovalMode, customer }: DispatchDialogProps) {
+export default function DispatchDialog({ open, onClose, onSave, onSkip, loading, initialData, isApprovalMode, customer, orderItems }: DispatchDialogProps) {
   const [formData, setFormData] = useState<DispatchData>({});
+  const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (initialData) {
@@ -30,7 +33,13 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
     } else {
       setFormData({});
     }
-  }, [initialData, open]);
+    if (orderItems && orderItems.length > 0) {
+      // Initialize items with their current/requested quantities
+      setItems(JSON.parse(JSON.stringify(orderItems)));
+    } else {
+      setItems([]);
+    }
+  }, [initialData, open, orderItems]);
 
   const handleChange = (field: keyof DispatchData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -148,6 +157,30 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Motor Vehicle No." fullWidth value={formData.motorVehicleNo || ''} onChange={(e) => handleChange('motorVehicleNo', e.target.value)} />
           </Grid>
+          {items.length > 0 && (
+            <Grid size={{ xs: 12 }}>
+              <Typography sx={{ fontWeight: 700, mb: 1, mt: 1, color: '#1A1A2E' }}>Final Dispatched Weights</Typography>
+              <Box sx={{ border: '1px solid #E2E8F0', borderRadius: 2, overflow: 'hidden' }}>
+                {items.map((item, index) => (
+                  <Box key={index} sx={{ display: 'flex', gap: 2, p: 1.5, alignItems: 'center', borderBottom: index < items.length - 1 ? '1px solid #E2E8F0' : 'none', backgroundColor: index % 2 === 0 ? '#FAFAFA' : '#FFFFFF' }}>
+                    <Typography sx={{ flex: 1, fontSize: '0.85rem', fontWeight: 600 }}>{item.name}</Typography>
+                    <TextField 
+                      label="Dispatched (Kg)" 
+                      type="number" 
+                      size="small" 
+                      sx={{ width: 130 }}
+                      value={item.dispatchedKg ?? item.quantityKg ?? item.quantity ?? 0} 
+                      onChange={(e) => {
+                        const newItems = [...items];
+                        newItems[index].dispatchedKg = Number(e.target.value);
+                        setItems(newItems);
+                      }} 
+                    />
+                  </Box>
+                ))}
+              </Box>
+            </Grid>
+          )}
         </Grid>
       </Box>
       <DialogActions sx={{ borderTop: '1px solid #E0E0E0', p: 2, display: 'flex', justifyContent: 'space-between' }}>
@@ -158,7 +191,7 @@ export default function DispatchDialog({ open, onClose, onSave, onSkip, loading,
               SKIP FOR NOW
             </Button>
           )}
-          <Button variant="contained" onClick={() => onSave(formData)} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
+          <Button variant="contained" onClick={() => onSave({ ...formData, finalItems: items })} disabled={loading} sx={{ backgroundColor: '#000', color: '#FFF', fontWeight: 700, borderRadius: 0 }}>
             {loading ? <CircularProgress size={20} color="inherit" /> : (isApprovalMode ? 'SAVE & APPROVE' : 'SAVE DETAILS')}
           </Button>
         </Box>

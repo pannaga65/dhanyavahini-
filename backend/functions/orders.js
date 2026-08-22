@@ -49,8 +49,11 @@ exports.updateOrderStatus = onCall(async (request) => {
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    // 4. If cancelled, restore inventory stock
-    if (normalizedStatus === "Cancelled" && previousStatus !== "Cancelled") {
+    // 4. If cancelled, restore inventory stock — but ONLY if stock was already deducted.
+    // Stock is deducted at Dispatch (Confirmed stage), NOT at Inquiry.
+    // So only restore if the previous status was Confirmed, Dispatched, or Delivered.
+    const statusesWithDeductedStock = ["Confirmed", "Dispatched", "Delivered"];
+    if (normalizedStatus === "Cancelled" && previousStatus !== "Cancelled" && statusesWithDeductedStock.includes(previousStatus)) {
       const items = orderSnap.data().items || [];
       for (const item of items) {
         if (item.productId && item.quantityKg) {
@@ -103,8 +106,9 @@ exports.deleteOrder = onCall(async (request) => {
     const orderData = orderSnap.data();
     const previousStatus = orderData.status;
 
-    // 1. If not already Cancelled, restore inventory stock before deleting
-    if (previousStatus !== "Cancelled") {
+    // 1. Only restore inventory if stock was actually deducted (i.e. status was past Inquiry)
+    const statusesWithDeductedStock = ["Confirmed", "Dispatched", "Delivered"];
+    if (statusesWithDeductedStock.includes(previousStatus)) {
       const items = orderData.items || [];
       for (const item of items) {
         if (item.productId && item.quantityKg) {

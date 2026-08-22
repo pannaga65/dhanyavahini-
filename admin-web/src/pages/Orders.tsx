@@ -392,6 +392,7 @@ export default function Orders() {
             <TableRow>
               <TableCell sx={{ fontWeight: 900 }}>ORDER ID</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>CUSTOMER</TableCell>
+              <TableCell sx={{ fontWeight: 900 }}>TOTAL QTY</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>AMOUNT</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>DELIVERY STATUS</TableCell>
               <TableCell sx={{ fontWeight: 900 }}>PAYMENT STATUS</TableCell>

@@ -609,9 +609,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          const Text(
-                                            'Request Quote',
-                                            style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 12),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                'Request Quote',
+                                                style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 12),
+                                              ),
+                                              if (product.moqKg > 0)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade100,
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text('Min: ${product.moqKg}kg', style: const TextStyle(fontSize: 10, color: AppTheme.textDark, fontWeight: FontWeight.bold)),
+                                                ),
+                                            ],
                                           ),
                                           
                                           // B2B Cart Action

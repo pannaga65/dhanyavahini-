@@ -128,9 +128,26 @@ class CategoryScreen extends ConsumerWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    'Request Quote', 
-                                    style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Request Quote', 
+                                        style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight, fontSize: 12),
+                                      ),
+                                      if (product.moqKg > 0)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text('Min: ${product.moqKg}kg', style: const TextStyle(fontSize: 10, color: AppTheme.textDark, fontWeight: FontWeight.bold)),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                   GestureDetector(
                                     onTap: () {

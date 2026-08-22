@@ -25,6 +25,8 @@ interface Order {
   paymentStatus?: string;
   paymentMethod?: string;
   paymentNote?: string;
+  payments?: { id: string, amount: number, method: string, note: string, date: any }[];
+  amountPaid?: number;
   totalAmount: number;
   invoiceNo?: string;
   dispatchDetails?: DispatchData;
@@ -54,9 +56,13 @@ export default function Orders() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editStatus, setEditStatus] = useState('');
-  const [editPaymentStatus, setEditPaymentStatus] = useState('');
   const [editPaymentMethod, setEditPaymentMethod] = useState('');
   const [editPaymentNote, setEditPaymentNote] = useState('');
+  const [editPayments, setEditPayments] = useState<{ id: string, amount: number, method: string, note: string, date: any }[]>([]);
+  const [newPaymentAmount, setNewPaymentAmount] = useState('');
+  const [newPaymentMethod, setNewPaymentMethod] = useState('Bank Transfer');
+  const [newPaymentNote, setNewPaymentNote] = useState('');
+  
   const [editShippingAddress, setEditShippingAddress] = useState('');
   const [editTotal, setEditTotal] = useState('');
   const [editItems, setEditItems] = useState<any[]>([]);
@@ -191,9 +197,25 @@ export default function Orders() {
   const handleOpenEdit = (order: Order) => {
     setEditingId(order.id);
     setEditStatus(order.status || 'Confirmed');
-    setEditPaymentStatus(order.paymentStatus || 'Pending');
     setEditPaymentMethod(order.paymentMethod || 'Bank Transfer');
     setEditPaymentNote(order.paymentNote || '');
+    
+    // Lazy migration for older 'Done' orders
+    let initialPayments = order.payments ? [...order.payments] : [];
+    if (initialPayments.length === 0 && order.paymentStatus === 'Done' && order.totalAmount > 0) {
+      initialPayments = [{
+        id: 'legacy-full-payment',
+        amount: order.totalAmount,
+        method: order.paymentMethod || 'Bank Transfer',
+        note: order.paymentNote || 'Legacy full payment',
+        date: order.createdAt || new Date()
+      }];
+    }
+    setEditPayments(initialPayments);
+    setNewPaymentAmount('');
+    setNewPaymentMethod('Bank Transfer');
+    setNewPaymentNote('');
+
     setEditShippingAddress(order.shippingAddress || order.billingAddress || '');
     setEditTotal(order.totalAmount?.toString() || '');
     setEditItems(order.items ? JSON.parse(JSON.stringify(order.items)) : []);
@@ -205,14 +227,24 @@ export default function Orders() {
     if (!editingId) return;
     setEditLoading(true);
 
+    // Auto-calculate payment status
+    const totalPaid = editPayments.reduce((sum, p) => sum + p.amount, 0);
+    const finalTotal = Number(editTotal);
+    let autoPaymentStatus = 'Pending';
+    if (totalPaid > 0) {
+      autoPaymentStatus = totalPaid >= finalTotal ? 'Done' : 'Partial';
+    }
+
     // Optimistic update
     const previousOrders = [...orders];
     setOrders(orders.map(o => o.id === editingId ? { 
       ...o, 
       status: editStatus, 
-      paymentStatus: editPaymentStatus, 
-      paymentMethod: editPaymentStatus === 'Done' ? editPaymentMethod : null,
-      paymentNote: editPaymentStatus === 'Done' ? editPaymentNote : null,
+      paymentStatus: autoPaymentStatus, 
+      paymentMethod: autoPaymentStatus === 'Done' ? editPaymentMethod : "",
+      paymentNote: autoPaymentStatus === 'Done' ? editPaymentNote : "",
+      payments: editPayments,
+      amountPaid: totalPaid,
       shippingAddress: editShippingAddress,
       items: editItems,
       subtotal: editSubtotal,
@@ -227,9 +259,11 @@ export default function Orders() {
       await updateOrderStatusFn({ orderId: targetId, newStatus: editStatus });
       // Update payment status, shipping address, and item weights
       await updateDoc(doc(db, 'orders', targetId), {
-        paymentStatus: editPaymentStatus,
-        paymentMethod: editPaymentStatus === 'Done' ? editPaymentMethod : null,
-        paymentNote: editPaymentStatus === 'Done' ? editPaymentNote : null,
+        paymentStatus: autoPaymentStatus,
+        paymentMethod: autoPaymentStatus === 'Done' ? editPaymentMethod : "",
+        paymentNote: autoPaymentStatus === 'Done' ? editPaymentNote : "",
+        payments: editPayments,
+        amountPaid: totalPaid,
         shippingAddress: editShippingAddress,
         items: editItems,
         subtotal: editSubtotal,
@@ -706,32 +740,83 @@ export default function Orders() {
                 <MenuItem value="Delivered">Delivered</MenuItem>
               </Select>
             </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Payment Status</InputLabel>
-              <Select value={editPaymentStatus} label="Payment Status" onChange={(e) => setEditPaymentStatus(e.target.value)}>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="Done">Done</MenuItem>
-              </Select>
-            </FormControl>
-            {editPaymentStatus === 'Done' && (
-              <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
-                <FormControl sx={{ minWidth: 150 }}>
-                  <InputLabel>Payment Method</InputLabel>
-                  <Select value={editPaymentMethod} label="Payment Method" onChange={(e) => setEditPaymentMethod(e.target.value)}>
-                    <MenuItem value="Bank Transfer">Bank Transfer</MenuItem>
+            <Box sx={{ p: 2, backgroundColor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#94A3B8', mb: 2, letterSpacing: 1 }}>
+                PAYMENT LEDGER
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Typography sx={{ fontWeight: 600 }}>Total Bill: ₹{Number(editTotal).toLocaleString()}</Typography>
+                <Typography sx={{ fontWeight: 600, color: 'success.main' }}>Paid: ₹{editPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}</Typography>
+                <Typography sx={{ fontWeight: 800, color: 'error.main' }}>
+                  Balance: ₹{Math.max(0, Number(editTotal) - editPayments.reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                </Typography>
+              </Box>
+              
+              {editPayments.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  {editPayments.map((p) => (
+                    <Box key={p.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, borderBottom: '1px solid #E2E8F0' }}>
+                      <Box>
+                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700 }}>₹{p.amount.toLocaleString()} ({p.method})</Typography>
+                        <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>{p.note || 'No note'}</Typography>
+                      </Box>
+                      <IconButton size="small" onClick={() => setEditPayments(editPayments.filter(ep => ep.id !== p.id))}>
+                        <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', mt: 2 }}>
+                <TextField
+                  size="small"
+                  label="Amount"
+                  type="number"
+                  value={newPaymentAmount}
+                  onChange={e => setNewPaymentAmount(e.target.value)}
+                  sx={{ width: 100, backgroundColor: '#FFF' }}
+                />
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Method</InputLabel>
+                  <Select value={newPaymentMethod} label="Method" onChange={e => setNewPaymentMethod(e.target.value)} sx={{ backgroundColor: '#FFF' }}>
+                    <MenuItem value="Bank Transfer">Bank</MenuItem>
                     <MenuItem value="Cash">Cash</MenuItem>
                     <MenuItem value="UPI">UPI</MenuItem>
                     <MenuItem value="Cheque">Cheque</MenuItem>
                   </Select>
                 </FormControl>
-                <TextField 
-                  label="Internal Note (e.g. UTR or Check No)" 
-                  value={editPaymentNote} 
-                  onChange={(e) => setEditPaymentNote(e.target.value)} 
-                  fullWidth 
+                <TextField
+                  size="small"
+                  label="Note"
+                  value={newPaymentNote}
+                  onChange={e => setNewPaymentNote(e.target.value)}
+                  sx={{ flex: 1, backgroundColor: '#FFF' }}
                 />
+                <Button 
+                  variant="contained" 
+                  size="small"
+                  disabled={!newPaymentAmount || Number(newPaymentAmount) <= 0}
+                  onClick={() => {
+                    const amt = Number(newPaymentAmount);
+                    if (amt > 0) {
+                      setEditPayments([...editPayments, {
+                        id: Date.now().toString(),
+                        amount: amt,
+                        method: newPaymentMethod,
+                        note: newPaymentNote,
+                        date: new Date()
+                      }]);
+                      setNewPaymentAmount('');
+                      setNewPaymentNote('');
+                    }
+                  }}
+                  sx={{ minWidth: 'auto', px: 2, height: 40 }}
+                >
+                  Add
+                </Button>
               </Box>
-            )}
+            </Box>
             <TextField 
               label="Shipping Address" 
               multiline 

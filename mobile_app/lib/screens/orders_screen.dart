@@ -164,6 +164,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     final paymentStatus = data['paymentStatus'] ?? 'Pending';
                     final invoiceNo = data['invoiceNo'];
 
+                    final totalAmt = (data['totalAmount'] ?? 0) as num;
+                    num amountPaid = 0;
+                    if (data['amountPaid'] != null) {
+                      amountPaid = data['amountPaid'] as num;
+                    } else if (paymentStatus == 'Done') {
+                      amountPaid = totalAmt;
+                    }
+                    num balanceDue = totalAmt - amountPaid;
+                    if (balanceDue < 0) balanceDue = 0;
+
                     final items = (data['items'] as List<dynamic>?) ?? [];
                     final isExpanded = _expandedOrders.contains(doc.id);
                     
@@ -481,14 +491,27 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                               ),
                                           ],
                                         ),
+                                        if (data['totalAmount'] != null && (amountPaid > 0 || paymentStatus != 'Pending'))
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 8),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Text('Paid: ${currencyFormat.format(amountPaid)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700, fontSize: 13)),
+                                                Text('Balance: ${currencyFormat.format(balanceDue)}', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800, fontSize: 13)),
+                                                Text('Paid: ${currencyFormat.format(data['amountPaid'] ?? 0)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700, fontSize: 13)),
+                                                Text('Balance: ${currencyFormat.format((data['totalAmount'] ?? 0) - (data['amountPaid'] ?? 0))}', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800, fontSize: 13)),
+                                              ]
+                                            ),
+                                          ),
                                         const SizedBox(height: 12),
                                       ],
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text('ID: ${doc.id.substring(0, 8).toUpperCase()}', style: const TextStyle(color: AppTheme.textLight, fontSize: 11)),
-                                          if (paymentStatus == 'Done' && invoiceNo != null)
-                                            OutlinedButton.icon(
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('ID: ${doc.id.substring(0, 8).toUpperCase()}', style: const TextStyle(color: AppTheme.textLight, fontSize: 11)),
+                                            if (invoiceNo != null)
+                                              OutlinedButton.icon(
                                               icon: const Icon(Icons.download, size: 16),
                                               label: const Text('Invoice'),
                                               style: OutlinedButton.styleFrom(

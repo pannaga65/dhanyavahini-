@@ -29,6 +29,7 @@ interface Product {
   availableStockKg?: number; // Fetched from inventory collection
   gstPercentage?: number;
   hsnCode?: string;
+  marketingBadge?: string;
 }
 
 export default function Products() {
@@ -63,6 +64,7 @@ export default function Products() {
   const [existingImageUrl, setExistingImageUrl] = useState('');
   const [gstPercentage, setGstPercentage] = useState('5'); // Default 5%
   const [hsnCode, setHsnCode] = useState('');
+  const [marketingBadge, setMarketingBadge] = useState('None');
 
   // Unit Multipliers to convert to KG
   const getMultiplier = (unit: string) => {
@@ -109,7 +111,7 @@ export default function Products() {
 
   const handleOpenNew = () => {
     setEditingId(null);
-    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setIncrementStepInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl(''); setGstPercentage('5'); setHsnCode('');
+    setName(''); setCategory(''); setPricePerUnit(''); setMoqInUnit(''); setIncrementStepInUnit(''); setStockInUnit(''); setImageFile(null); setExistingImageUrl(''); setGstPercentage('5'); setHsnCode(''); setMarketingBadge('None');
     setOpen(true);
   };
 
@@ -126,6 +128,7 @@ export default function Products() {
     setImageFile(null);
     setGstPercentage((product.gstPercentage ?? 5).toString());
     setHsnCode(product.hsnCode || '');
+    setMarketingBadge(product.marketingBadge || 'None');
     setOpen(true);
   };
 
@@ -171,6 +174,7 @@ export default function Products() {
       const incrementStepKg = incrementStepInUnit ? Number(incrementStepInUnit) * multiplier : moqKg;
       const stockKg = stockInUnit ? Number(stockInUnit) * multiplier : 0;
       const gstNum = gstPercentage ? Number(gstPercentage) : 5;
+      const badgeValue = marketingBadge === 'None' ? '' : marketingBadge;
 
       let downloadUrl = existingImageUrl;
       if (imageFile) {
@@ -197,6 +201,7 @@ export default function Products() {
           isActive: true,
           gstPercentage: gstNum,
           hsnCode,
+          marketingBadge: badgeValue,
           ...(imageFile ? { imageUrl: downloadUrl } : {})
         });
         // Update Inventory (overwrite total available for now)
@@ -217,6 +222,7 @@ export default function Products() {
           isActive: true,
           gstPercentage: gstNum,
           hsnCode,
+          marketingBadge: badgeValue,
         });
         // Create Initial Inventory Ledger
         await setDoc(doc(db, 'inventory', productRef.id), {
@@ -429,6 +435,19 @@ export default function Products() {
               value={hsnCode} 
               onChange={e => setHsnCode(e.target.value)} 
             />
+
+            <FormControl fullWidth>
+              <InputLabel>Marketing Badge</InputLabel>
+              <Select
+                value={marketingBadge}
+                label="Marketing Badge"
+                onChange={(e) => setMarketingBadge(e.target.value)}
+              >
+                <MenuItem value="None">None</MenuItem>
+                <MenuItem value="Trending">Trending</MenuItem>
+                <MenuItem value="Price Drop">Price Drop</MenuItem>
+              </Select>
+            </FormControl>
 
             <TextField 
               label="GST Percentage (%)" 

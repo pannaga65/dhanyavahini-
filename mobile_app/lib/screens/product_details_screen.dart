@@ -71,10 +71,6 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
           // Initialize quantity to MOQ once
           if (!isInitialized) {
             quantity = product.moqKg;
-            // if stock is lower than moq, we set to stock, or 0 if out of stock
-            if (quantity > product.availableStockKg) {
-              quantity = product.availableStockKg.toInt();
-            }
             isInitialized = true;
           }
 
@@ -113,23 +109,6 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                 Text('Specifications', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 _buildSpecRow('Minimum Order (MOQ)', '${product.moqKg} Kg'),
-                _buildSpecRow('Available Stock', '${product.availableStockKg} Kg'),
-                const SizedBox(height: 24),
-                if (product.availableStockKg <= 0)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.warning, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('This product is currently out of stock.', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  )
               ],
             ),
           );
@@ -166,7 +145,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.remove),
-                            onPressed: product.availableStockKg <= 0 ? null : () {
+                            onPressed: () {
                               if (quantity > product.moqKg) {
                                 setState(() => quantity -= (product.moqKg > 0 ? product.moqKg : 1)); 
                                 if (quantity < product.moqKg) quantity = product.moqKg;
@@ -176,13 +155,9 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                           Text('$quantity Kg', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                           IconButton(
                             icon: const Icon(Icons.add),
-                            onPressed: product.availableStockKg <= 0 ? null : () {
+                            onPressed: () {
                               final increment = product.moqKg > 0 ? product.moqKg : 1;
-                              if (quantity + increment <= product.availableStockKg) {
-                                setState(() => quantity += increment); 
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cannot exceed available stock of ${product.availableStockKg} Kg')));
-                              }
+                              setState(() => quantity += increment); 
                             },
                           ),
                         ],
@@ -199,23 +174,19 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                             size: 20,
                           ),
                           label: Text(
-                            product.availableStockKg <= 0
-                                ? 'Out of Stock'
-                                : _justAdded
-                                    ? '✓ Added to Inquiry'
-                                    : 'Add to Inquiry',
+                            _justAdded
+                                ? '✓ Added to Inquiry'
+                                : 'Add to Inquiry',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: product.availableStockKg <= 0
-                                ? Colors.grey
-                                : _justAdded
-                                    ? const Color(0xFF2E7D32)
-                                    : AppTheme.primaryAction,
+                            backgroundColor: _justAdded
+                                ? const Color(0xFF2E7D32)
+                                : AppTheme.primaryAction,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          onPressed: product.availableStockKg <= 0 ? null : () => _handleAddToCart(product),
+                          onPressed: () => _handleAddToCart(product),
                         ),
                       ),
                     ),

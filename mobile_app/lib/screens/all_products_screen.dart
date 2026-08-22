@@ -194,22 +194,23 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
                                                   errorWidget: (ctx, url, err) => const Center(child: Icon(Icons.inventory_2, color: AppTheme.textLight, size: 40)),
                                                 )
                                               : const Center(child: Icon(Icons.inventory_2, color: AppTheme.textLight, size: 40)),
-                                          Positioned(
-                                            top: 8, right: 8,
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: product.availableStockKg > 0 
-                                                    ? AppTheme.primaryAction.withValues(alpha: 0.9) 
-                                                    : Colors.red.withValues(alpha: 0.9),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                product.availableStockKg > 0 ? 'In Stock' : 'Out',
-                                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                          if (product.availableStockKg > 0 && product.marketingBadge.isNotEmpty)
+                                            Positioned(
+                                              top: 8, right: 8,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: product.marketingBadge == 'Trending' 
+                                                      ? Colors.orange.withValues(alpha: 0.9) 
+                                                      : Colors.blue.withValues(alpha: 0.9),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Text(
+                                                  product.marketingBadge.toUpperCase(),
+                                                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                                ),
                                               ),
                                             ),
-                                          ),
                                         ],
                                       ),
                                     ),
@@ -259,16 +260,7 @@ class _AllProductsScreenState extends ConsumerState<AllProductsScreen> {
   }
 
   Widget _buildCartButton(product, bool isInCart, bool justAdded) {
-    if (product.availableStockKg <= 0) {
-      return Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade400,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Icon(Icons.block, color: Colors.white, size: 16),
-      );
-    }
+
 
     if (justAdded) {
       return Container(

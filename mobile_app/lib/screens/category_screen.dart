@@ -90,22 +90,23 @@ class CategoryScreen extends ConsumerWidget {
                                       errorWidget: (ctx, url, err) => const Center(child: Icon(Icons.inventory_2, color: AppTheme.textLight, size: 40)),
                                     )
                                   : const Center(child: Icon(Icons.inventory_2, color: AppTheme.textLight, size: 40)),
-                              Positioned(
-                                top: 8, right: 8,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: product.availableStockKg > 0 
-                                        ? AppTheme.primaryAction.withValues(alpha: 0.9) 
-                                        : Colors.red.withValues(alpha: 0.9),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    product.availableStockKg > 0 ? 'In Stock' : 'Out',
-                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                              if (product.availableStockKg > 0 && product.marketingBadge.isNotEmpty)
+                                Positioned(
+                                  top: 8, right: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: product.marketingBadge == 'Trending' 
+                                          ? Colors.orange.withValues(alpha: 0.9) 
+                                          : Colors.blue.withValues(alpha: 0.9),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      product.marketingBadge.toUpperCase(),
+                                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                    ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -133,25 +134,23 @@ class CategoryScreen extends ConsumerWidget {
                                   ),
                                   GestureDetector(
                                     onTap: () {
-                                      if (product.availableStockKg > 0) {
-                                        ref.read(cartProvider.notifier).addItem(
-                                          CartItem(
-                                            productId: product.id,
-                                            name: product.name,
-                                            price: product.basePriceKg,
-                                            quantity: product.moqKg > 0 ? product.moqKg : 1, // Quick add moq
-                                            moqKg: product.moqKg > 0 ? product.moqKg : 1,
-                                            incrementStepKg: product.incrementStepKg,
-                                            gstPercentage: product.gstPercentage,
-                                            imageUrl: product.imageUrl,
-                                          ),
-                                        );
-                                      }
+                                      ref.read(cartProvider.notifier).addItem(
+                                        CartItem(
+                                          productId: product.id,
+                                          name: product.name,
+                                          price: product.basePriceKg,
+                                          quantity: product.moqKg > 0 ? product.moqKg : 1, // Quick add moq
+                                          moqKg: product.moqKg > 0 ? product.moqKg : 1,
+                                          incrementStepKg: product.incrementStepKg,
+                                          gstPercentage: product.gstPercentage,
+                                          imageUrl: product.imageUrl,
+                                        ),
+                                      );
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: product.availableStockKg > 0 ? AppTheme.primaryAction : Colors.grey,
+                                        color: AppTheme.primaryAction,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: const Icon(Icons.add, color: Colors.white, size: 16),

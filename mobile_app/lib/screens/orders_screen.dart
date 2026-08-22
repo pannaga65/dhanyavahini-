@@ -231,6 +231,23 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                             ],
                                           ),
                                           const SizedBox(height: 12),
+                                          if (data['totalAmount'] != null)
+                                            Text(
+                                              'Total: ${currencyFormat.format(data['totalAmount'])}',
+                                              style: const TextStyle(color: AppTheme.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          if (data['adminNotes'] != null && data['adminNotes'].toString().isNotEmpty)
+                                            Container(
+                                              margin: const EdgeInsets.only(top: 8),
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.amber.shade50,
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: Colors.amber.shade200),
+                                              ),
+                                              child: Text('Note: ${data['adminNotes']}', style: TextStyle(color: Colors.amber.shade900, fontSize: 12, fontWeight: FontWeight.w600)),
+                                            ),
+                                          const SizedBox(height: 12),
                                           Text('Placed on $dateStr', style: const TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.w600)),
                                           const SizedBox(height: 16),
                                           

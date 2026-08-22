@@ -24,6 +24,7 @@ export default function Inquiries() {
   // Negotiation Form Data
   const [negotiatedPrice, setNegotiatedPrice] = useState('');
   const [negotiatedQuantity, setNegotiatedQuantity] = useState('');
+  const [negotiationNotes, setNegotiationNotes] = useState('');
 
   // Dispatch Dialog State
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -68,6 +69,7 @@ export default function Inquiries() {
     setNegotiatedPrice(inquiry.totalAmount?.toString() || '');
     const calculatedTotalQty = inquiry.totalQuantity || inquiry.items?.reduce((sum: number, item: any) => sum + (item.quantityKg || 0), 0) || 0;
     setNegotiatedQuantity(calculatedTotalQty.toString() || '');
+    setNegotiationNotes(inquiry.adminNotes || '');
     setOpen(true);
   };
 
@@ -177,6 +179,7 @@ export default function Inquiries() {
       await updateDoc(doc(db, 'orders', editingId), {
         totalAmount: Number(negotiatedPrice),
         totalQuantity: Number(negotiatedQuantity),
+        adminNotes: negotiationNotes,
         updatedAt: new Date()
       });
       setOpen(false);
@@ -287,6 +290,7 @@ export default function Inquiries() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <TextField label="Negotiated Total Amount (₹)" type="number" fullWidth value={negotiatedPrice} onChange={(e) => setNegotiatedPrice(e.target.value)} />
             <TextField label="Negotiated Total Quantity" type="number" fullWidth value={negotiatedQuantity} onChange={(e) => setNegotiatedQuantity(e.target.value)} />
+            <TextField label="Admin Notes (Visible to Customer)" multiline rows={3} fullWidth value={negotiationNotes} onChange={(e) => setNegotiationNotes(e.target.value)} />
             <Typography sx={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
               Update these values before approving the order if you have negotiated a different rate with the customer.
             </Typography>

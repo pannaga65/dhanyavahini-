@@ -398,89 +398,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // 2.5 Live Alerts / Campaigns Ticker
-              SliverToBoxAdapter(
-                child: campaignsAsync.when(
-                  data: (campaigns) {
-                    if (campaigns.isEmpty) return const SizedBox.shrink();
-                    return Container(
-                      height: 50,
-                      margin: const EdgeInsets.only(top: 8, bottom: 8),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: campaigns.length,
-                        itemBuilder: (context, index) {
-                          final c = campaigns[index];
-                          IconData icon = Icons.campaign;
-                          Color color = AppTheme.primaryAction;
-                          if (c.type == 'alert') { icon = Icons.warning_rounded; color = Colors.red; }
-                          if (c.type == 'new_arrival') { icon = Icons.new_releases; color = Colors.green; }
-                          if (c.type == 'price_drop') { icon = Icons.trending_down; color = Colors.blue; }
-                          if (c.type == 'moving_fast') { icon = Icons.local_fire_department; color = Colors.orange; }
-                          
-                          return GestureDetector(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-                                builder: (ctx) => Container(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(icon, size: 48, color: color),
-                                      const SizedBox(height: 16),
-                                      Text(c.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textDark), textAlign: TextAlign.center),
-                                      const SizedBox(height: 12),
-                                      Text(c.body, style: const TextStyle(fontSize: 16, color: AppTheme.textLight), textAlign: TextAlign.center),
-                                      if (c.imageUrl.isNotEmpty) ...[
-                                        const SizedBox(height: 16),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: CachedNetworkImage(imageUrl: c.imageUrl, height: 150, width: double.infinity, fit: BoxFit.cover),
-                                        ),
-                                      ],
-                                      const SizedBox(height: 32),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: () => Navigator.pop(ctx),
-                                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryAction, padding: const EdgeInsets.symmetric(vertical: 16)),
-                                          child: const Text('GOT IT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        )
-                                      )
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(right: 12),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(25),
-                                border: Border.all(color: color.withValues(alpha: 0.3)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(icon, size: 18, color: color),
-                                  const SizedBox(width: 8),
-                                  Text(c.title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13)),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (err, stack) => const SizedBox.shrink(),
-                ),
-              ),
+
 
               // 3. Dynamic Categories
               SliverToBoxAdapter(
@@ -645,28 +563,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                 : const Icon(Icons.inventory_2, color: AppTheme.textLight, size: 40),
                                           ),
                                           
-                                          // Stock badge (Top left)
-                                          Positioned(
-                                            top: 0, left: 0,
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: product.availableStockKg > 0 
-                                                    ? AppTheme.secondaryAccent.withValues(alpha: 0.15) 
-                                                    : Colors.red.withValues(alpha: 0.15),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                product.availableStockKg > 0 ? 'IN STOCK' : 'OUT',
-                                                style: TextStyle(
-                                                  color: product.availableStockKg > 0 ? AppTheme.secondaryAccent : Colors.red, 
-                                                  fontSize: 9, 
-                                                  fontWeight: FontWeight.w800, 
-                                                  letterSpacing: 0.5
+                                          // Marketing badge (Top left)
+                                          if (product.availableStockKg > 0 && product.marketingBadge.isNotEmpty)
+                                            Positioned(
+                                              top: 0, left: 0,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: product.marketingBadge == 'Trending' 
+                                                      ? Colors.orange.withValues(alpha: 0.15) 
+                                                      : Colors.blue.withValues(alpha: 0.15),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Text(
+                                                  product.marketingBadge.toUpperCase(),
+                                                  style: TextStyle(
+                                                    color: product.marketingBadge == 'Trending' ? Colors.orange : Colors.blue, 
+                                                    fontSize: 9, 
+                                                    fontWeight: FontWeight.w800, 
+                                                    letterSpacing: 0.5
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
                                         ],
                                       ),
                                     ),
@@ -699,17 +618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           SizedBox(
                                             width: double.infinity,
                                             height: 36,
-                                            child: product.availableStockKg <= 0 
-                                            ? ElevatedButton(
-                                                onPressed: null,
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.grey.shade300,
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                                  padding: EdgeInsets.zero
-                                                ),
-                                                child: const Text('UNAVAILABLE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                                              )
-                                            : inCart 
+                                            child: inCart 
                                               // Cart Stepper UI
                                               ? Container(
                                                   decoration: BoxDecoration(

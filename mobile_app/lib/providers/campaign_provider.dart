@@ -32,7 +32,6 @@ final campaignsProvider = StreamProvider<List<CampaignModel>>((ref) {
   return FirebaseFirestore.instance
       .collection('campaigns')
       .where('isActive', isEqualTo: true)
-      .orderBy('createdAt', descending: true)
       .snapshots()
       .map((snapshot) => snapshot.docs
           .map((doc) => CampaignModel.fromFirestore(doc))

@@ -3,7 +3,8 @@ import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, T
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CampaignIcon from '@mui/icons-material/Campaign';
-import { collection, query, orderBy, onSnapshot, getFirestore } from 'firebase/firestore';
+import BlockIcon from '@mui/icons-material/Block';
+import { collection, query, orderBy, onSnapshot, getFirestore, deleteDoc, doc } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import app from '../firebase';
 import { useUI } from '../context/UIContext';
@@ -28,6 +29,8 @@ export default function Campaigns() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setCampaigns(data);
+    }, (error) => {
+      console.log('Campaigns listener error (can happen on logout):', error.message);
     });
     return () => unsubscribe();
   }, []);
@@ -55,7 +58,7 @@ export default function Campaigns() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleStop = async (id: string) => {
     showConfirm("Are you sure you want to stop this campaign?", async () => {
       try {
         const deleteCampaignFn = httpsCallable(functions, 'deleteCampaign');
@@ -64,6 +67,18 @@ export default function Campaigns() {
       } catch (e) {
         console.error("Error stopping campaign", e);
         showMessage("Failed to stop campaign.", "error");
+      }
+    });
+  };
+
+  const handleHardDelete = async (id: string) => {
+    showConfirm("Are you sure you want to completely delete this campaign?", async () => {
+      try {
+        await deleteDoc(doc(db, 'campaigns', id));
+        showMessage("Campaign deleted.", "success");
+      } catch (e) {
+        console.error("Error deleting campaign", e);
+        showMessage("Failed to delete.", "error");
       }
     });
   };
@@ -142,8 +157,12 @@ export default function Campaigns() {
                   {row.createdAt?.toDate().toLocaleString() || 'N/A'}
                 </TableCell>
                 <TableCell align="right">
-                  {row.isActive && (
-                    <IconButton onClick={() => handleDelete(row.id)} size="small" sx={{ color: '#EF4444', '&:hover': { backgroundColor: '#FEF2F2' } }}>
+                  {row.isActive ? (
+                    <IconButton onClick={() => handleStop(row.id)} size="small" sx={{ color: '#F97316', '&:hover': { backgroundColor: '#FFF7ED' } }} title="Stop Campaign">
+                      <BlockIcon fontSize="small" />
+                    </IconButton>
+                  ) : (
+                    <IconButton onClick={() => handleHardDelete(row.id)} size="small" sx={{ color: '#EF4444', '&:hover': { backgroundColor: '#FEF2F2' } }} title="Delete Campaign">
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   )}

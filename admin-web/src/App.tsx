@@ -126,6 +126,8 @@ function App() {
         }
         return newCount;
       });
+    }, (error) => {
+      console.log('Orders listener error (can happen on logout):', error.message);
     });
     return () => unsubscribe();
   }, [user]);

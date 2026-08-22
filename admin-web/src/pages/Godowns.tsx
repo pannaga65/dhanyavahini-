@@ -37,6 +37,8 @@ export default function Godowns() {
     name: '',
     location: '',
     managerName: '',
+    phone: '',
+    altPhone: '',
     capacity: '',
     isActive: true
   });
@@ -63,12 +65,14 @@ export default function Godowns() {
         name: godown.name || '',
         location: godown.location || '',
         managerName: godown.managerName || '',
+        phone: godown.phone || '',
+        altPhone: godown.altPhone || '',
         capacity: godown.capacity ? godown.capacity.toString() : '',
         isActive: godown.isActive !== false
       });
     } else {
       setEditingId(null);
-      setFormData({ name: '', location: '', managerName: '', capacity: '', isActive: true });
+      setFormData({ name: '', location: '', managerName: '', phone: '', altPhone: '', capacity: '', isActive: true });
     }
     setOpen(true);
   };
@@ -96,6 +100,8 @@ export default function Godowns() {
         name: formData.name.trim(),
         location: formData.location.trim(),
         managerName: formData.managerName.trim(),
+        phone: formData.phone.trim(),
+        altPhone: formData.altPhone.trim(),
         capacity: formData.capacity ? Number(formData.capacity) : null,
         isActive: formData.isActive
       };
@@ -191,6 +197,7 @@ export default function Godowns() {
               <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>NAME</TableCell>
               <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>LOCATION</TableCell>
               <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>MANAGER</TableCell>
+              <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>PHONE</TableCell>
               <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>CAPACITY</TableCell>
               <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }}>STATUS</TableCell>
               <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '12px' }} align="right">ACTIONS</TableCell>
@@ -202,6 +209,10 @@ export default function Godowns() {
                 <TableCell sx={{ fontWeight: 900 }}>{row.name}</TableCell>
                 <TableCell>{row.location}</TableCell>
                 <TableCell>{row.managerName || '-'}</TableCell>
+                <TableCell>
+                  {row.phone || '-'}
+                  {row.altPhone && <Box sx={{ fontSize: '0.75rem', color: '#64748B' }}>{row.altPhone}</Box>}
+                </TableCell>
                 <TableCell>{row.capacity ? `${row.capacity} Bags` : '-'}</TableCell>
                 <TableCell>
                   <FormControlLabel
@@ -219,7 +230,7 @@ export default function Godowns() {
             ))}
             {godowns.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                   <Typography sx={{ color: '#94A3B8', fontWeight: 600, mb: 2 }}>{!navigator.onLine ? "NO INTERNET CONNECTION" : "No godowns found."}</Typography>
                   <Button variant="outlined" onClick={() => handleOpen()} sx={{ color: '#1B4332', borderColor: '#E2E8F0', fontWeight: 600, borderRadius: '8px' }}>
                     Create First Godown
@@ -281,6 +292,20 @@ export default function Godowns() {
                 type="number"
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Phone Number"
+                fullWidth
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+              <TextField
+                label="Alternative Phone Number"
+                fullWidth
+                value={formData.altPhone}
+                onChange={(e) => setFormData({ ...formData, altPhone: e.target.value })}
               />
             </Box>
             <FormControlLabel

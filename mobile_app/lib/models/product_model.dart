@@ -9,6 +9,7 @@ class ProductModel {
   final double availableStockKg;
   final bool isActive;
   final double gstPercentage;
+  final String marketingBadge;
 
   ProductModel({
     required this.id,
@@ -21,6 +22,7 @@ class ProductModel {
     required this.availableStockKg,
     required this.isActive,
     required this.gstPercentage,
+    this.marketingBadge = '',
   }) : incrementStepKg = incrementStepKg ?? moqKg;
 
   factory ProductModel.fromFirestore(Map<String, dynamic> data, String id, {double inventoryStock = 0.0}) {
@@ -36,6 +38,7 @@ class ProductModel {
       availableStockKg: inventoryStock,
       isActive: data['isActive'] ?? true,
       gstPercentage: (data['gstPercentage'] is num) ? (data['gstPercentage'] as num).toDouble() : 5.0,
+      marketingBadge: data['marketingBadge'] ?? '',
     );
   }
 }

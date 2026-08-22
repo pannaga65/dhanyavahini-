@@ -19,10 +19,7 @@ exports.downloadInvoice = onRequest(async (req, res) => {
 
     const isAdmin = req.query.admin === 'true';
 
-    // Verify payment status
-    if (!isAdmin && order.paymentStatus !== "Done") {
-      return res.status(403).send("Invoice is not available until payment is Done.");
-    }
+    // Payment status check removed — users can now view the invoice as soon as it is dispatched (i.e. has an invoiceNo).
     
     if (!order.invoiceNo) {
       return res.status(403).send("Invoice number has not been generated for this order yet. Please fill dispatch details in the admin panel.");

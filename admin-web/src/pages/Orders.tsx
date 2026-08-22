@@ -23,6 +23,8 @@ interface Order {
   customerName?: string;
   status: string;
   paymentStatus?: string;
+  paymentMethod?: string;
+  paymentNote?: string;
   totalAmount: number;
   invoiceNo?: string;
   dispatchDetails?: DispatchData;
@@ -53,6 +55,8 @@ export default function Orders() {
   const [editLoading, setEditLoading] = useState(false);
   const [editStatus, setEditStatus] = useState('');
   const [editPaymentStatus, setEditPaymentStatus] = useState('');
+  const [editPaymentMethod, setEditPaymentMethod] = useState('');
+  const [editPaymentNote, setEditPaymentNote] = useState('');
   const [editShippingAddress, setEditShippingAddress] = useState('');
   const [editTotal, setEditTotal] = useState('');
   const [editItems, setEditItems] = useState<any[]>([]);
@@ -188,6 +192,8 @@ export default function Orders() {
     setEditingId(order.id);
     setEditStatus(order.status || 'Confirmed');
     setEditPaymentStatus(order.paymentStatus || 'Pending');
+    setEditPaymentMethod(order.paymentMethod || 'Bank Transfer');
+    setEditPaymentNote(order.paymentNote || '');
     setEditShippingAddress(order.shippingAddress || order.billingAddress || '');
     setEditTotal(order.totalAmount?.toString() || '');
     setEditItems(order.items ? JSON.parse(JSON.stringify(order.items)) : []);
@@ -205,6 +211,8 @@ export default function Orders() {
       ...o, 
       status: editStatus, 
       paymentStatus: editPaymentStatus, 
+      paymentMethod: editPaymentStatus === 'Done' ? editPaymentMethod : null,
+      paymentNote: editPaymentStatus === 'Done' ? editPaymentNote : null,
       shippingAddress: editShippingAddress,
       items: editItems,
       subtotal: editSubtotal,
@@ -220,6 +228,8 @@ export default function Orders() {
       // Update payment status, shipping address, and item weights
       await updateDoc(doc(db, 'orders', targetId), {
         paymentStatus: editPaymentStatus,
+        paymentMethod: editPaymentStatus === 'Done' ? editPaymentMethod : null,
+        paymentNote: editPaymentStatus === 'Done' ? editPaymentNote : null,
         shippingAddress: editShippingAddress,
         items: editItems,
         subtotal: editSubtotal,
@@ -703,6 +713,25 @@ export default function Orders() {
                 <MenuItem value="Done">Done</MenuItem>
               </Select>
             </FormControl>
+            {editPaymentStatus === 'Done' && (
+              <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <FormControl sx={{ minWidth: 150 }}>
+                  <InputLabel>Payment Method</InputLabel>
+                  <Select value={editPaymentMethod} label="Payment Method" onChange={(e) => setEditPaymentMethod(e.target.value)}>
+                    <MenuItem value="Bank Transfer">Bank Transfer</MenuItem>
+                    <MenuItem value="Cash">Cash</MenuItem>
+                    <MenuItem value="UPI">UPI</MenuItem>
+                    <MenuItem value="Cheque">Cheque</MenuItem>
+                  </Select>
+                </FormControl>
+                <TextField 
+                  label="Internal Note (e.g. UTR or Check No)" 
+                  value={editPaymentNote} 
+                  onChange={(e) => setEditPaymentNote(e.target.value)} 
+                  fullWidth 
+                />
+              </Box>
+            )}
             <TextField 
               label="Shipping Address" 
               multiline 

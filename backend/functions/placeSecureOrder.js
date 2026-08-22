@@ -87,12 +87,6 @@ exports.placeSecureOrder = onCall(async (request) => {
         const availableStock = inventory ? (inventory.availableStockKg || 0) : 0;
         const requestedKg = item.quantity;
 
-        if (requestedKg > availableStock) {
-          throw new HttpsError(
-            "failed-precondition",
-            `Insufficient stock for "${product.name}". Available: ${availableStock} Kg, Requested: ${requestedKg} Kg.`
-          );
-        }
 
         if (product.moqKg && requestedKg < product.moqKg) {
           throw new HttpsError(
